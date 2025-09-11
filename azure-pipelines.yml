@@ -12,12 +12,12 @@ steps:
 - task: DownloadSecureFile@1
   name: sshKey
   inputs:
-    secureFile: 'aws-key.pem'   # uploaded in Azure DevOps > Pipelines > Library > Secure files
+    secureFile: 'Team04.ppk'   # uploaded in Azure DevOps > Pipelines > Library > Secure files
 
 - script: |
     mkdir -p ~/.ssh
-    cp $(sshKey.secureFilePath) ~/.ssh/aws-key.pem
-    chmod 600 ~/.ssh/aws-key.pem
+    cp $(sshKey.secureFilePath) ~/.ssh/Team04.ppk
+    chmod 600 ~/.ssh/Team04.ppk
     echo "Transferring files..."
-    scp -o StrictHostKeyChecking=no -i ~/.ssh/aws-key.pem ./dist/* $(aws_server):$(target_dir)/
+    scp -o StrictHostKeyChecking=no -i ~/.ssh/Team04.ppk ./dist/* $(aws_server):$(target_dir)/
   displayName: "Transfer files to AWS Ubuntu server"
