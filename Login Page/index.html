@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Log in</title>
+    <link rel="stylesheet" type="text/css" href="login.css">
+    <script type="text/javascript" src="/Homepage/navbar.js"></script>
+    
+  </head>
+  <body>
+    <div id="navbarheader"></div>
+    <div id="login">
+        <h2 id="title">Log In</h2>
+        <p id="title">THIS IS A TEST</p>
+        <div id="error" class="hidden"><p id="errorText">Invalid Email</p></div>
+        <form action="login.php" method="POST">
+            <label for="email" class="input">email</label> <br>
+            <input type="text" name="email" id="emailInput" class="input"><br><br>
+
+            <label for="password" class="input">password</label><br>
+            <input type="password" class="input" name="password" id="passwordInput">
+
+            <button type="submit" id="passwordChange" class="input">Log In</button>
+        </form>
+        <a href="password.html" id="forget">Forget Password?</a>
+        <br>
+        <a href="signup.html" id="createAccount">Don't have an account? Sign up now!</a>
+    </div>
+  </body>
+  
+</html>
