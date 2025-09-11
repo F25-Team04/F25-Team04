@@ -1,0 +1,119 @@
+#navbarheader {
+    position: relative;
+    top: 0;
+    z-index: 3;
+}
+#login {
+    position: relative;
+    border: 2px solid black;
+    top: 95px;
+    width: 400px;
+    left: 35.5%;
+    height: 450px;
+}
+#signup {
+    position: relative;
+    border: 2px solid black;
+    top: 110px;
+    width: 400px;
+    left: 35.5%;
+    height: 450px;
+
+}
+.input {
+    position: relative;
+    left: 10%;
+    width: 75%;
+    top: 0px;
+    
+}
+#error {
+    position: relative;
+    text-align: center;
+    font-size: 15px;
+    border: 1px solid rgb(0, 0, 0);
+    background-color: rgb(246, 234, 234);
+    color: black;
+    height: 40px;
+    width: 75%;
+    left: 10%;
+    justify-content: center;
+    margin-top: 18px;
+}
+#errorText {
+    font-size: 15px;
+}
+#title {
+    position: relative;
+    left: 10%;
+    width: 75%;
+}
+p {
+    text-indent: 0;
+    
+}
+h2 {
+    text-align: left;
+}
+
+#emailInput {
+    font-size: 20px;
+    padding: 5px;
+}
+
+#passwordInput {
+    font-size: 20px;
+    padding: 3px;
+}
+#passwordChange {
+    position: relative;
+    top: 20px;
+    height: 40px;
+    background-color: blue;
+    color: white;
+    font-size: 20px;
+}
+#forget {
+    position: relative;
+    left: 10%;
+    top: 20px;
+}
+
+#createAccount {
+    position: relative;
+    left: 10%;
+    text-align: center;
+    top: 60px;
+}
+#submit {
+    position: relative;
+    top: 60px;
+    height: 40px;
+    background-color: blue;
+    color: white;
+    font-size: 20px;
+}
+
+#nameInput {
+    font-size: 20px;
+    padding: 5px;
+}
+
+#list {
+    position: relative;
+    left: 10%;
+}
+
+
+.hidden {
+    display: none;
+  }
+
+#create {
+    position: relative;
+    top: 0px;
+    height: 40px;
+    background-color: blue;
+    color: white;
+    font-size: 20px;
+}
