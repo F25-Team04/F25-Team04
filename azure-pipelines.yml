@@ -1,0 +1,23 @@
+trigger:
+- main   # or your branch
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  aws_server: "ec2-user@<54.144.2.158>"   # replace with your server user and IP
+  target_dir: "/var/www/html"               # folder on AWS Ubuntu server
+
+steps:
+- task: DownloadSecureFile@1
+  name: sshKey
+  inputs:
+    secureFile: 'aws-key.pem'   # uploaded in Azure DevOps > Pipelines > Library > Secure files
+
+- script: |
+    mkdir -p ~/.ssh
+    cp $(sshKey.secureFilePath) ~/.ssh/aws-key.pem
+    chmod 600 ~/.ssh/aws-key.pem
+    echo "Transferring files..."
+    scp -o StrictHostKeyChecking=no -i ~/.ssh/aws-key.pem ./dist/* $(aws_server):$(target_dir)/
+  displayName: "Transfer files to AWS Ubuntu server"
