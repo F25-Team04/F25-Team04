@@ -13,29 +13,35 @@ window.onload = function() {
     });
 
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
-  event.preventDefault(); // stop normal form submission
+        event.preventDefault(); // stop normal form submission
 
-  // Gather form data
-  const form = event.target;
-  const formData = new FormData(form);
+        // Gather form data
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = {
+            email: form.email.value,
+            password: form.password.value
+        };
 
-  try {
-    // Send POST request
-        const response = await fetch("/submit", {
-            method: "POST",
-            body: formData
-        });
+        console.log(data)
+        try {
+            // Send POST request
+            const response = await fetch("/submit", {
+                method: "POST",
+                body: data
+            });
 
-        if (response.ok) {
-            const result = await response.json();
-            console.log("Server Response:", result);
-            alert("Form submitted successfully!");
-        } else {
-            alert("Error submitting form");
-        }
-        } catch (error) {
-            console.error("Error:", error);
-        }
+            if (response.ok) {
+                const result = await response.json();
+                window.location = "../About/about.html";
+                console.log("Server Response:", result);
+                alert("Form submitted successfully!");
+            } else {
+                alert("Error submitting form");
+            }
+            } catch (error) {
+                console.error("Error:", error);
+            }
     });
 
 
