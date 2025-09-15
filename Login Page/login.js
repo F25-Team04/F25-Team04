@@ -25,10 +25,14 @@ window.onload = function() {
 
         console.log(data)
         try {
+            
             // Send POST request
-            const response = await fetch("/submit", {
+            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/login", {
                 method: "POST",
-                body: data
+                headers: {
+                    "Content-Type": "application/json"  // IMPORTANT
+                },
+                body: JSON.stringify(data)   
             });
 
             if (response.ok) {
