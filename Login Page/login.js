@@ -35,9 +35,9 @@ window.onload = function() {
                 const result = await response.json();
                 window.location = "../About/about.html";
                 console.log("Server Response:", result);
-                alert("Form submitted successfully!");
+
             } else {
-                alert("Error submitting form");
+                alert("Password or Email is Incorrect");
             }
             } catch (error) {
                 console.error("Error:", error);
