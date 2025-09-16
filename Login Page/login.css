@@ -9,9 +9,24 @@
 
 body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    padding-bottom: 35px;
+}
+
+footer a {
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
 }
 
 .wrapper {
