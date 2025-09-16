@@ -3,14 +3,24 @@ window.onload = function() {
     const passwordField = document.getElementById("passwordInput");
     const capsIndicator = document.querySelector(".caps-indicator");
     
+    document.addEventListener("keydown", checkCaps);
+    document.addEventListener("keyup", checkCaps);
+
     document.addEventListener("keydown", (e) => {
-        if (e.getModifierState("CapsLock")) {
-            capsIndicator.classList.remove("active");
-        }
-        else {
-            capsIndicator.classList.add("active");
+        if (e.code === "CapsLock") {
+            checkCaps(e);
         }
     });
+
+    function checkCaps(event) {
+        const capsOn = event.getModifierState("CapsLock");
+        if (capsOn) {
+            capsIndicator.classList.add("active");
+        }
+        else {
+            capsIndicator.classList.remove("active");
+        }
+    }
 
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
         event.preventDefault(); // stop normal form submission
