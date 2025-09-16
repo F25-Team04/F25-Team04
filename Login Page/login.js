@@ -1,16 +1,26 @@
 window.onload = function() {
   
     const passwordField = document.getElementById("passwordInput");
-    const warning = document.getElementById("capsWarning");
+    const capsIndicator = document.querySelector(".caps-indicator");
     
+    document.addEventListener("keydown", checkCaps);
+    document.addEventListener("keyup", checkCaps);
 
-    passwordField.addEventListener("keyup", function(event) {
-        if (event.getModifierState("CapsLock")) {
-            warning.style.display = "block";   // Show warning
-        } else {
-            warning.style.display = "none";    // Hide warning
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "CapsLock") {
+            checkCaps(e);
         }
     });
+
+    function checkCaps(event) {
+        const capsOn = event.getModifierState("CapsLock");
+        if (capsOn) {
+            capsIndicator.classList.add("active");
+        }
+        else {
+            capsIndicator.classList.remove("active");
+        }
+    }
 
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
         event.preventDefault(); // stop normal form submission
