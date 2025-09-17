@@ -47,7 +47,7 @@ window.onload = function() {
 
             if (response.ok) {
                 const result = await response.json();
-                window.location = "About/about.html";
+                window.location = "About Page/about.html";
                 console.log("Server Response:", result);
 
             } else {
