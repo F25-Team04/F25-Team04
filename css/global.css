@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+:root {
+    --open-sans: "Open Sans", sans-serif;
+    --revvy-green: #1ED760;
+    --revvy-black: #121212;
+}
+
+* {
+    font-family: var(--open-sans);
+}

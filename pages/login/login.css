@@ -1,10 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
-
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Open Sans", sans-serif;
 }
 
 body {
@@ -32,7 +29,25 @@ footer a:hover {
 .wrapper {
     width: 420px;
     border-radius: 10px;
-    padding: 30px 40px;
+    padding: 0px 40px;
+}
+
+.brand-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 420px;
+    padding-bottom: 24px;
+}
+
+.brand-header .brand-logo {
+    height: 96px;
+    width: 96px;
+}
+
+.brand-header .brand-name {
+    max-width: 256px;
 }
 
 .wrapper h1 {
@@ -92,11 +107,12 @@ footer a:hover {
     border: none;
     outline: none;
     border-radius: 45px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+    box-shadow: 0 0 12px rgba(0, 0, 0, .2);
     cursor: pointer;
     font-size: 16px;
-    color: #333;
+    color: var(--revvy-black);
     font-weight: 600;
+    background-color: var(--revvy-green);
 }
 
 .wrapper .register-link {
@@ -123,15 +139,16 @@ footer a:hover {
 }
 
 .caps-indicator {
-  width: 12px;
-  height: 12px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background-color: #ccc;
-  border: 1px solid #888;
-  transition: background-color 0.2s ease, border-color 0.2s ease;}
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background-color: #ccc;
+    border: 1px solid #888;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
 
 .caps-indicator.active {
-  background-color: #4CAF50;
-  border-color: #4CAF50;
+    background-color: var(--revvy-green);
+    border-color: var(--revvy-green);
 }
