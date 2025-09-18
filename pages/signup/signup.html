@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+ <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply</title>
+    <link rel="stylesheet" href="../../css/global.css">
+    <link rel="stylesheet" href="signup.css">
+    <script type="text/javascript" src="apply.js"></script>
+  </head>
+
+  <body>
+    <header>
+        <h1>Revvy Driver Application</h1>
+        <p>If you are a Sponsor, please contact your Sponsor Organization for access.</p>
+    </header>
+    <div class="wrapper">
+        <form action="" id="signupForm">
+            <div class="accInfo">
+                <h3>Account Information</h3>
+                <p>Email Address</p>
+                <input name="email" type="email" placeholder="someone@email.com" required>
+                <p>Password</p>
+                <input name="password" type="password" placeholder="Enter pasword" required>
+                <br> <input name="confPassword" type="password" placeholder="Confirm password" required>
+            </div>
+
+            <div class="driverInfo">
+                <br> <h3>Driver Information</h3>
+                <p>Phone Number</p>
+                <input name="phone" type="tel" placeholder="(XXX) XXX-XXXX" required>
+                <p>Full Name</p>
+                <input name="fname" type="text" placeholder="First name" required>
+                <br> <input name="lname" type="text" placeholder="Last name" required>
+                <p>Drivers License Number</p>
+                <input name="dln" type="text" placeholder="Enter DL#" required>
+                <p>Employee ID</p>
+                <input name="empID" type="text" placeholder="Enter employee ID#" required>
+                <p>Sponsor</p>
+                <label for="searchable">Choose an option:</label>
+                <input list="dropdown" id="searchable" name="searchable" placeholder="Sponsor name" />
+                <datalist id="dropdown"></datalist>
+            </div>
+        </form>
+
+        <footer>
+          <br> <a href="../../index.html">Back to Login</a>
+        </footer>
+    </div>
+  </body>
+</html>
