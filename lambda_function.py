@@ -33,11 +33,13 @@ def post_login(body):
             SELECT * 
             FROM Users
             WHERE usr_email = '{email}'
-            AND usr_passwordhash IS NOT NULL
             AND usr_isdeleted = 0
         """)
     
     user = cur.fetchone()
+
+
+
 
     if user:
         return {"success": True, "message": f"Welcome {user.get('usr_firstname')} {user.get('usr_lastname')}!"}
