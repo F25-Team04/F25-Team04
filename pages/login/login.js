@@ -22,6 +22,17 @@ window.onload = function() {
         }
     }
 
+    window.togglePW = function (btn) {
+        var x = document.getElementById("pw");
+        var icon = btn.querySelector("i");
+        var isHidden = x.type === "password";
+
+        x.type = isHidden ? "text" : "password";
+
+        icon.classList.toggle("bx-eye-slash", isHidden);
+        icon.classList.toggle("bx-eye", !isHidden);
+    }
+
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
         event.preventDefault(); // stop normal form submission
 

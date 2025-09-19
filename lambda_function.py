@@ -17,10 +17,11 @@ conn = pymysql.connect(
 )
 
 def post_query(query):
-    # returns result of query
+    # returns result of query and commits changes
     with conn.cursor() as cur:
         cur.execute(query)
         result = cur.fetchall()
+        conn.commit()
         return result
 
 def post_login(body):
@@ -42,9 +43,30 @@ def post_login(body):
 
 
     if user:
-        return {"success": True, "message": f"Welcome {user.get('usr_firstname')} {user.get('usr_lastname')}!"}
+        # update last login timestamp
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE Users
+                SET usr_lastlogin = NOW()
+                WHERE usr_email = %s
+            """, (email,))
+            conn.commit() 
+
+        return {
+            "success": True, 
+            "message": f"Welcome {user.get('usr_firstname')} {user.get('usr_lastname')}!"
+        }
     else:
-        return {"success": False, "message": "User does not exist"}
+        return {
+            "success": False, 
+            "message": "User does not exist"
+        }
+
+def post_change_password(body):
+    pass
+
+def post_application(body):
+    pass
 
 def get_about():
     # returns most recent about data by abt_releasedate
@@ -56,6 +78,19 @@ def get_about():
         """)
         recent = cur.fetchone()
         return recent
+
+def get_organizations():
+    # returns list of organization names
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            SELECT org_name 
+            FROM Organizations
+            WHERE org_isdeleted <> 1
+            ORDER BY org_name
+        """)
+        result = cur.fetchall()
+        org_names = [item["org_name"] for item in result]
+        return org_names
 
 # overall handler for requests
 def lambda_handler(event, context):
@@ -84,21 +119,28 @@ def lambda_handler(event, context):
             cursorclass=pymysql.cursors.DictCursor
         )
 
-
-        
         print("event:", event)
         print("context:", context)
 
         if (method == "GET" and path == "/about"):
             response_data = get_about()
+        elif (method == "GET" and path == "/organizations"):
+            response_data = get_organizations()
+
         elif (method == "POST" and path == "/login"):
-            # response_data = post_login(conn)
             response_data = post_login(event.get("body"))
-            pass
+        elif (method == "POST" and path == "/application"):
+            response_data = post_application(event.get("body"))
+        elif (method == "POST" and path == "/change_password"):
+            response_data = post_change_password(event.get("body"))
         elif (method == "POST" and path == "/query"):
             response_data = post_query(event.get("body"))
+            
         else:
-            raise 
+            return {
+                "statusCode": 404,
+                "body": "Resource not found."
+            }
 
     # handle exceptions at any point
     except Exception as e:
