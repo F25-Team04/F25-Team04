@@ -118,6 +118,9 @@ def post_login(body):
     
     user = cur.fetchone()
 
+
+
+
     if user:
         # check password against stored hash
         if verify_secret(password, user.get("usr_passwordhash")):
