@@ -227,7 +227,7 @@ def get_organizations():
         cur.execute(f"""
             SELECT org_name 
             FROM Organizations
-            WHERE org_isdeleted <> 1
+            WHERE org_isdeleted = 0
             ORDER BY org_name
         """)
         result = cur.fetchall()
