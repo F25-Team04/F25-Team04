@@ -8,8 +8,44 @@ import base64
 import secrets
 import unicodedata
 
-# Config - tune iter count per your threat model and performance.
-# As of recent guidance, 100k+ iterations is a baseline; 200k-500k is common.
+def get_db_credentials():
+    secret_name = "Team04_DB_user"
+    region_name = "us-east-2"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        # For a list of exceptions thrown, see
+        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    return json.loads(secret)
+
+try:
+    # connect to Team04_DB as Team04 user
+    credentials = get_db_credentials()
+    conn = pymysql.connect(
+        host=credentials.get("host"),
+        user=credentials.get("username"),
+        password=credentials.get("password"),
+        database=credentials.get("dbname"),
+        cursorclass=pymysql.cursors.DictCursor
+    )
+except Exception as e:
+    print(e)
+    exit()
+
+# Config - tune iter count (200k-500k is common)
 DEFAULT_ITERATIONS = 260_000
 SALT_BYTES = 16
 DKLEN = 32  # 32 bytes = 256 bits derived key
@@ -55,45 +91,6 @@ def verify_secret(secret: str, stored: str) -> bool:
     # constant-time compare
     return hmac.compare_digest(dk, expected)
 
-def get_db_credentials():
-    secret_name = "Team04_DB_User"
-    region_name = "us-east-2"
-
-    # Create a Secrets Manager client
-    session = boto3.session.Session()
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region_name
-    )
-
-    try:
-        get_secret_value_response = client.get_secret_value(
-            SecretId=secret_name
-        )
-    except ClientError as e:
-        # For a list of exceptions thrown, see
-        # https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        raise e
-
-    secret = get_secret_value_response['SecretString']
-    print(secret)
-
-# hardcode for demo (not secure at all)
-DB_HOST = "cpsc4910-f25.cobd8enwsupz.us-east-1.rds.amazonaws.com"
-DB_USER = "Team04"
-DB_PASSWORD = "Team Kenny"
-DB_NAME = "Team04_DB"
-#get_db_credentials()
-
-# connect to Team04_DB as Team04 user
-conn = pymysql.connect(
-    host=DB_HOST,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    database=DB_NAME,
-    cursorclass=pymysql.cursors.DictCursor
-)
-
 def post_query(query):
     # returns result of query and commits changes
     with conn.cursor() as cur:
@@ -117,9 +114,6 @@ def post_login(body):
         """, email)
     
     user = cur.fetchone()
-
-
-
 
     if user:
         # check password against stored hash
@@ -252,15 +246,6 @@ def lambda_handler(event, context):
         }
 
     try:
-        # connect to Team04_DB as Team04 user
-        conn = pymysql.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_NAME,
-            cursorclass=pymysql.cursors.DictCursor
-        )
-
         print("event:", event)
         print("context:", context)
 
