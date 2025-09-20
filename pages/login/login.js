@@ -43,8 +43,6 @@ window.onload = function() {
             email: form.email.value,
             password: form.password.value
         };
-
-        console.log(data)
         try {
             
             // Send POST request
@@ -53,17 +51,20 @@ window.onload = function() {
                 headers: {
                     "Content-Type": "application/json"  // IMPORTANT
                 },
-                body: JSON.stringify(data)   
+                body: JSON.stringify(data)
             });
-
             if (response.ok) {
                 const result = await response.json();
-                window.location = "About Page/about.html";
-                console.log("Server Response:", result);
+                
+                if (result.success == false) {
+                    alert(result.message);
+                }
+                else if (result.success == true) {
+                    window.location = "pages/about/about.html";
+                }
+                
 
-            } else {
-                alert("Password or Email is Incorrect");
-            }
+            } 
             } catch (error) {
                 console.error("Error:", error);
             }
