@@ -1,3 +1,4 @@
+# ==== imports ==========================================================================
 import json
 import pymysql
 import boto3
@@ -8,6 +9,19 @@ import base64
 import secrets
 import unicodedata
 
+# ==== response builder =================================================================
+def _resp(status: int, payload):
+    return {
+        "statusCode": status,
+        "headers": {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        },
+        "body": json.dumps(payload, default=str) if not isinstance(payload, str) else payload,
+    }
+
+# ==== connect to DB ====================================================================
 def get_db_credentials():
     secret_name = "Team04_DB_user"
     region_name = "us-east-2"
@@ -31,36 +45,30 @@ def get_db_credentials():
     secret = get_secret_value_response['SecretString']
     return json.loads(secret)
 
-try:
-    # connect to Team04_DB as Team04 user
-    credentials = get_db_credentials()
-    conn = pymysql.connect(
-        host=credentials.get("host"),
-        user=credentials.get("username"),
-        password=credentials.get("password"),
-        database=credentials.get("dbname"),
-        cursorclass=pymysql.cursors.DictCursor
-    )
-except Exception as e:
-    print(e)
-    exit()
+# connect to Team04_DB as Team04 user
+credentials = get_db_credentials()
+conn = pymysql.connect(
+    host=credentials.get("host"),
+    user=credentials.get("username"),
+    password=credentials.get("password"),
+    database=credentials.get("dbname"),
+    cursorclass=pymysql.cursors.DictCursor
+)
 
-# Config - tune iter count (200k-500k is common)
+# ==== create/verify secret hash ========================================================
 DEFAULT_ITERATIONS = 260_000
 SALT_BYTES = 16
 DKLEN = 32  # 32 bytes = 256 bits derived key
 
 def _normalize(text: str) -> bytes:
-    """Normalize to NFKC and convert to UTF-8 bytes."""
+    # Normalize to NFKC and convert to UTF-8 bytes.
     if text is None:
         raise ValueError("text must not be None")
     normalized = unicodedata.normalize("NFKC", text)
     return normalized.encode("utf-8")
 
 def hash_secret(secret: str, iterations: int = DEFAULT_ITERATIONS) -> str:
-    """
-    Hash a secret (password or answer) and return a single string suitable for storage.
-    """
+    # Hash a secret (password or answer) and return a single string suitable for storage.
     secret_bytes = _normalize(secret)
     salt = secrets.token_bytes(SALT_BYTES)
     dk = hashlib.pbkdf2_hmac("sha256", secret_bytes, salt, iterations, dklen=DKLEN)
@@ -71,10 +79,8 @@ def hash_secret(secret: str, iterations: int = DEFAULT_ITERATIONS) -> str:
     return f"pbkdf2_sha256${iterations}${salt_b64}${dk_b64}"
 
 def verify_secret(secret: str, stored: str) -> bool:
-    """
-    Verify a secret (password / answer) against a stored hash string.
-    Returns True if match, False otherwise.
-    """
+    # Verify a secret (password / answer) against a stored hash string.
+    # Returns True if match, False otherwise.
     try:
         algo, iter_str, salt_b64, hash_b64 = stored.split("$", 3)
         if algo != "pbkdf2_sha256":
@@ -91,6 +97,7 @@ def verify_secret(secret: str, stored: str) -> bool:
     # constant-time compare
     return hmac.compare_digest(dk, expected)
 
+# ==== POST =============================================================================
 def post_query(query):
     # returns result of query and commits changes
     with conn.cursor() as cur:
@@ -101,6 +108,7 @@ def post_query(query):
     return result
 
 def post_login(body):
+    # parse login details, find user, verify pw hash, and return success/failure with message
     body = json.loads(body)
     email = body.get("email")
     password = body.get("password")
@@ -112,12 +120,12 @@ def post_login(body):
             WHERE usr_email = %s
             AND usr_isdeleted = 0
         """, email)
-    
-    user = cur.fetchone()
+        user = cur.fetchone()
 
     if user:
         # check password against stored hash
         if verify_secret(password, user.get("usr_passwordhash")):
+
             # update failed login attempts
             with conn.cursor() as cur:
                 cur.execute("""
@@ -128,6 +136,7 @@ def post_login(body):
                     AND usr_isdeleted = 0
                 """, email)
                 conn.commit() 
+
             # return success, login
             return {
                 "success": True, 
@@ -143,6 +152,7 @@ def post_login(body):
                     AND usr_isdeleted = 0
                 """, email)
                 conn.commit() 
+
             return {
                 "success": False, 
                 "message": "Password does not match!"
@@ -168,8 +178,7 @@ def post_change_password(body):
             WHERE usr_email = %s
             AND usr_isdeleted = 0
         """, email)
-
-    user = cur.fetchone()
+        user = cur.fetchone()
 
     if user:
         if answer == user.get("usr_securityanswer"):
@@ -200,10 +209,11 @@ def post_change_password(body):
         "message": "User does not exist"
     }
     
-
 def post_application(body):
     pass
 
+
+# ==== GET ==============================================================================
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
@@ -228,32 +238,27 @@ def get_organizations():
         org_names = [item["org_name"] for item in result]
         return org_names
 
+# ==== handler (main) ===================================================================
 # overall handler for requests
 def lambda_handler(event, context):
     
     method = event.get("httpMethod")
     path = event.get("path")
 
-    if method == "OPTIONS":
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-                "Access-Control-Allow-Headers": "Content-Type,Authorization"
-            },
-            "body": json.dumps({})
-        }
-
     try:
+        # logging
         print("event:", event)
         print("context:", context)
 
-        if (method == "GET" and path == "/about"):
+        # OPTIONS
+        if (method == "OPTIONS"):
+            return _resp(200, {})
+        # GET
+        elif (method == "GET" and path == "/about"):
             response_data = get_about()
         elif (method == "GET" and path == "/organizations"):
             response_data = get_organizations()
-
+        # POST
         elif (method == "POST" and path == "/login"):
             response_data = post_login(event.get("body"))
         elif (method == "POST" and path == "/application"):
@@ -264,31 +269,13 @@ def lambda_handler(event, context):
             response_data = post_query(event.get("body"))
 
         else:
-            return {
-                "statusCode": 404,
-                "body": "Resource not found."
-            }
+            return _resp(404, "Resource not found.")
 
     # handle exceptions at any point
     except Exception as e:
         print(f"ERROR: {e}")
-        return {
-            "statusCode": 400,
-            "body": str(e)
-        }
-
-    # close connection no matter what
-    finally:
-        if conn:
-            conn.close()
+        return _resp(400, str(e))
     
+    # success
     print(f"SUCCESS: {response_data}")
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-            "Access-Control-Allow-Headers": "Content-Type,Authorization"
-        },
-        "body": json.dumps(response_data, default=str)
-    }
+    return _resp(200, response_data)
