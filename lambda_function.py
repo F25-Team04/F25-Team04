@@ -104,7 +104,6 @@ def post_query(query):
         cur.execute(query)
         result = cur.fetchall()
         conn.commit()
-    
     return result
 
 def post_login(body):
@@ -112,6 +111,9 @@ def post_login(body):
     body = json.loads(body)
     email = body.get("email")
     password = body.get("password")
+
+    if email is None or password is None:
+        raise Exception("Missing required field(s): email, password")
 
     with conn.cursor() as cur:
         cur.execute("""
@@ -169,7 +171,10 @@ def post_change_password(body):
     body = json.loads(body)
     email = body.get("email")
     answer = body.get("answer")
-    password = body.get("new_password")
+    new_password = body.get("new_password")
+
+    if email is None or answer is None or new_password is None:
+        raise Exception("Missing required field(s): email, answer, new_password")
 
     with conn.cursor() as cur:
         cur.execute("""
@@ -183,7 +188,7 @@ def post_change_password(body):
     if user:
         if answer == user.get("usr_securityanswer"):
             # update password with hash of new password
-            passwordhash = hash_secret(password)
+            passwordhash = hash_secret(new_password)
             with conn.cursor() as cur:
                 cur.execute("""
                     UPDATE Users 
