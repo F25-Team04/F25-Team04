@@ -141,7 +141,8 @@ def post_login(body):
 
             # return success, login
             return {
-                "success": True, 
+                "success": True,
+                
                 "message": f"Welcome {user.get('usr_firstname')} {user.get('usr_lastname')}!"
             }
         else:
@@ -215,7 +216,70 @@ def post_change_password(body):
     }
     
 def post_application(body):
-    pass
+    # parse login details, find user, verify pw hash, and return success/failure with message
+    body = json.loads(body)
+    email = body.get("email")
+    password = body.get("password")
+    fName = body.get("fname")
+    lName = body.get("lname")
+    dln = body.get("dln")
+    empID = body.get("empID")
+    org = body.get("searchable")
+    ans = body.get("security")
+    phone = body.get("phone")
+    address = body.get("address")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT * 
+            FROM Users
+            WHERE usr_email = %s
+            AND usr_isdeleted = 0
+        """, email)
+        user = cur.fetchone()
+
+    if user:
+        # return failure, dne
+        return {
+            "success": False, 
+            "message": "Email already associated with an account"
+        }
+    else:
+        # adds the account to the database
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Users (
+                usr_email, usr_passwordhash, usr_role, usr_organization, 
+                usr_loginattempts, usr_securityquestion, usr_securityanswer, 
+                usr_status, usr_address, usr_firstname, usr_lastname, 
+                usr_employeeid, usr_phone, usr_license, usr_pointbalance, usr_isdeleted, usr_address
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+            email, 
+            hash_secret(password),
+            "driver",
+            org,
+            0,
+            "What is your favorite color",
+            ans,
+            "active",
+            None,   # usr_address = NULL
+            fName,
+            lName,
+            empID,
+            phone,
+            dln,
+            0,      # usr_pointbalance
+            0,       # usr_isdeleted
+            address
+            ))
+        conn.commit() 
+        return {
+            "success": True, 
+            "message": "Account Created"
+        }
+
+
 
 
 # ==== GET ==============================================================================
@@ -240,6 +304,7 @@ def get_organizations():
             ORDER BY org_name
         """)
         result = cur.fetchall()
+        print("DEBUG - Organizations result:", result) 
         org_names = [item["org_name"] for item in result]
         return org_names
 
