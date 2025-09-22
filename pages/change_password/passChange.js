@@ -25,16 +25,14 @@ window.onload = function() {
             // Send POST request
             const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/change_password", {
                 method: "POST",
-                // headers: {
-                //     "Content-Type": "application/json"  // IMPORTANT
-                // },
+              
                 body: JSON.stringify(data)   
             });
 
             if (response.ok) {
                 //alert("THERE DAMN");
                 const text = await response.text();
-                alert("THERE DAMN" + text);
+                alert(text);
 
             } else {
                 //alert("Password or Email is Incorrect  ");
@@ -45,6 +43,7 @@ window.onload = function() {
                 alert("ERROR " + error)
             }
     });
+
 
 
   };
