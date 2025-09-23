@@ -87,6 +87,7 @@ footer a:hover {
 }
 
 .input-box i {
+    color: var(--revvy-green);
     position: absolute;
     right: 20px;
     top: 50%;

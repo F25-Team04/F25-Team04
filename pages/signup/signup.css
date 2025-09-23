@@ -49,8 +49,8 @@ body {
 .accInfo h3::after {
     content: "";
     display: block;
-    height: 1px;
-    background: var(--revvy-black);
+    height: 1.5px;
+    background: var(--revvy-green);
     margin-top: 8px;
     width: 100%;
 }
@@ -72,8 +72,8 @@ body {
 .driverInfo h3::after {
     content: "";
     display: block;
-    height: 0.5px;
-    background: var(--revvy-black);
+    height: 1.5px;
+    background: var(--revvy-green);
     margin-top: 8px;
     width: 100%;
 }
