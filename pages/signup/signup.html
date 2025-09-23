@@ -7,6 +7,7 @@
     <title>Signup</title>
     <link rel="stylesheet" href="../../css/global.css">
     <link rel="stylesheet" href="signup.css">
+    <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
     <script type="text/javascript" src="apply.js"></script>
   </head>
 
@@ -15,8 +16,10 @@
       <img class="brand-logo" src="../../assets/car-logo.png">
       <img class="brand-name" src="../../assets/revvy.png">
     </div>
-    <h1>Revvy Driver Application</h1>
-    <p>If you are a Sponsor, please contact your Sponsor Organization for access.</p>
+    <div class="app-header">
+      <h1>Revvy Driver Application</h1>
+      <p>If you are a Sponsor, please contact your Sponsor Organization for access.</p>
+    </div>
     <div class="wrapper">
         <form action="" id="signupForm">
             <div class="accInfo">
@@ -24,44 +27,58 @@
                 <p>Email Address</p>
                 <input name="email" type="email" placeholder="someone@email.com" required>
                 <p>Password</p>
-                <input name="password" type="password" placeholder="Enter pasword" required>
-                <br> <input name="confPassword" type="password" placeholder="Confirm password" required>
+                <input name="password" type="password" placeholder="Enter password" required>
+                <input name="confPassword" type="password" placeholder="Confirm password" required>
+                <div class="acc-info-footer">
+                    <div class="toggle-pw">
+                        <label><input type="checkbox"> Show password</label>
+                    </div>
+                    <div class="caps-lock">
+                        <span class="caps-indicator"></span>
+                        <p>Caps Lock</p>
+                    </div>
+                </div>
             </div>
 
             <div class="driverInfo">
-                <br> <h3>Driver Information</h3>
-                <p>Phone Number</p>
-                <input name="phone" type="tel" placeholder="(XXX) XXX-XXXX" required>
-                <p>Full Name</p>
-                <input name="fname" type="text" placeholder="First name" required>
-                <br> <input name="lname" type="text" placeholder="Last name" required>
-                <p>Drivers License Number</p>
-                <input name="dln" type="text" placeholder="Enter DL#" required>
-                <p>Employee ID</p>
-                <input name="empID" type="text" placeholder="Enter employee ID#" required>
-                <p>Sponsor</p>
-                <label for="searchable">Choose an option:</label>
-                <input list="dropdown" id="searchable" name="searchable" placeholder="Sponsor name" />
-                <datalist id="dropdown"></datalist>
-                <br>
-                <label for="security">Security Question: What is your favorite color:</label>
-                <input name="security" type="text" required>
-                <br>
-                <label for="address">Address</label>
-                <input name="address" type="text" required>
-                <br>
-                <button type="submit" class="btn">Submit Application</button>
+                <h3>Driver Information</h3>
+
+                <div class="left-driver-info">
+                    <p>Phone Number</p>
+                    <input name="phone" type="tel" placeholder="(XXX) XXX-XXXX" required>
+                    <p>First Name</p>
+                    <input name="fname" type="text" placeholder="First name" required>
+                    <p>Last Name</p>
+                    <input name="lname" type="text" placeholder="Last name" required>
+                    <p>Drivers License Number</p>
+                    <input name="dln" type="text" placeholder="Enter DL#" required>
+                </div>
+                
+                <div class="right-driver-info">
+                    <p>Employee ID</p>
+                    <input name="empID" type="text" placeholder="Enter employee ID#" required>
+                    <label for="searchable">Sponsor (Choose an option):</label>
+                    <input list="dropdown" id="searchable" name="searchable" placeholder="Sponsor name" />
+                    <datalist id="dropdown"></datalist>
+                    <label for="security">Security Question: What is your favorite color?</label>
+                    <input name="security" placeholder="Answer" type="text" required>
+                    <label for="address">Address</label>
+                    <input name="address" placeholder="Enter address" type="text" required>
+                </div>
             </div>
+
+            <button type="submit" class="btn">Submit Application</button>
+
         </form>
 
         <div class="login-link">
           <a href="../../index.html">Back to Login</a>
         </div>
     </div>
-  </body>
 
-  <footer>
+  <footer class="copyright">
     <p class="copyright">© 2025 Revvy | Team 04</p>
   </footer>
 
+  </body>
 </html>

@@ -1,5 +1,39 @@
 window.onload = function() {
 
+    const capsIndicator = document.querySelector(".caps-indicator");
+    const cb = document.querySelector('.accInfo .acc-info-footer input[type="checkbox"]');
+    const pw1 = document.querySelector('.accInfo input[name="password"]');
+    const pw2 = document.querySelector('.accInfo input[name="confPassword"]');
+    
+    document.addEventListener("keydown", checkCaps);
+    document.addEventListener("keyup", checkCaps);
+
+    document.addEventListener("keydown", (e) => {
+        if (e.code === "CapsLock") {
+            checkCaps(e);
+        }
+    });
+
+    function checkCaps(event) {
+        const capsOn = event.getModifierState("CapsLock");
+        if (capsOn) {
+            capsIndicator.classList.add("active");
+        }
+        else {
+            capsIndicator.classList.remove("active");
+        }
+    }
+
+    if (cb && pw1 && pw2) {
+        const syncVisibility = () => {
+            const t = cb.checked ? "text" : "password";
+            pw1.type = t;
+            pw2.type = t;
+        };
+        cb.addEventListener("change", syncVisibility);
+        syncVisibility();
+    }
+
     // Takes in the list of the organizations and adds them to list 
     // for the user to select from when applying to an organization
     function generateOrgs(orgs) {
