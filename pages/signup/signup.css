@@ -166,7 +166,7 @@ footer a:hover {
 .toggle-pw label input {
     width: 12px;
     height: auto;
-    accent-color: var(--revvy-black);
+    accent-color: var(--revvy-green);
     margin-right: 3px;
 }
 
