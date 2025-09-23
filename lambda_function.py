@@ -300,7 +300,12 @@ def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT * 
+            SELECT 
+                abt_teamnumber AS "Team Number", 
+                abt_version AS "Version",
+                abt_releasedate AS "Release Date",
+                abt_productname AS "Product Name",
+                abt_productdesc AS "Product Description"
             FROM About
             ORDER BY abt_releasedate DESC LIMIT 1
         """)
