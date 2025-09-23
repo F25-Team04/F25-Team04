@@ -228,6 +228,23 @@ def post_application(body):
     ans = body.get("security")
     phone = body.get("phone")
     address = body.get("address")
+    
+    # check for and report any missing fields
+    required_fields = {
+        "email": email,
+        "password": password,
+        "fname": fName,
+        "lname": lName,
+        "dln": dln,
+        "empID": empID,
+        "org": org,
+        "ans": ans,
+        "phone": phone,
+        "address": address
+    }
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
 
     with conn.cursor() as cur:
         cur.execute("""
@@ -239,7 +256,7 @@ def post_application(body):
         user = cur.fetchone()
 
     if user:
-        # return failure, dne
+        # return failure, account already exists
         return {
             "success": False, 
             "message": "Email already associated with an account"
@@ -251,9 +268,9 @@ def post_application(body):
                 INSERT INTO Users (
                 usr_email, usr_passwordhash, usr_role, usr_organization, 
                 usr_loginattempts, usr_securityquestion, usr_securityanswer, 
-                usr_status, usr_address, usr_firstname, usr_lastname, 
+                usr_status, usr_firstname, usr_lastname, 
                 usr_employeeid, usr_phone, usr_license, usr_pointbalance, usr_isdeleted, usr_address
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
             email, 
             hash_secret(password),
@@ -262,8 +279,7 @@ def post_application(body):
             0,
             "What is your favorite color",
             ans,
-            "active",
-            None,   # usr_address = NULL
+            "active", # currently adds active accounts, change to pending once sponsor panel is set up
             fName,
             lName,
             empID,
@@ -279,14 +295,11 @@ def post_application(body):
             "message": "Account Created"
         }
 
-
-
-
 # ==== GET ==============================================================================
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
-        cur.execute(f"""
+        cur.execute("""
             SELECT * 
             FROM About
             ORDER BY abt_releasedate DESC LIMIT 1
@@ -297,7 +310,7 @@ def get_about():
 def get_organizations():
     # returns list of organization names
     with conn.cursor() as cur:
-        cur.execute(f"""
+        cur.execute("""
             SELECT org_name 
             FROM Organizations
             WHERE org_isdeleted = 0
