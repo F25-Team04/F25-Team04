@@ -10,12 +10,14 @@ fetch(endpoint)
     })
     .then (data => {
         Object.entries(data).forEach(([key, value]) => {
-            const div = document.createElement("div");
-            div.innerHTML = `
-            <h3>${key}</h3>
-            <p>${value}</p>
-            `;
-            dataContainer.appendChild(div);
+            const h = document.createElement("h3");
+            const p = document.createElement("p");
+
+            h.textContent = key;
+            p.textContent = (value ?? "");
+            
+            dataContainer.appendChild(h);
+            dataContainer.appendChild(p);
         });
     })
     .catch (error => {
