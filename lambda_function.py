@@ -269,16 +269,15 @@ def post_application(body):
                 usr_loginattempts, usr_securityquestion, usr_securityanswer, 
                 usr_status, usr_firstname, usr_lastname, 
                 usr_employeeid, usr_phone, usr_license, usr_address,
-                usr_pointbalance, usr_isdeleted
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                usr_pointbalance
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 email, hash_secret(password), "driver", org,
                 0, "What is your favorite color", ans,
                 # currently adds active accounts, change to pending once sponsor panel is set up
                 "active", fName, lName,
                 empID, phone, dln, address,
-                0,      # usr_pointbalance
-                0       # usr_isdeleted
+                0      # usr_pointbalance
             ))
             conn.commit() 
             
@@ -286,6 +285,35 @@ def post_application(body):
             "success": True, 
             "message": "Account Created"
         })
+        
+def post_point_rule(body):
+    body = json.loads(body)
+    org = body.get("org")
+    rule = body.get("rule")
+    points = body.get("points")
+
+    # check for and report any missing fields
+    required_fields = {
+        "org": org,
+        "rule": rule,
+        "points": points
+    }
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO Point_Rules (
+                rul_organization, rul_reason, rul_pointdelta
+            ) VALUES (%s, %s, %s)
+        """, (org, rule, points))
+        conn.commit() 
+
+    return build_response(200, {
+        "success": True,
+        "message": f"Point rule '{rule}' added for organization: {org}"
+    })
 
 # ==== GET ==============================================================================
 def get_about():
@@ -321,6 +349,7 @@ def get_organizations():
 def get_user(queryParams):
     # returns user matching the id query param
     # only returns non-deleted users
+    queryParams = queryParams or {}
     usr_id = queryParams.get("id")
     if usr_id is None:
         raise Exception(f"Missing required query parameter: id")
@@ -344,12 +373,48 @@ def get_user(queryParams):
     if user:
         return build_response(200, user)
     else:
-        raise Exception("User does not exist.")
+        return build_response(404, "User does not exist.")
 
+def get_point_rules(queryParams):
+    # returns point rules for the specified organization
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                rul_id AS "Rule ID",
+                rul_reason AS "Rule", 
+                rul_pointdelta AS "Points"
+            FROM Point_Rules
+            WHERE rul_organization = %s
+            AND rul_isdeleted = 0
+        """, org)
+        rules = cur.fetchall()
+        
+    if rules:
+        return build_response(200, rules)
+    else:
+        return build_response(404, f"No point rules found for organization: {org}")
+
+def get_application_security_questions():
+    # returns list of security questions
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT sqs_question AS "Question"
+            FROM Security_Questions
+        """)
+        result = cur.fetchall()
+        print("DEBUG - Security Questions result:", result) 
+        questions = [item["Question"] for item in result]
+        return build_response(200, questions)
 
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
     # marks user as deleted in the database
+    queryParams = queryParams or {}
     usr_id = queryParams.get("id")
     if usr_id is None:
         raise Exception(f"Missing required query parameter: id")
@@ -388,6 +453,7 @@ def lambda_handler(event, context):
         # OPTIONS
         if (method == "OPTIONS"):
             return build_response(200, {})
+        
         # GET
         elif (method == "GET" and path == "/about"):
             response = get_about()
@@ -395,7 +461,11 @@ def lambda_handler(event, context):
             response = get_organizations()
         elif (method == "GET" and path == "/user"):
             response = get_user(queryParams)
-        
+        elif (method == "GET" and path == "/point_rules"):
+            response = get_point_rules(queryParams)
+        elif (method == "GET" and path == "/application/security_questions"):
+            response = get_application_security_questions()
+
         # DELETE
         elif (method == "DELETE" and path == "/user"):
             response = delete_user(queryParams)
@@ -403,12 +473,14 @@ def lambda_handler(event, context):
         # POST
         elif (method == "POST" and path == "/login"):
             response = post_login(body)
-        elif (method == "POST" and (path == "/application" or path == "/user")):
+        elif (method == "POST" and path == "/application"):
             response = post_application(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
         elif (method == "POST" and path == "/query"):
             response = post_query(body)
+        elif (method == "POST" and path == "/point_rules"):
+            response = post_point_rule(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
