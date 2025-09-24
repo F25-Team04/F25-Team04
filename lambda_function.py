@@ -399,7 +399,7 @@ def get_point_rules(queryParams):
     else:
         return build_response(404, f"No point rules found for organization: {org}")
 
-def get_application_security_questions():
+def get_security_questions():
     # returns list of security questions
     with conn.cursor() as cur:
         cur.execute("""
@@ -463,8 +463,8 @@ def lambda_handler(event, context):
             response = get_user(queryParams)
         elif (method == "GET" and path == "/point_rules"):
             response = get_point_rules(queryParams)
-        elif (method == "GET" and path == "/application/security_questions"):
-            response = get_application_security_questions()
+        elif (method == "GET" and path == "/security_questions"):
+            response = get_security_questions()
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
