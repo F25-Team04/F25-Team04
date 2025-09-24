@@ -9,3 +9,17 @@
 * {
     font-family: var(--open-sans);
 }
+
+footer {
+    margin-top: auto;
+    align-self: flex-start;
+}
+
+footer p {
+    grid-column: 1;
+    justify-self: start;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 30px;
+    padding-bottom: 24px;
+}

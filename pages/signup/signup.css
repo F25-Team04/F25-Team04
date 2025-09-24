@@ -10,12 +10,12 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 50px 0px 24px;
+    padding: 50px 0px 0px
 }
 
 .wrapper {
     width: 900px;
-    border-radius: 10px
+    border-radius: 10px;
 }
 
 .wrapper .btn {
@@ -43,7 +43,7 @@ body {
 
 .accInfo h3 {
     padding-bottom: 10px;
-    text-align: center
+    text-align: center;
 }
 
 .accInfo h3::after {
@@ -116,34 +116,8 @@ body {
     padding: 20px 45px 20px 20px;
 }
 
-footer {
-    margin-top: auto;
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-}
-
 .login-link {
     text-align: center;
-}
-
-.copyright p {
-    grid-column: 1;
-    justify-self: start;
-    margin-left: 24px;
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-footer a {
-    grid-column: 2;
-    justify-self: center;
-    text-decoration: none;
-}
-
-footer a:hover {
-    text-decoration: underline;
 }
 
 .acc-info-footer {

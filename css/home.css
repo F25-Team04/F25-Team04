@@ -1,0 +1,70 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    height: 100vh;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.navbar {
+    background: var(--revvy-black);
+    padding: 10px 15px
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li {
+    list-style: none;
+    display: inline-block;
+}
+
+li a {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-right: 25px;
+}
+
+.nav-container .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    width: 112px;
+    height: 45px;
+    border: none;
+    outline: none;
+    border-radius: 45px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.signup-btn {
+    color: var(--revvy-black);
+    background-color: white;
+}
+
+.login-btn {
+    color: var(--revvy-black);
+    background-color: var(--revvy-green);
+}
