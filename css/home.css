@@ -19,6 +19,20 @@ body {
     height: 40px;
 }
 
+.brand-name {
+    filter: invert();
+    height: 40px;
+    padding-top: 8px;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 15px;
+}
+
 .navbar {
     background: var(--revvy-black);
     padding: 10px 15px
@@ -43,7 +57,7 @@ li a {
     margin-right: 25px;
 }
 
-.nav-container .btn {
+.btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -59,12 +73,79 @@ li a {
     text-decoration: none;
 }
 
-.signup-btn {
+.white-btn {
     color: var(--revvy-black);
     background-color: white;
 }
 
-.login-btn {
+.green-btn {
     color: var(--revvy-black);
     background-color: var(--revvy-green);
+}
+
+.gray-btn {
+    color: var(--revvy-black);
+    background-color: var(--muted-background);
+}
+
+.hero-grid {
+    display: grid;
+    align-items: center;
+}
+
+.hero-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hero-title {
+    font-size: 40px;
+    font-weight: 700;
+    text-wrap: balance;
+}
+
+.hero-description {
+    font-size: 20px;
+    color: var(--muted-foreground);
+}
+
+.hero-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+}
+
+.hero-buttons .green-btn {
+    width: 200px;
+}
+
+.hero-buttons .gray-btn {
+    width: 140px;
+}
+
+.hero-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    font-size: 14px;
+    color: var(--muted-foreground);
+}
+
+.hero-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hero-feature-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--revvy-green);
+    border-radius: 50%;
 }

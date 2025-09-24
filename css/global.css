@@ -4,6 +4,8 @@
     --open-sans: "Open Sans", sans-serif;
     --revvy-green: #1ED760;
     --revvy-black: #121212;
+    --muted-background: #F8F8F8;
+    --muted-foreground: #6b7280;
 }
 
 * {
