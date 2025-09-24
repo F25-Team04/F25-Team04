@@ -10,12 +10,12 @@ import secrets
 import unicodedata
 
 # ==== response builder =================================================================
-def _resp(status: int, payload):
+def build_response(status: int, payload):
     return {
         "statusCode": status,
         "headers": {
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,DELETE",
             "Access-Control-Allow-Headers": "Content-Type,Authorization",
         },
         "body": json.dumps(payload, default=str) if not isinstance(payload, str) else payload,
@@ -104,7 +104,7 @@ def post_query(query):
         cur.execute(query)
         result = cur.fetchall()
         conn.commit()
-    return result
+    return build_response(200, result)
 
 def post_login(body):
     # parse login details, find user, verify pw hash, and return success/failure with message
@@ -140,11 +140,10 @@ def post_login(body):
                 conn.commit() 
 
             # return success, login
-            return {
+            return build_response(200, {
                 "success": True,
-                
                 "message": f"Welcome {user.get('usr_firstname')} {user.get('usr_lastname')}!"
-            }
+            })
         else:
             # update failed login attempts
             with conn.cursor() as cur:
@@ -156,17 +155,17 @@ def post_login(body):
                 """, email)
                 conn.commit() 
 
-            return {
+            return build_response(200, {
                 "success": False, 
                 "message": "Password does not match!"
-            }
+            })
 
     else:
         # return failure, dne
-        return {
+        return build_response(200, {
             "success": False, 
             "message": "User does not exist."
-        }
+        })
 
 def post_change_password(body):
     body = json.loads(body)
@@ -199,22 +198,22 @@ def post_change_password(body):
                 """, (passwordhash, email))
                 conn.commit()
 
-            return {
+            return build_response(200, {
                 "success": True, 
                 "message": "Password successfully updated."
-            }
+            })
 
         else:
-            return {
+            return build_response(200, {
                 "success": False, 
                 "message": "Incorrect answer to security question."
-            }
+            })
 
-    return {
+    return build_response(200, {
         "success": False, 
         "message": "User does not exist"
-    }
-    
+    })
+
 def post_application(body):
     # parse login details, find user, verify pw hash, and return success/failure with message
     body = json.loads(body)
@@ -257,10 +256,10 @@ def post_application(body):
 
     if user:
         # return failure, account already exists
-        return {
+        return build_response(200, {
             "success": False, 
             "message": "Email already associated with an account"
-        }
+        })  
     else:
         # adds the account to the database
         with conn.cursor() as cur:
@@ -269,31 +268,24 @@ def post_application(body):
                 usr_email, usr_passwordhash, usr_role, usr_organization, 
                 usr_loginattempts, usr_securityquestion, usr_securityanswer, 
                 usr_status, usr_firstname, usr_lastname, 
-                usr_employeeid, usr_phone, usr_license, usr_pointbalance, usr_isdeleted, usr_address
+                usr_employeeid, usr_phone, usr_license, usr_address,
+                usr_pointbalance, usr_isdeleted
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-            email, 
-            hash_secret(password),
-            "driver",
-            org,
-            0,
-            "What is your favorite color",
-            ans,
-            "active", # currently adds active accounts, change to pending once sponsor panel is set up
-            fName,
-            lName,
-            empID,
-            phone,
-            dln,
-            0,      # usr_pointbalance
-            0,       # usr_isdeleted
-            address
+                email, hash_secret(password), "driver", org,
+                0, "What is your favorite color", ans,
+                # currently adds active accounts, change to pending once sponsor panel is set up
+                "active", fName, lName,
+                empID, phone, dln, address,
+                0,      # usr_pointbalance
+                0       # usr_isdeleted
             ))
-        conn.commit() 
-        return {
+            conn.commit() 
+            
+        return build_response(200, {
             "success": True, 
             "message": "Account Created"
-        }
+        })
 
 # ==== GET ==============================================================================
 def get_about():
@@ -310,7 +302,7 @@ def get_about():
             ORDER BY abt_releasedate DESC LIMIT 1
         """)
         recent = cur.fetchone()
-        return recent
+        return build_response(200, recent)
 
 def get_organizations():
     # returns list of organization names
@@ -324,7 +316,59 @@ def get_organizations():
         result = cur.fetchall()
         print("DEBUG - Organizations result:", result) 
         org_names = [item["org_name"] for item in result]
-        return org_names
+        return build_response(200, org_names)
+
+def get_user(queryParams):
+    # returns user matching the id query param
+    # only returns non-deleted users
+    usr_id = queryParams.get("id")
+    if usr_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                usr_id AS "User ID",                usr_email AS "Email",
+                usr_role AS "Role",                 usr_organization AS "Organization",
+                usr_status AS "Status",             usr_pointbalance AS "Point Balance",
+                usr_firstname AS "First Name",      usr_lastname AS "Last Name", 
+                usr_employeeid AS "Employee ID",    usr_license AS "License",
+                usr_phone AS "Phone",               usr_address AS "Address",
+                usr_securityquestion AS "Security Question"
+            FROM Users
+            WHERE usr_id = %s
+            AND usr_isdeleted = 0
+        """, usr_id)
+        user = cur.fetchone()
+        
+    if user:
+        return build_response(200, user)
+    else:
+        raise Exception("User does not exist.")
+
+
+# ==== DELETE ===========================================================================
+def delete_user(queryParams):
+    # marks user as deleted in the database
+    usr_id = queryParams.get("id")
+    if usr_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Users
+            SET usr_isdeleted = 1
+            WHERE usr_id = %s
+            AND usr_isdeleted = 0
+        """, usr_id)
+        result = cur.fetchall()
+        affected = cur.rowcount
+        conn.commit()
+        
+    return build_response(200, {
+        "success": True,
+        "message": f"User {usr_id} deleted" if affected else f"No user found with id={usr_id}"
+    })
 
 # ==== handler (main) ===================================================================
 # overall handler for requests
@@ -332,6 +376,9 @@ def lambda_handler(event, context):
     
     method = event.get("httpMethod")
     path = event.get("path")
+    body = event.get("body")
+    queryParams = event.get("queryStringParameters")
+    multiQueryParams = event.get("multiValueQueryStringParameters")
 
     try:
         # logging
@@ -340,30 +387,37 @@ def lambda_handler(event, context):
 
         # OPTIONS
         if (method == "OPTIONS"):
-            return _resp(200, {})
+            return build_response(200, {})
         # GET
         elif (method == "GET" and path == "/about"):
-            response_data = get_about()
+            response = get_about()
         elif (method == "GET" and path == "/organizations"):
-            response_data = get_organizations()
+            response = get_organizations()
+        elif (method == "GET" and path == "/user"):
+            response = get_user(queryParams)
+        
+        # DELETE
+        elif (method == "DELETE" and path == "/user"):
+            response = delete_user(queryParams)
+        
         # POST
         elif (method == "POST" and path == "/login"):
-            response_data = post_login(event.get("body"))
-        elif (method == "POST" and path == "/application"):
-            response_data = post_application(event.get("body"))
+            response = post_login(body)
+        elif (method == "POST" and (path == "/application" or path == "/user")):
+            response = post_application(body)
         elif (method == "POST" and path == "/change_password"):
-            response_data = post_change_password(event.get("body"))
+            response = post_change_password(body)
         elif (method == "POST" and path == "/query"):
-            response_data = post_query(event.get("body"))
+            response = post_query(body)
 
         else:
-            return _resp(404, "Resource not found.")
+            return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
 
     # handle exceptions at any point
     except Exception as e:
         print(f"ERROR: {e}")
-        return _resp(400, str(e))
+        return build_response(status=400, payload=str(e))
     
     # success
-    print(f"SUCCESS: {response_data}")
-    return _resp(200, response_data)
+    print(f"SUCCESS: {response}")
+    return response
