@@ -33,6 +33,36 @@ window.onload = function() {
         icon.classList.toggle("bx-eye", !isHidden);
     }
 
+    async function GetUser(UserID) {
+        try {
+            
+        // Send POST request
+        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=4", {
+            method: "GET",
+            });
+            if (response.ok) {
+                const result = await response.json();
+                console.log(result);
+                if (result.success == false) {
+                    alert(result.message);
+                }
+                else if (result.success == true) {
+                    if (result["role"] == "driver") {
+
+                    }
+                    else if (result["role"] == "sponsor") {
+                        
+                    }
+                    else if (result["role"] == "admin") {
+
+                    }
+                }
+
+            } 
+            } catch (error) {
+                console.error("Error:", error);
+            }
+    }
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
         event.preventDefault(); // stop normal form submission
 
@@ -60,7 +90,7 @@ window.onload = function() {
                     alert(result.message);
                 }
                 else if (result.success == true) {
-                    window.location = "pages/about/about.html";
+
                 }
                 
 
@@ -70,5 +100,5 @@ window.onload = function() {
             }
     });
 
-
+    GetUser(4);
   };

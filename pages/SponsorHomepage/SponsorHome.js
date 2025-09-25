@@ -5,10 +5,11 @@ window.onload = function() {
             let item = document.createElement("div");
             let text = document.createElement("p");
             let point = document.createElement("p");
+            item.id = "rule-row"
             point.id = "pointnum";
             text.id = "rule-descript";
-            text.textContent = rule.description;
-            point.textContent = rule.points;
+            text.textContent = rule["description"];
+            point.textContent = rule["point"];
             item.textContent = rule.text;
             item.appendChild(text);
             item.appendChild(point);
@@ -16,11 +17,11 @@ window.onload = function() {
         });
     }
     let rule = []
-    rule[description] = "Come to a complete stop at a stopsign"
-    rule[point] = 3
+    rule["description"] = "Come to a complete stop at a stopsign"
+    rule["point"] = 3
     let rule1 = []
-    rule1[description] = "Do not go over 60mph"
-    rule1[point] = 2
+    rule1["description"] = "Do not go over 60mph"
+    rule1["point"] = 2
 
     array = [rule, rule1]
     MakeRulesList(array);

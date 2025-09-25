@@ -1,0 +1,18 @@
+#rule-list {
+    border: 2px solid black
+}
+
+#rule-row {
+    position: relative;
+    height: 60px;
+    width: 60%px;
+}
+
+#pointnum {
+    position: absolute;
+    left: 95%;
+}
+
+#rule-descript {
+    position: absolute;
+}
