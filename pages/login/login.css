@@ -12,6 +12,7 @@ body {
     align-items: center;
     min-height: 100vh;
     height: 100%;
+    padding-top: 36px;
 }
 
 .wrapper {
@@ -32,7 +33,7 @@ footer {
     justify-content: center;
     align-items: center;
     width: 420px;
-    padding-bottom: 24px;
+    padding-bottom: 16px;
 }
 
 .brand-header .brand-logo {
