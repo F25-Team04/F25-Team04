@@ -97,7 +97,7 @@ li a {
 .hero-content {
     display: flex;
     flex-direction: column;
-    padding: 36px;
+    padding: 56px;
     gap: 24px;
 }
 
@@ -159,6 +159,12 @@ li a {
 
 .features {
     background-color: var(--muted-background);
+    padding: 72px 0px;
+    height: 810px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .features-header {
@@ -166,7 +172,7 @@ li a {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 72px;
+    padding-bottom: 72px;
 }
 
 .features-title {
@@ -179,22 +185,36 @@ li a {
 }
 
 .features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    display: flex;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
     gap: 32px;
 }
 
-.feature-title {
-    text-align: center;
-}
-
 .feature-card {
+    height: 360px;
+    width: 320px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 16px;
     background-color: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
+    padding: 56px 36px;
+    text-align: center;
+}
+
+.feature-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: var(--revvy-green);
+    background-color: rgb(30, 215, 96, 0.1);
+    border-radius: 10px;
+    height: 36px;
+    width: 36px;
 }
