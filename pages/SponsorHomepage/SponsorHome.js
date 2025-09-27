@@ -1,5 +1,10 @@
+const params = new URLSearchParams(window.location.search);
+const USER_ID = params.get("id");
+const ORG_ID = params.get("org");
+
 window.onload = function() {
     function MakeRulesList(rules) {
+        console.log(rules)
         const list = document.getElementById("rule-list")
         rules.forEach(rule => {
             let item = document.createElement("div");
@@ -8,32 +13,52 @@ window.onload = function() {
             item.id = "rule-row"
             point.id = "pointnum";
             text.id = "rule-descript";
-            text.textContent = rule["description"];
-            point.textContent = rule["point"];
+            text.textContent = rule["Rule"];
+            point.textContent = rule["Points"];
             item.textContent = rule.text;
             item.appendChild(text);
             item.appendChild(point);
             list.appendChild(item);
         });
     }
-    let rule = []
-    rule["description"] = "Come to a complete stop at a stopsign"
-    rule["point"] = 3
-    let rule1 = []
-    rule1["description"] = "Do not go over 60mph"
-    rule1["point"] = 2
+    // Gets the User based on their id and sends the user to the homepage that corresponds to the account type
+    async function GetRules() {
+        try {
 
-    array = [rule, rule1]
-    MakeRulesList(array);
+        // Send POST request
+        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/point_rules?org=" + ORG_ID, {
+            method: "GET",
+            });
+            if (response.ok) {
+                const result = await response.json();
+                MakeRulesList(result);
 
-    // Gets the user
-    // fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/organizations")
-    //     .then(response => response.json())
-    //     .then(orgs => {
-    //         generateOrgs(orgs); // handle the JSON data
-    //     })
-    //     .catch(error => {
-    //         console.error("There was a problem with the fetch operation:", error);
-    //     });
+            } 
+            } catch (error) {
+                console.error("Error:", error);
+            }
+    }
+    async function GetUser() {
+        try {
+        // Send POST request
+            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=" + USER_ID, {
+            method: "GET",
+            });
+            if (response.ok) {
+                const result = await response.json();
+                if (response.success == false) {
+                    alert(result.message);
+                }
+                else if (response.status == 200) {
+                    message = document.getElementById("welcome_message")
+                    message.textContent = "Welcome " + result["First Name"]
+                }
 
+            } 
+            } catch (error) {
+                console.error("Error:", error);
+            }
+    }
+    GetUser();
+    GetRules();
 };

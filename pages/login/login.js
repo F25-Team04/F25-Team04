@@ -33,27 +33,27 @@ window.onload = function() {
         icon.classList.toggle("bx-eye", !isHidden);
     }
 
+    // Gets the User based on their id and sends the user to the homepage that corresponds to the account type
     async function GetUser(UserID) {
         try {
-            
+        console.log(UserID)
         // Send POST request
-        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=4", {
+        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=" + UserID, {
             method: "GET",
             });
             if (response.ok) {
                 const result = await response.json();
-                console.log(result);
-                if (result.success == false) {
+                if (response.success == false) {
                     alert(result.message);
                 }
-                else if (result.success == true) {
-                    if (result["role"] == "driver") {
-
+                else if (response.status == 200) {
+                    if (result["Role"] == "driver") {
+                         window.location = "";
                     }
-                    else if (result["role"] == "sponsor") {
-                        
+                    else if (result["Role"] == "sponsor") {
+                        window.location = "../SponsorHomepage/SponsorHome.html?id=" + UserID + "&org=" + result["Organization"];
                     }
-                    else if (result["role"] == "admin") {
+                    else if (result["Role"] == "admin") {
 
                     }
                 }
@@ -90,7 +90,7 @@ window.onload = function() {
                     alert(result.message);
                 }
                 else if (result.success == true) {
-
+                    GetUser(result.message);
                 }
                 
 
@@ -99,6 +99,4 @@ window.onload = function() {
                 console.error("Error:", error);
             }
     });
-
-    GetUser(4);
   };
