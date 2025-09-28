@@ -6,6 +6,7 @@ window.onload = function() {
     function MakeRulesList(rules) {
         console.log(rules)
         const list = document.getElementById("rule-list")
+        list.innerHTML = "";
         rules.forEach(rule => {
             let item = document.createElement("div");
             let text = document.createElement("p");
@@ -21,7 +22,7 @@ window.onload = function() {
             list.appendChild(item);
         });
     }
-    // Gets the User based on their id and sends the user to the homepage that corresponds to the account type
+    // Gets the rules for the organization that the user belongs to
     async function GetRules() {
         try {
 
@@ -38,6 +39,8 @@ window.onload = function() {
                 console.error("Error:", error);
             }
     }
+
+    // Gets the user information based on the user id in the query params so that the welcome message will be personalized
     async function GetUser() {
         try {
         // Send POST request
@@ -61,4 +64,37 @@ window.onload = function() {
     }
     GetUser();
     GetRules();
+
+    // Sends a new rule to a database
+    document.getElementById("ruleForm").addEventListener("submit", async function(event) {
+        event.preventDefault(); // stop normal form submission
+
+        // Gather form data
+        const form = event.target;
+        const formData = new FormData(form);
+        console.log(form)
+        const data = {
+            org: ORG_ID,
+            rule: formData.get("rule-reason"),
+            points: formData.get("points"),
+        };
+        try {
+            
+            // Send POST request
+            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/point_rules", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"  // IMPORTANT
+                },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                const result = await response.json();
+                console.log(result);
+                GetRules();
+            } 
+            } catch (error) {
+                console.error("Error:", error);
+            }
+    });
 };

@@ -54,7 +54,7 @@ window.onload = function() {
                         window.location = "../SponsorHomepage/SponsorHome.html?id=" + UserID + "&org=" + result["Organization"];
                     }
                     else if (result["Role"] == "admin") {
-
+                        window.location = "../AdminHomepage/AdminHome.html";
                     }
                 }
 
