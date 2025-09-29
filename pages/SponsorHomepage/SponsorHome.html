@@ -12,24 +12,21 @@
   </head>
   <body>
     <h1 id="welcome_message"></h1>
-    <div>
-      <h3>Organization Name</h3>
-      <div id="rule-list"></div>
-      <br>
-      <div id="create-rule">
+    <div class="organization">
+      <h3 class="org-name">Organization Name</h3>
         <form id="ruleForm">
-          <label for="rule-reason">Rule</label>
-          <input type="text" name="rule-reason" required>
-          <br>
-          <label for="points">Points</label>
-          <input type="number" name="points" required>
-          <br>
-          <input type="submit">
-        </form>
-      </div>
-    </div>
-    <div>
+          <div class="input-box">
+            <label for="rule-reason">Rule</label>
+            <input type="text" name="rule-reason" placeholder="Enter rule" required>
+          </div>
+
+          <div class="input-box">
+            <label for="points">Points</label>
+            <input type="number" name="points" placeholder="Enter points" required>
+          </div>
         
+          <button class="btn" type="submit">Add Rule</button>
+        </form>
     </div>
   </body>
 </html>

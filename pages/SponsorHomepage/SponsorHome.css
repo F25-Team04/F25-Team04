@@ -1,18 +1,67 @@
-#rule-list {
-    border: 2px solid black
+body, html {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-#rule-row {
-    position: relative;
-    height: 60px;
-    width: 60%px;
+.organization {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 420px;
 }
 
-#pointnum {
-    position: absolute;
-    left: 95%;
+.org-name {
+    font-size: 28px;
 }
 
-#rule-descript {
-    position: absolute;
+.org-name::after {
+    content: "";
+    display: block;
+    height: 1.5px;
+    background: var(--revvy-green);
+    margin-top: 8px;
+    width: 100%;
+}
+
+.input-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 24px;
+}
+
+.input-box label {
+    align-self: flex-start;
+}
+
+input {
+    width: 280px;
+    margin: 5px 0;
+    border: none;
+    outline: none;
+    border: 2px solid black;
+    border-radius: 40px;
+    font-size: 16px;
+    padding: 20px 45px 20px 20px;
+}
+
+.btn {
+    display: block;
+    width: 280px;
+    height: 45px;
+    border: none;
+    outline: none;
+    border-radius: 45px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, .2);
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--revvy-black);
+    font-weight: 600;
+    background-color: var(--revvy-green);
+    align-self: center;
+    justify-self: center;
 }
