@@ -239,7 +239,7 @@ def post_application(body):
         "empID": empID,
         "org": org,
         "ques": ques,
-        "ans": ans,
+        "answer": ans,
         "phone": phone,
         "address": address
     }
