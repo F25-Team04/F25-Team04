@@ -139,21 +139,11 @@ def post_login(body):
                 """, email)
                 conn.commit() 
 
-            # check account status
-            status = user.get("usr_status")
-            if status == "inactive":
-                return build_response(200, {
-                    "success": True,
-                    "inactive": True,
-                    "message": user.get('usr_id')
-                })
-            else:
-                return build_response(200, {
-                    "success": True,
-                    "inactive": False,
-                    "message": user.get('usr_id')
-                })
-
+            # return success, login
+            return build_response(200, {
+                "success": True,
+                "message": user.get('usr_id')
+            })
         else:
             # update failed login attempts
             with conn.cursor() as cur:
