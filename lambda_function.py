@@ -237,7 +237,7 @@ def post_application(body):
         "lname": lName,
         "dln": dln,
         "empID": empID,
-        "org": org,
+        "searchable": org,
         "ques": ques,
         "answer": ans,
         "phone": phone,
