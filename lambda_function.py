@@ -247,6 +247,7 @@ def post_application(body):
     if missing:
         raise Exception(f"Missing required field(s): {', '.join(missing)}")
 
+    # check if user with email already exists
     with conn.cursor() as cur:
         cur.execute("""
             SELECT * 
@@ -262,31 +263,48 @@ def post_application(body):
             "success": False, 
             "message": "Email already associated with an account"
         })  
-    else:
-        # adds the account to the database
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO Users (
-                usr_email, usr_passwordhash, usr_role, usr_organization, 
-                usr_loginattempts, usr_securityquestion, usr_securityanswer, 
-                usr_status, usr_firstname, usr_lastname, 
-                usr_employeeid, usr_phone, usr_license, usr_address,
-                usr_pointbalance
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                email, hash_secret(password), "driver", org,
-                0, ques, ans,
-                # now adds pending accounts
-                "pending", fName, lName,
-                empID, phone, dln, address,
-                0      # usr_pointbalance
-            ))
-            conn.commit() 
-            
-        return build_response(200, {
-            "success": True, 
-            "message": "Account Created"
+    
+    # map org name to org id and check if it exists
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT org_id
+            FROM Organizations
+            WHERE org_name = %s
+            AND org_isdeleted = 0
+        """, org)
+        org = cur.fetchone()
+        
+    if org is None:
+        return build_response(404, {
+            "success": False,
+            "message": "Organization does not exist"
         })
+    org = org.get("org_id")
+
+    # adds the account to the database
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO Users (
+            usr_email, usr_passwordhash, usr_role, usr_organization, 
+            usr_loginattempts, usr_securityquestion, usr_securityanswer, 
+            usr_status, usr_firstname, usr_lastname, 
+            usr_employeeid, usr_phone, usr_license, usr_address,
+            usr_pointbalance
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            email, hash_secret(password), "driver", org,
+            0, ques, ans,
+            # now adds pending accounts
+            "pending", fName, lName,
+            empID, phone, dln, address,
+            0      # usr_pointbalance
+        ))
+        conn.commit() 
+        
+    return build_response(200, {
+        "success": True, 
+        "message": "Account Created"
+    })
         
 def post_point_rule(body):
     body = json.loads(body)
