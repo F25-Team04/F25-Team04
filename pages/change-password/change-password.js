@@ -39,6 +39,13 @@ window.onload = function() {
             new_password: form.newPass.value
         };
 
+        // Password validation
+        const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+        if (!passRegex.test(data.new_password || "")) {
+            alert("Password must meet the password requirements listed in the dropdown menu.");
+            return;
+        }
 
         console.log(data)
         try {
