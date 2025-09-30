@@ -87,6 +87,16 @@ window.onload = function() {
 
         // convert FormData → plain object
         const data = Object.fromEntries(formData.entries());
+
+        // Password validation
+        const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+        if (!passRegex.test(data.password || "")) {
+            alert("Password must meet the password requirements listed in the dropdown menu.");
+            return;
+        }
+
+
         // Posts the signup form to the API
         const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/application", {
             method: "POST",

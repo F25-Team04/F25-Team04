@@ -166,3 +166,7 @@ body {
     background-color: var(--revvy-green);
     border-color: var(--revvy-green);
 }
+
+.pw-reqs ul {
+    padding-left: 1.25rem;
+}
