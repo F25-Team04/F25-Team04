@@ -349,33 +349,58 @@ def get_organizations():
         return build_response(200, org_names)
 
 def get_user(queryParams):
-    # returns user matching the id query param
+    # returns users matching id/org/status params
     # only returns non-deleted users
     queryParams = queryParams or {}
+    conditions = ["usr_isdeleted = 0"]
+    values = []
+
     usr_id = queryParams.get("id")
-    if usr_id is None:
-        raise Exception(f"Missing required query parameter: id")
-    
+    if usr_id is not None:
+        conditions.append("usr_id = %s")
+        values.append(usr_id)
+
+    org = queryParams.get("org")
+    if org is not None:
+        conditions.append("usr_organization = %s")
+        values.append(org)
+
+    status = queryParams.get("status")
+    if status is not None:
+        conditions.append("usr_status = %s")
+        values.append(status)
+
+    if not values:
+        raise Exception("Missing required query parameter: must provide at least one of id, org, or status")
+
+    sql = f"""
+        SELECT 
+            usr_id AS "User ID",                usr_email AS "Email",
+            usr_role AS "Role",                 usr_organization AS "Organization",
+            usr_status AS "Status",             usr_pointbalance AS "Point Balance",
+            usr_firstname AS "First Name",      usr_lastname AS "Last Name", 
+            usr_employeeid AS "Employee ID",    usr_license AS "License",
+            usr_phone AS "Phone",               usr_address AS "Address",
+            usr_securityquestion AS "Security Question",
+            org_name AS "Organization Name"
+        FROM Users 
+            JOIN Organizations 
+            ON usr_organization = org_id
+        WHERE {" AND ".join(conditions)}
+    """
+
     with conn.cursor() as cur:
-        cur.execute("""
-            SELECT 
-                usr_id AS "User ID",                usr_email AS "Email",
-                usr_role AS "Role",                 usr_organization AS "Organization",
-                usr_status AS "Status",             usr_pointbalance AS "Point Balance",
-                usr_firstname AS "First Name",      usr_lastname AS "Last Name", 
-                usr_employeeid AS "Employee ID",    usr_license AS "License",
-                usr_phone AS "Phone",               usr_address AS "Address",
-                usr_securityquestion AS "Security Question"
-            FROM Users
-            WHERE usr_id = %s
-            AND usr_isdeleted = 0
-        """, usr_id)
-        user = cur.fetchone()
-        
-    if user:
-        return build_response(200, user)
+        cur.execute(
+            sql, 
+            values
+        )
+        users = cur.fetchall()
+
+    if users:
+        return build_response(200, users)
     else:
-        return build_response(404, "User does not exist.")
+        return build_response(404, "No users match the given parameters.")
+
 
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
