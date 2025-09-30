@@ -1,10 +1,31 @@
 window.onload = function() {
   
+    // Takes in the list of security questions and adds them to list
+    // for the user to select from
+    function generateQuestions(questions) {
+        const dropdown = document.getElementById("questions")
+        questions.forEach (question => {
+            const option = document.createElement("option");
+            option.value = question;
+            option.textContent = question;
+            dropdown.appendChild(option);
+        });
+    }
+
+    // Gets security questions that are listed in the database
+    fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/security_questions")
+        .then(response => response.json())
+        .then(questions => {
+            generateQuestions(questions);
+        })
+        .catch(error => {
+            console.error("There was a problem with the fetch operation:", error);
+        });
 
     document.getElementById("test").addEventListener("submit", async function(event) {
         event.preventDefault(); // stop normal form submission
 
-    
+        
        
  
         // Gather form data
@@ -13,7 +34,8 @@ window.onload = function() {
         const data = {
             email: form.email.value,
             //password: "idk man",
-            answer: form.securityQ.value,
+            security_question: form.security.value,
+            answer: form.answer.value,
             new_password: form.newPass.value
         };
 

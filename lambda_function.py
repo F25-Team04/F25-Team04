@@ -174,7 +174,7 @@ def post_change_password(body):
     new_password = body.get("new_password")
 
     if email is None or answer is None or new_password is None:
-        raise Exception("Missing required field(s): email, answer, new_password")
+        raise Exception("Missing required field(s): email, security question, answer, new_password")
 
     with conn.cursor() as cur:
         cur.execute("""
