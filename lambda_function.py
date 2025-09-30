@@ -224,7 +224,8 @@ def post_application(body):
     dln = body.get("dln")
     empID = body.get("empID")
     org = body.get("searchable")
-    ans = body.get("security")
+    ques = body.get("security")
+    ans = body.get("answer")
     phone = body.get("phone")
     address = body.get("address")
     
@@ -237,6 +238,7 @@ def post_application(body):
         "dln": dln,
         "empID": empID,
         "org": org,
+        "ques": ques,
         "ans": ans,
         "phone": phone,
         "address": address
@@ -273,7 +275,7 @@ def post_application(body):
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 email, hash_secret(password), "driver", org,
-                0, "What is your favorite color", ans,
+                0, ques, ans,
                 # currently adds active accounts, change to pending once sponsor panel is set up
                 "active", fName, lName,
                 empID, phone, dln, address,
