@@ -142,7 +142,7 @@ def post_login(body):
             # return success, login
             return build_response(200, {
                 "success": True,
-                "message": f"Welcome {user.get('usr_firstname')} {user.get('usr_lastname')}!"
+                "message": user.get('usr_id')
             })
         else:
             # update failed login attempts
@@ -429,11 +429,13 @@ def delete_user(queryParams):
         result = cur.fetchall()
         affected = cur.rowcount
         conn.commit()
-        
-    return build_response(200, {
-        "success": True,
-        "message": f"User {usr_id} deleted" if affected else f"No user found with id={usr_id}"
-    })
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"User {usr_id} deleted"
+        })
+    
+    return build_response(404, f"No user found with id={usr_id}")
 
 # ==== handler (main) ===================================================================
 # overall handler for requests
