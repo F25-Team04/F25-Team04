@@ -61,8 +61,11 @@
                     <label for="searchable">Sponsor (Choose an option):</label>
                     <input list="dropdown" id="searchable" name="searchable" placeholder="Sponsor name" />
                     <datalist id="dropdown"></datalist>
-                    <label for="security">Security Question: What is your favorite color?</label>
-                    <input name="security" placeholder="Answer" type="text" required>
+                    <label for="security">Security Question: (Choose a question)</label>
+                    <input list="questions" id="security" name="security" placeholder="Question" />
+                    <datalist id="questions"></datalist>
+                    <label for="answer">Answer</label>
+                    <input name="answer" placeholder="Enter your answer" type="text" required>
                     <label for="address">Address</label>
                     <input name="address" placeholder="Enter address" type="text" required>
                 </div>

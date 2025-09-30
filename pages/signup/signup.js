@@ -34,6 +34,28 @@ window.onload = function() {
         syncVisibility();
     }
 
+    // Takes in the list of security questions and adds them to list
+    // for the user to select from
+    function generateQuestions(questions) {
+        const dropdown = document.getElementById("questions")
+        questions.forEach (question => {
+            const option = document.createElement("option");
+            option.value = question;
+            option.textContent = question;
+            dropdown.appendChild(option);
+        });
+    }
+
+    // Gets security questions that are listed in the database
+    fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/security_questions")
+        .then(response => response.json())
+        .then(questions => {
+            generateQuestions(questions);
+        })
+        .catch(error => {
+            console.error("There was a problem with the fetch operation:", error);
+        });
+
     // Takes in the list of the organizations and adds them to list 
     // for the user to select from when applying to an organization
     function generateOrgs(orgs) {
