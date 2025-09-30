@@ -276,8 +276,8 @@ def post_application(body):
             """, (
                 email, hash_secret(password), "driver", org,
                 0, ques, ans,
-                # currently adds active accounts, change to pending once sponsor panel is set up
-                "active", fName, lName,
+                # now adds pending accounts
+                "pending", fName, lName,
                 empID, phone, dln, address,
                 0      # usr_pointbalance
             ))
