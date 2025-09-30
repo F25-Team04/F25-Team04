@@ -47,7 +47,10 @@ window.onload = function() {
                     alert(result.message);
                 }
                 else if (response.status == 200) {
-                    if (result["Role"] == "driver") {
+                    if (result["Status"] == "inactive") {
+                        alert("Account is inactive, if you are a driver you are likely not approved yet.");
+                    }
+                    else if (result["Role"] == "driver") {
                          window.location = "";
                     }
                     else if (result["Role"] == "sponsor") {
