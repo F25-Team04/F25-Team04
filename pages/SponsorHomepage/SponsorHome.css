@@ -3,6 +3,7 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 64px;
 }
 
 .organization {
@@ -17,7 +18,7 @@ body, html {
     font-size: 28px;
 }
 
-.org-name::after {
+.org-name::after, .rules-title::after {
     content: "";
     display: block;
     height: 1.5px;
@@ -66,4 +67,11 @@ input {
     align-self: center;
     justify-self: center;
     margin-top: 12px;
+}
+
+#rule-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 36px;
 }
