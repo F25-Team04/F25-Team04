@@ -299,8 +299,31 @@ def post_application(body):
             empID, phone, dln, address,
             0      # usr_pointbalance
         ))
-        conn.commit() 
+        conn.commit()
         
+        # get the new user's id
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_email = %s
+            AND usr_status = 'pending'
+            AND usr_isdeleted = 0
+        """, (email,))
+        driver = cur.fetchone()
+
+        if driver:
+            driver_id = driver.get("usr_id")
+
+        # log application in Applications table
+        cur.execute("""
+            INSERT INTO Applications (
+                app_driver, 
+                app_status, 
+                app_date
+            ) VALUES (%s, %s, NOW())
+        """, (driver_id, "pending"))
+        conn.commit()
+
     return build_response(200, {
         "success": True, 
         "message": "Account Created"
@@ -362,7 +385,16 @@ def post_decision(body):
         conn.commit()
 
     if affected: 
-        ### TODO log decision in Decisions table
+        # log decision in Applications table
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE Applications
+                SET app_sponsor = %s,
+                    app_status = %s, 
+                    app_note = %s
+                WHERE app_driver = %s
+            """, (sponsor, new_status, note, driver))
+            conn.commit()
         
         return build_response(200, {
             "message": f"Driver {driver} new account {new_status}."
