@@ -337,20 +337,19 @@ def post_point_rule(body):
 
 def post_decision(body):
     body = json.loads(body) or {}
-    usr_id = body.get("usr_id")
+    driver = body.get("driver")
+    sponsor = body.get("sponsor")
     accepted = body.get("accepted")
     note = body.get("note", "")
 
-    if usr_id is None or accepted is None:
-        raise Exception("Missing required field(s): usr_id, accepted")
+    if driver is None or sponsor is None or accepted is None:
+        raise Exception("Missing required field(s): driver, sponsor, accepted")
 
     if accepted not in [True, False]:
         raise Exception("Invalid 'accepted' value: must be boolean True or False")
 
     new_status = "active" if accepted else "rejected"
     
-    return build_response(200, [usr_id, new_status, note])
-
     with conn.cursor() as cur:
         cur.execute("""
             UPDATE Users
@@ -358,15 +357,18 @@ def post_decision(body):
             WHERE usr_id = %s
             AND usr_isdeleted = 0
             AND usr_status = 'pending'
-        """, (new_status, usr_id))
+        """, (new_status, driver))
         affected = cur.rowcount
         conn.commit()
 
-    if affected:
+    if affected: 
+        ### TODO log decision in Decisions table
+        
         return build_response(200, {
-            "message": f"User {usr_id} new account {new_status}."
+            "message": f"Driver {driver} new account {new_status}."
         })
-    return build_response(404, f"No pending application found for user id={usr_id}")
+        
+    return build_response(404, f"No pending application found for usr_id={driver}")
 
 # ==== GET ==============================================================================
 def get_about():
