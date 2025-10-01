@@ -238,7 +238,7 @@ def post_application(body):
         "dln": dln,
         "empID": empID,
         "searchable": org,
-        "ques": ques,
+        "security": ques,
         "answer": ans,
         "phone": phone,
         "address": address
@@ -254,75 +254,71 @@ def post_application(body):
             FROM Users
             WHERE usr_email = %s
             AND usr_isdeleted = 0
-        """, email)
-        user = cur.fetchone()
+        """, (email,))
 
-    if user:
-        # return failure, account already exists
-        return build_response(200, {
-            "success": False, 
-            "message": "Email already associated with an account"
-        })  
+        if cur.fetchone():
+            # return failure, account already exists
+            return build_response(200, {
+                "success": False, 
+                "message": "Email already associated with an account"
+            })  
     
-    # map org name to org id and check if it exists
-    with conn.cursor() as cur:
+        # map org name to org id and check if it exists
         cur.execute("""
             SELECT org_id
             FROM Organizations
             WHERE org_name = %s
             AND org_isdeleted = 0
-        """, org)
+        """, (org,))
         org = cur.fetchone()
         
-    if org is None:
-        return build_response(404, {
-            "success": False,
-            "message": "Organization does not exist"
-        })
-    org = org.get("org_id")
+        if not org:
+            return build_response(404, {
+                "success": False,
+                "message": "Organization does not exist"
+            })
+        org_id = org.get("org_id")
 
-    # adds the account to the database
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO Users (
-            usr_email, usr_passwordhash, usr_role, usr_organization, 
-            usr_loginattempts, usr_securityquestion, usr_securityanswer, 
-            usr_status, usr_firstname, usr_lastname, 
-            usr_employeeid, usr_phone, usr_license, usr_address,
-            usr_pointbalance
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            email, hash_secret(password), "driver", org,
-            0, ques, ans,
-            # now adds pending accounts
-            "pending", fName, lName,
-            empID, phone, dln, address,
-            0      # usr_pointbalance
-        ))
-        conn.commit()
-        
-        # get the new user's id
-        cur.execute("""
-            SELECT usr_id
-            FROM Users
-            WHERE usr_email = %s
-            AND usr_status = 'pending'
-            AND usr_isdeleted = 0
-        """, (email,))
-        driver = cur.fetchone()
+        try:
+            # begin insert/update operations
+            conn.begin()
+            # adds the account to the database
+            cur.execute("""
+                    INSERT INTO Users (
+                    usr_email, usr_passwordhash, usr_role, usr_organization, 
+                    usr_loginattempts, usr_securityquestion, usr_securityanswer, 
+                    usr_status, usr_firstname, usr_lastname, 
+                    usr_employeeid, usr_phone, usr_license, usr_address,
+                    usr_pointbalance
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    email, hash_secret(password), "driver", org,
+                    0, ques, ans,
+                    # now adds pending accounts
+                    "pending", fName, lName,
+                    empID, phone, dln, address,
+                    0      # usr_pointbalance
+                ))
+            # get the new user's id
+            driver_id = cur.lastrowid
 
-        if driver:
-            driver_id = driver.get("usr_id")
+            if not driver_id:
+                raise Exception("Failed to create user account")
 
-        # log application in Applications table
-        cur.execute("""
-            INSERT INTO Applications (
-                app_driver, 
-                app_status, 
-                app_date
-            ) VALUES (%s, %s, NOW())
-        """, (driver_id, "pending"))
-        conn.commit()
+            # log application in Applications table
+            cur.execute("""
+                INSERT INTO Applications (
+                    app_driver, 
+                    app_status, 
+                    app_date
+                ) VALUES (%s, %s, NOW())
+            """, (driver_id, "pending"))
+            
+            # commit changes, or rollback on error
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise e
 
     return build_response(200, {
         "success": True, 
