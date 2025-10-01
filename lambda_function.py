@@ -108,7 +108,7 @@ def post_query(query):
 
 def post_login(body):
     # parse login details, find user, verify pw hash, and return success/failure with message
-    body = json.loads(body)
+    body = json.loads(body) or {}
     email = body.get("email")
     password = body.get("password")
 
@@ -168,7 +168,7 @@ def post_login(body):
         })
 
 def post_change_password(body):
-    body = json.loads(body)
+    body = json.loads(body) or {}
     email = body.get("email")
     answer = body.get("answer")
     new_password = body.get("new_password")
@@ -216,7 +216,7 @@ def post_change_password(body):
 
 def post_application(body):
     # parse login details, find user, verify pw hash, and return success/failure with message
-    body = json.loads(body)
+    body = json.loads(body) or {}
     email = body.get("email")
     password = body.get("password")
     fName = body.get("fname")
@@ -307,7 +307,7 @@ def post_application(body):
     })
         
 def post_point_rule(body):
-    body = json.loads(body)
+    body = json.loads(body) or {}
     org = body.get("org")
     rule = body.get("rule")
     points = body.get("points")
@@ -334,6 +334,39 @@ def post_point_rule(body):
         "success": True,
         "message": f"Point rule '{rule}' added for organization: {org}"
     })
+
+def post_decision(body):
+    body = json.loads(body) or {}
+    usr_id = body.get("usr_id")
+    accepted = body.get("accepted")
+    note = body.get("note", "")
+
+    if usr_id is None or accepted is None:
+        raise Exception("Missing required field(s): usr_id, accepted")
+
+    if accepted not in [True, False]:
+        raise Exception("Invalid 'accepted' value: must be boolean True or False")
+
+    new_status = "active" if accepted else "rejected"
+    
+    return build_response(200, [usr_id, new_status, note])
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Users
+            SET usr_status = %s
+            WHERE usr_id = %s
+            AND usr_isdeleted = 0
+            AND usr_status = 'pending'
+        """, (new_status, usr_id))
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"User {usr_id} new account {new_status}."
+        })
+    return build_response(404, f"No pending application found for user id={usr_id}")
 
 # ==== GET ==============================================================================
 def get_about():
@@ -367,7 +400,7 @@ def get_organizations():
         return build_response(200, org_names)
 
 def get_user(queryParams):
-    # returns users matching id/org/status params
+    # returns users matching id/org/status/role params
     # only returns non-deleted users
     queryParams = queryParams or {}
     conditions = ["usr_isdeleted = 0"]
@@ -387,9 +420,14 @@ def get_user(queryParams):
     if status is not None:
         conditions.append("usr_status = %s")
         values.append(status)
+        
+    role = queryParams.get("role")
+    if role is not None:
+        conditions.append("usr_role = %s")
+        values.append(role)
 
     if not values:
-        raise Exception("Missing required query parameter: must provide at least one of id, org, or status")
+        raise Exception("Missing required query parameter: must provide at least one of id, org, status, role")
 
     sql = f"""
         SELECT 
@@ -528,6 +566,8 @@ def lambda_handler(event, context):
             response = post_query(body)
         elif (method == "POST" and path == "/point_rules"):
             response = post_point_rule(body)
+        elif (method == "POST" and path == "/decision"):
+            response = post_decision(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
