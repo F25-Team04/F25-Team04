@@ -27,7 +27,7 @@ window.onload = function() {
         try {
 
         // Send POST request
-        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/point_rules?org=" + ORG_ID, {
+        const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules?org=" + ORG_ID, {
             method: "GET",
             });
             if (response.ok) {
@@ -44,7 +44,7 @@ window.onload = function() {
     async function GetUser() {
         try {
         // Send POST request
-            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=" + USER_ID, {
+            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + USER_ID, {
             method: "GET",
             });
             if (response.ok) {
@@ -81,7 +81,7 @@ window.onload = function() {
         try {
             
             // Send POST request
-            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/point_rules", {
+            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"  // IMPORTANT

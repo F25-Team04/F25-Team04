@@ -1,4 +1,4 @@
-const endpoint = "https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/about";
+const endpoint = "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/about";
 const dataContainer = document.getElementById("db-data");
 
 fetch(endpoint)

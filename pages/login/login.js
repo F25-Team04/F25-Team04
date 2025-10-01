@@ -38,7 +38,7 @@ window.onload = function() {
         try {
         console.log(UserID)
         // Send POST request
-        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=" + UserID, {
+        const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + UserID, {
             method: "GET",
             });
             if (response.ok) {
@@ -79,7 +79,7 @@ window.onload = function() {
         try {
             
             // Send POST request
-            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/login", {
+            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"  // IMPORTANT

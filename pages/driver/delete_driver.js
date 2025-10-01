@@ -29,7 +29,7 @@ window.onload = function() {
             
 
         
-            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=" + data.id, {
+            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + data.id, {
                 method: "DELETE",
             });
             

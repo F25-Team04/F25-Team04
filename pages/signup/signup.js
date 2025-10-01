@@ -47,7 +47,7 @@ window.onload = function() {
     }
 
     // Gets security questions that are listed in the database
-    fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/security_questions")
+    fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/security_questions")
         .then(response => response.json())
         .then(questions => {
             generateQuestions(questions);
@@ -69,7 +69,7 @@ window.onload = function() {
     }
     
     // Gets the organizations registered that are already registered to the Server
-    fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/organizations")
+    fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organizations")
         .then(response => response.json())
         .then(orgs => {
             generateOrgs(orgs); // handle the JSON data
@@ -98,7 +98,7 @@ window.onload = function() {
 
 
         // Posts the signup form to the API
-        const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/application", {
+        const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/application", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

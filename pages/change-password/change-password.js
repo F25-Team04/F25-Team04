@@ -13,7 +13,7 @@ window.onload = function() {
     }
 
     // Gets security questions that are listed in the database
-    fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/security_questions")
+    fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/security_questions")
         .then(response => response.json())
         .then(questions => {
             generateQuestions(questions);
@@ -52,7 +52,7 @@ window.onload = function() {
 
             
             // Send POST request
-            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/change_password", {
+            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/change_password", {
                 method: "POST",
               
                 body: JSON.stringify(data)   
