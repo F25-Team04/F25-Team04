@@ -54,7 +54,7 @@ window.onload = function() {
                 }
                 else if (response.status == 200) {
                     message = document.getElementById("welcome_message")
-                    message.textContent = "Welcome " + result["First Name"]
+                    message.textContent = "Welcome " + result["First Name"] + "!"
                 }
 
             } 
