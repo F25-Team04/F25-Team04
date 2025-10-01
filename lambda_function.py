@@ -292,7 +292,7 @@ def post_application(body):
                     usr_pointbalance
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
-                    email, hash_secret(password), "driver", org,
+                    email, hash_secret(password), "driver", org_id,
                     0, ques, ans,
                     # now adds pending accounts
                     "pending", fName, lName,
