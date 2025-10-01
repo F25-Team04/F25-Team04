@@ -8,33 +8,82 @@ html, body {
     height: 100%;
 }
 
-header {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    text-align: center;
-    background-color: var(--revvy-green);
-}
-
 body {
-    padding-top: 20px;
     display: flex;
     flex-direction: column;
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.brand-name {
+    filter: invert();
+    height: 40px;
+    padding-top: 8px;
+}
+
+.nav-brand {
+    display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+.navbar {
+    background: var(--revvy-black);
+    padding: 10px 15px;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+li {
+    list-style: none;
+    display: inline-block;
+}
+
+li a {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-right: 25px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    width: 112px;
+    height: 45px;
+    border: none;
+    outline: none;
+    border-radius: 45px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.white-btn {
+    color: var(--revvy-black);
+    background-color: white;
+}
+
+.green-btn {
+    color: var(--revvy-black);
+    background-color: var(--revvy-green);
 }
 
 h2 {
     text-align: center;
-}
-
-p {
-    font-size: 30px;
-    text-align: center;
-}
-
-a {
-    text-decoration: none;
 }
 
 a:hover {
@@ -45,3 +94,63 @@ body .p2 {
     font-size: 18px;
 }
 
+.info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 24px 0px;
+}
+
+.info-title, .members-title {
+    font-size: 30px;
+}
+
+.info-title::after, .members-title::after {
+    content: "";
+    display: block;
+    height: 1.5px;
+    background: var(--revvy-green);
+    margin-top: 8px;
+    width: 100%;
+}
+
+.members {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 36px 0px 0px;
+    gap: 4px;
+}
+
+.members p:first-of-type {
+    margin-top: 8px;
+}
+
+#db-data {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 12px;
+    column-gap: 24px;
+    margin: 12px 0px 0px;
+}
+
+#db-data h3 {
+    text-align: right;
+}
+
+#db-data p {
+    text-align: left;
+    font-size: 20px;
+    max-width: 420px;
+}
+
+.home-link {
+    justify-self: center;
+    align-self: center;
+}
+
+.home-link p {
+    font-size: 12px;
+}
