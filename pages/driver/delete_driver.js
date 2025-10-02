@@ -1,4 +1,57 @@
+const params = new URLSearchParams(window.location.search);
+const USER_ID = params.get("id");
+
 window.onload = function() {
+
+    function fillScreen(driverInfo){
+        place = document.getElementById("name")
+        place.innerHTML = "Name:     " + driverInfo["First Name"] + " " + driverInfo["Last Name"]
+        place = document.getElementById("usrID")
+        place.innerHTML = "User ID:     " + driverInfo["User ID"]
+        place = document.getElementById("email")
+        place.innerHTML = "Email:       " + driverInfo["Email"]
+        place = document.getElementById("role")
+        place.innerHTML = "Role:       " + driverInfo["Role"]
+        place = document.getElementById("org")
+        place.innerHTML = "Organization:     " + driverInfo["Organization Name"]
+        place = document.getElementById("balance")
+        place.innerHTML = "Points:     " + driverInfo["Point Balance"]
+        
+    }
+
+    go();
+
+    async function go() {
+        
+        try {
+            
+            // Send POST request
+
+            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + USER_ID , {
+                method: "GET",
+            })
+            
+            
+
+            if (response.ok) {
+                const result = await response.json();
+                const text1 = result[0].Email;
+                fillScreen(result[0])
+
+            } else {
+                //alert("Password or Email is Incorrect  ");
+                const text = await response.text();
+                alert(text);
+            }
+
+        } catch (error) {
+            alert("EROR " + error)
+        }
+
+        const place = document.getElementById("test2")
+
+        
+    };
 
     
     document.getElementById("delete").addEventListener("submit", async function (event) {
@@ -29,7 +82,7 @@ window.onload = function() {
             
 
         
-            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + data.id, {
+            const response = await fetch("https://5ynirur3b5.execute-api.us-east-2.amazonaws.com/dev/user?id=" + data.id, {
                 method: "DELETE",
             });
             
