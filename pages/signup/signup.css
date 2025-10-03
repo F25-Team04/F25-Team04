@@ -8,9 +8,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
     min-height: 100vh;
-    padding: 50px 0px 0px
 }
 
 .wrapper {
@@ -39,6 +37,10 @@ body {
     border-radius: 10px;
     margin: auto;
     padding-bottom: 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .accInfo h3 {
@@ -46,13 +48,17 @@ body {
     text-align: center;
 }
 
-.accInfo h3::after {
+.accInfo h3::after, .driverInfo h3::after {
     content: "";
     display: block;
-    height: 1.5px;
+    height: 2px;
     background: var(--revvy-green);
     margin-top: 8px;
     width: 100%;
+}
+
+.accInfo p {
+    align-self: flex-start;
 }
 
 .driverInfo {
@@ -69,21 +75,14 @@ body {
     text-align: center;
 }
 
-.driverInfo h3::after {
-    content: "";
-    display: block;
-    height: 1.5px;
-    background: var(--revvy-green);
-    margin-top: 8px;
-    width: 100%;
-}
-
 .brand-header {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 420px;
+    align-self: center;
+    margin-top: 64px;
 }
 
 .brand-header .brand-logo {

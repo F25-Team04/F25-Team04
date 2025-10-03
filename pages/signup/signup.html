@@ -13,6 +13,23 @@
   </head>
 
   <body>
+    <header>
+      <nav class="navbar">
+        <div class="nav-container">
+          <div class="nav-brand">
+            <a href="../../index.html"><img class="brand-logo" src="../../assets/car-logo-flipped.png"></a>
+            <a href="../../index.html"><img class="brand-name" src="../../assets/revvy.png"></a>
+          </div>
+          <ul>
+            <li><a href="../../index.html">Home</a></li>
+            <li><a href="../about/about.html">About</a></li>
+            <a class="btn white-btn" href="../signup/signup.html">Sign up</a>
+            <a class="btn green-btn" href="../login/login.html">Log in</a>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
     <div class="brand-header">
       <img class="brand-logo" src="../../assets/car-logo.png">
       <img class="brand-name" src="../../assets/revvy.png">
@@ -64,6 +81,8 @@
                     <input name="lname" type="text" placeholder="Last name" required>
                     <p>Driver's License Number</p>
                     <input name="dln" type="text" placeholder="Enter DL#" required>
+                    <label for="address">Address</label>
+                    <input name="address" placeholder="Enter address" type="text" required>
                 </div>
                 
                 <div class="right-driver-info">
@@ -77,8 +96,6 @@
                     <datalist id="questions"></datalist>
                     <label for="answer">Answer</label>
                     <input name="answer" placeholder="Enter your answer" type="text" required>
-                    <label for="address">Address</label>
-                    <input name="address" placeholder="Enter address" type="text" required>
                 </div>
             </div>
 
