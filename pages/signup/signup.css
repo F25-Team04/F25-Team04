@@ -12,6 +12,7 @@ body {
 }
 
 .wrapper {
+    align-self: center;
     width: 900px;
     border-radius: 10px;
 }

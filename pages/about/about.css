@@ -40,7 +40,7 @@ body .p2 {
 .info-title::after, .members-title::after {
     content: "";
     display: block;
-    height: 1.5px;
+    height: 2px;
     background: var(--revvy-green);
     margin-top: 8px;
     width: 100%;
