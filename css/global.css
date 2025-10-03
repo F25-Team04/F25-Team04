@@ -12,9 +12,87 @@
     font-family: var(--open-sans);
 }
 
+.main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex: 1 0 auto;
+}
+
+.navbar {
+    background: var(--revvy-black);
+    padding: 10px 15px;
+}
+
+.navbar .nav-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+.navbar .brand-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.navbar .brand-name {
+    filter: invert();
+    height: 40px;
+    padding-top: 8px;
+}
+
+.navbar .nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar li {
+    list-style: none;
+    display: inline-block;
+}
+
+.navbar li a {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-right: 25px;
+}
+
+.navbar .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    width: 112px;
+    height: 45px;
+    border: none;
+    outline: none;
+    border-radius: 45px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.navbar .white-btn {
+    color: var(--revvy-black);
+    background-color: white;
+}
+
+.navbar .green-btn {
+    color: var(--revvy-black);
+    background-color: var(--revvy-green);
+}
+
 footer {
     margin-top: auto;
     align-self: flex-start;
+    flex: 0 0 auto;
 }
 
 footer p {
@@ -23,4 +101,9 @@ footer p {
     margin-top: 0;
     margin-bottom: 0;
     padding: 24px 30px;
+}
+
+.pw-reqs li {
+    font-size: 14px;
+    color: var(--muted-foreground);
 }
