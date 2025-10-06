@@ -62,6 +62,7 @@ window.onload = function() {
                 //alert("THERE DAMN");
                 const text = await response.text();
                 alert(text);
+                window.location = "../login/login.html"
 
             } else {
                 //alert("Password or Email is Incorrect  ");
