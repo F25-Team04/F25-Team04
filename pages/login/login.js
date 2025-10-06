@@ -41,8 +41,9 @@ window.onload = function() {
         const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + UserID, {
             method: "GET",
             });
-            if (response.ok) {
-                const result = await response.json();
+            result = await response.json();
+            result = result[0]
+            if (result.statusCode = 200) {
                 if (response.success == false) {
                     alert(result.message);
                 }
