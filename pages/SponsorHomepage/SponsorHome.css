@@ -1,6 +1,7 @@
 body, html {
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 64px;
@@ -18,7 +19,7 @@ body, html {
     font-size: 28px;
 }
 
-.org-name::after, .rules-title::after {
+.org-name::after, .rules-title::after, .applications-title::after {
     content: "";
     display: block;
     height: 1.5px;
