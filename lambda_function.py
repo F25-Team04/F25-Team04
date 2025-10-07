@@ -8,6 +8,7 @@ import hmac
 import base64
 import secrets
 import unicodedata
+import requests
 
 # ==== response builder =================================================================
 def build_response(status: int, payload):
@@ -398,6 +399,51 @@ def post_decision(body):
         
     return build_response(404, f"No pending application found for usr_id={driver}")
 
+def post_point_adjustment(body):
+    # Adjusts a user's point balance and logs the adjustment.
+    body = json.loads(body) or {}
+    driver = body.get("driver_id")
+    sponsor = body.get("sponsor_id") 
+    reason = body.get("reason", "")
+    delta = body.get("delta")
+
+    if driver is None or sponsor is None or reason is None or delta is None:
+        raise Exception("Missing required field(s): driver, sponsor, reason, delta")
+
+    with conn.cursor() as cur:
+        cur.begin()
+        # Log the adjustment
+        cur.execute("""
+            UPDATE Users
+            SET usr_pointbalance = MAX(usr_pointbalance + %s, 0)
+            WHERE usr_id = %s
+        """, (delta, driver))
+        affected = cur.rowcount
+        if not affected:
+            conn.rollback()
+            return build_response(404, f"User {driver} not found.")
+        
+        # get new balance from users table
+        cur.execute("""
+            SELECT usr_pointbalance
+            FROM Users
+            WHERE usr_id = %s
+        """, (driver,))
+        new_balance = cur.fetchone()
+        new_balance = new_balance["usr_pointbalance"] if new_balance else 0
+
+        # Insert into Point_Transactions
+        cur.execute("""
+            INSERT INTO Point_Transactions (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_date)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        """, (driver, delta, new_balance, reason, sponsor))
+        conn.commit()
+
+    return build_response(200, {
+        "success": True,
+        "message": f"User {driver} point balance adjusted by {delta} to {new_balance}."
+    })
+
 # ==== GET ==============================================================================
 def get_about():
     # returns most recent about data by abt_releasedate
@@ -524,6 +570,23 @@ def get_security_questions():
         questions = [item["Question"] for item in result]
         return build_response(200, questions)
 
+def get_products(queryParams):
+    # returns list of products from FakeStoreAPI 
+    """
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+    """
+
+    # Call the FakeStoreAPI to get the products
+    response = requests.get(f"https://fakestoreapi.com/products")
+    if response.status_code == 200:
+        products = response.json()
+        return build_response(200, products)
+    else:
+        return build_response(404, "No products found!")
+
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
     # marks user as deleted in the database
@@ -580,6 +643,8 @@ def lambda_handler(event, context):
             response = get_point_rules(queryParams)
         elif (method == "GET" and path == "/security_questions"):
             response = get_security_questions()
+        elif (method == "GET" and path == "/products"):
+            response = get_products(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
@@ -598,6 +663,8 @@ def lambda_handler(event, context):
             response = post_point_rule(body)
         elif (method == "POST" and path == "/decision"):
             response = post_decision(body)
+        elif (method == "POST" and path == "/point_adjustment"):
+            response = post_point_adjustment(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
