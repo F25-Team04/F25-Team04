@@ -1,0 +1,26 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.success-container {
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.success-container h1 {
+    padding-bottom: .5em;
+}
+
+.success-container p {
+    padding-bottom: .5em;
+}

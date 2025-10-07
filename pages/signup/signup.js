@@ -113,7 +113,7 @@ window.onload = function() {
         const ans = await response.json();
 
         if (ans.success === true) {
-            window.location = "../../index.html";
+            window.location = "../application-success/success.html";
         }    
         else {
             alert(ans.message);

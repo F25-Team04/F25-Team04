@@ -14,7 +14,7 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
 }
 
@@ -30,7 +30,6 @@ body {
     justify-content: center;
     align-items: center;
     width: 420px;
-    padding-bottom: 16px;
 }
 
 .brand-header .brand-logo {
@@ -148,4 +147,8 @@ body {
 
 .toggle-pw {
     cursor: pointer;
+}
+
+footer p{
+    padding: 0px 30px 24px;
 }
