@@ -51,7 +51,10 @@ window.onload = function() {
                     if (result["Status"] == "inactive") {
                         alert("Account is inactive, if you are a driver you are likely not approved yet.");
                     }
-                    else if (result["Role"] == "driver") {
+                    else if (result["Status"] == "rejected") {
+                        alert("Driver application was rejected by the sponsor. Please re-apply to a different sponsor or try again later.");
+                    }
+                    else if (result["role"] == "driver") {
                          window.location = "../driver/driver.html?id=" + UserID;
                     }
                     else if (result["Role"] == "sponsor") {
