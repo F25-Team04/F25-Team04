@@ -1,0 +1,13 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1 {
+    position: relative;
+    font-size: 36px;
+    text-align: center;
+    width: 100%;
+    border: 2px solid black
+}
