@@ -580,7 +580,16 @@ def get_products(queryParams):
     """
 
     # Call the FakeStoreAPI to get the products
-    response = requests.get(f"https://fakestoreapi.com/products")
+    url = "https://fakestoreapi.com/products"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "close",
+    }
+    response = requests.get(url, headers=headers, timeout=5)
+    print("DEBUG - Products API response:\n", json.dumps(response.json(), indent=2))
+    
     if response.status_code == 200:
         products = response.json()
         return build_response(200, products)
