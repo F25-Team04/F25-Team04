@@ -403,7 +403,7 @@ def post_point_adjustment(body):
     # Adjusts a user's point balance and logs the adjustment.
     body = json.loads(body) or {}
     driver = body.get("driver_id")
-    sponsor = body.get("sponsor_id") 
+    sponsor = body.get("sponsor_id")
     reason = body.get("reason", "")
     delta = body.get("delta")
 
@@ -411,38 +411,45 @@ def post_point_adjustment(body):
         raise Exception("Missing required field(s): driver, sponsor, reason, delta")
 
     with conn.cursor() as cur:
-        cur.begin()
-        # Log the adjustment
-        cur.execute("""
-            UPDATE Users
-            SET usr_pointbalance = MAX(usr_pointbalance + %s, 0)
-            WHERE usr_id = %s
-        """, (delta, driver))
-        affected = cur.rowcount
-        if not affected:
+        try:
+            conn.begin()
+
+            # Verify user exists and lock
+            cur.execute("""
+                SELECT usr_pointbalance
+                FROM Users
+                WHERE usr_id = %s
+                FOR UPDATE
+            """, (driver,))
+            row = cur.fetchone()
+            if not row:
+                conn.rollback()
+                return build_response(404, f"User {driver} not found.")
+
+            old_balance = row["usr_pointbalance"]
+            new_balance = max(old_balance + int(delta), 0)
+
+            # Update (may be no actual operation, that’s fine)
+            cur.execute("""
+                UPDATE Users
+                SET usr_pointbalance = %s
+                WHERE usr_id = %s
+            """, (new_balance, driver))
+
+            # Always log the attempted adjustment (even if new_balance==old_balance)
+            cur.execute("""
+                INSERT INTO Point_Transactions
+                    (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_date)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+            """, (driver, delta, new_balance, reason, sponsor))
+
+            conn.commit()
+            return build_response(200, {
+                "message": f"User {driver} point balance adjusted by {delta} from {old_balance} to {new_balance}."
+            })
+        except Exception as e:
             conn.rollback()
-            return build_response(404, f"User {driver} not found.")
-        
-        # get new balance from users table
-        cur.execute("""
-            SELECT usr_pointbalance
-            FROM Users
-            WHERE usr_id = %s
-        """, (driver,))
-        new_balance = cur.fetchone()
-        new_balance = new_balance["usr_pointbalance"] if new_balance else 0
-
-        # Insert into Point_Transactions
-        cur.execute("""
-            INSERT INTO Point_Transactions (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_date)
-            VALUES (%s, %s, %s, %s, %s, NOW())
-        """, (driver, delta, new_balance, reason, sponsor))
-        conn.commit()
-
-    return build_response(200, {
-        "success": True,
-        "message": f"User {driver} point balance adjusted by {delta} to {new_balance}."
-    })
+            raise
 
 # ==== GET ==============================================================================
 def get_about():
