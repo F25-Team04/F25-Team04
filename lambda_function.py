@@ -521,7 +521,8 @@ def get_user(queryParams):
             usr_employeeid AS "Employee ID",    usr_license AS "License",
             usr_phone AS "Phone",               usr_address AS "Address",
             usr_securityquestion AS "Security Question",
-            org_name AS "Organization Name"
+            org_name AS "Organization Name",    org_conversionrate AS "Convert"
+
         FROM Users 
             JOIN Organizations 
             ON usr_organization = org_id
@@ -681,7 +682,6 @@ def lambda_handler(event, context):
             response = post_decision(body)
         elif (method == "POST" and path == "/point_adjustment"):
             response = post_point_adjustment(body)
-
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
 
