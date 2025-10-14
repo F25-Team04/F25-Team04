@@ -1,0 +1,129 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    background-color: var(--muted-background);
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.main {
+    margin: 0px 48px;
+    justify-content: normal;
+    gap: px;
+}
+
+.greeting-title, .greeting-desc {
+    align-self: baseline;
+}
+
+.greeting-title {
+    padding: 15px 0px 5px;
+}
+
+.greeting-desc {
+    padding-bottom: 20px;
+}
+
+.driver-card {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin-bottom: 24px;
+}
+
+.driver-card p {
+    color: var(--muted-foreground);
+}
+
+.driver-info {
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    gap: 4px;
+    padding: 24px;
+}
+
+.points-card {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    align-items: center;
+    justify-self: flex-end;
+    background-color: var(--revvy-green);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin: 24px;
+    padding: 24px;
+}
+
+.points-card span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+
+.org-role {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin: 4px 0px;
+}
+
+.org-name, .role-name {
+    border: 1px solid #ccc;
+    border-radius: 16px;
+    padding: 2px 8px;
+    display: inline-block;
+    background-color: var(--revvy-green);
+    color: black;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.role-name {
+    background-color: var(--muted-background);
+}
+
+.history {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.history p {
+    font-size: 14px;
+    color: var(--muted-foreground);
+}
+
+.points-history, .order-history {
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 24px;
+}
+
+.transaction {
+    display: flex;
+    align-items: start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.transaction:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
