@@ -1,12 +1,13 @@
+
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
-const ORG_ID = params.get("org")
+
 
 window.onload = function() {
     var list = this.document.getElementById("links")
     const li = document.createElement("li");
     const link = document.createElement("a");
-    link.href = "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID
+    link.href = "../AdminHomepage/AdminHome.html?id=" + USER_ID
     link.textContent = "Home"
     li.appendChild(link)
     const create = document.createElement("a");
@@ -19,7 +20,6 @@ window.onload = function() {
         event.preventDefault(); // stop normal form submission
 
         // Gather form data
-        document.getElementById("org_id").value = ORG_ID
         const form = event.target;
         const formData = new FormData(form);
         try {

@@ -1,0 +1,17 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1 {
+    text-align: center;
+    top: 50px;
+}
+
+#create {
+    justify-content: center;
+    display: flexbox;
+    text-align: center;
+    gap: 20px;
+}
