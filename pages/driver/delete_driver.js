@@ -17,19 +17,28 @@ window.onload = function() {
 
     function fillScreen(driverInfo){
         place = document.getElementById("name")
-        place.innerHTML = "Name:     " + driverInfo["First Name"] + " " + driverInfo["Last Name"]
+        place.innerHTML = driverInfo["First Name"] + " " + driverInfo["Last Name"]
         place = document.getElementById("usrID")
-        place.innerHTML = "User ID:     " + driverInfo["User ID"]
+        place.innerHTML = "ID: " + driverInfo["User ID"]
         place = document.getElementById("email")
-        place.innerHTML = "Email:       " + driverInfo["Email"]
+        place.innerHTML = driverInfo["Email"]
         place = document.getElementById("role")
-        place.innerHTML = "Role:       " + driverInfo["Role"]
+        place.innerHTML = driverInfo["Role"]
         place = document.getElementById("org")
-        place.innerHTML = "Organization:     " + driverInfo["Organization Name"]
+        place.innerHTML = driverInfo["Organization Name"]
         place = document.getElementById("balance")
-        place.innerHTML = "Points:     " + driverInfo["Point Balance"]
+        place.innerHTML = driverInfo["Point Balance"]
         
+        document.getElementById("greeting").textContent = `${getGreeting()}, ${driverInfo["First Name"]}!`;
+
     }
+
+    function getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good morning";
+        if (hour < 18) return "Good afternoon";
+        return "Good evening";
+    };
 
     go();
 
@@ -116,5 +125,4 @@ window.onload = function() {
             }
     });
 
-
-  };
+};
