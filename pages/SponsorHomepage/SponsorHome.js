@@ -3,6 +3,17 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function() {
+    var list = this.document.getElementById("links")
+    const li = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = "../driver/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID
+    link.textContent = "Home"
+    li.appendChild(link)
+    const create = document.createElement("a");
+    create.href = "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" + USER_ID + "&org=" + ORG_ID
+    create.textContent = "Create Sponsor"
+    li.appendChild(create)
+    list.appendChild(li);
     function MakeRulesList(rules) {
         console.log(rules)
         const list = document.getElementById("rule-list")
