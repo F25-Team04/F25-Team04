@@ -15,7 +15,7 @@ async function ApplicationDecision(DRIVER_ID, SPONSOR_ID, ACCEPTED) {
         },
         body: JSON.stringify(body)
     }
-    fetch('https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/decisions', requestOptions)
+    fetch('https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/decision', requestOptions)
         .then(response => {
             // Check if the request was successful (status code 200-299)
             if (!response.ok) {
@@ -53,28 +53,6 @@ window.onload = function () {
     li.appendChild(app);
     list.appendChild(li);
 
-    // Gets the user information based on the user id in the query params so that the welcome message will be personalized
-    async function GetUser() {
-        try {
-            // Send POST request
-            const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" + USER_ID, {
-                method: "GET",
-            });
-            if (response.ok) {
-                const result = await response.json();
-                if (response.success == false) {
-                    alert(result.message);
-                }
-                else if (response.status == 200) {
-                    message = document.getElementById("welcome_message")
-                    message.textContent = "Welcome " + result["First Name"] + "!"
-                }
-            }
-        } catch (error) {
-            console.error("Error:", error);
-        }
-    }
-
     // Pulls pending driver requests for the organization that the user belongs to
     async function GetPending() {
         try {
@@ -97,9 +75,7 @@ window.onload = function () {
                         item.id = "pending-row"
                         name.id = "driver-name";
                         approve.id = "approve-button";
-                        approve.classList.add("btn green-btn");
                         reject.id = "reject-button";
-                        reject.classList.add("btn white-btn");
                         name.textContent = driver["First Name"] + " " + driver["Last Name"];
                         approve.textContent = "Approve";
                         reject.textContent = "Reject";
@@ -139,7 +115,5 @@ window.onload = function () {
             console.error("Error:", error);
         }
     }
-    GetUser();
-    GetRules();
     GetPending();
 };
