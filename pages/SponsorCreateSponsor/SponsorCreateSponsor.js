@@ -14,6 +14,11 @@ window.onload = function() {
     create.textContent = "Create Sponsor"
     li.appendChild(create)
     list.appendChild(li);
+    const app = document.createElement("a");
+    app.href = "../SponsorApplicationPage/sponsor-applications.html?id=" + USER_ID + "&org=" + ORG_ID
+    app.textContent = "Applications"
+    li.appendChild(app)
+    list.appendChild(li);
 
     document.getElementById("create").addEventListener("submit", async function(event) {
         event.preventDefault(); // stop normal form submission
