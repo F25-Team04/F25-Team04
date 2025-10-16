@@ -1,0 +1,28 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+header {
+    width: 100%;
+    border: 2px solid black;
+    align-items: normal;
+}
+
+body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.applications-title::after {
+    content: "";
+    display: block;
+    height: 1.5px;
+    background: var(--revvy-green);
+    margin-top: 8px;
+    width: 100%;
+}
