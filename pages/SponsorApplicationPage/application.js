@@ -2,7 +2,7 @@
 // DRIVERID = id of the user that has applied for an account
 // SPONSORID = id of the sponsor user that accepted of declined the account
 // ACCEPTED = True if the application was accepted, False if the application was declined
-function ApplicationDecision(DRIVER_ID, SPONSOR_ID, ACCEPTED) {
+async function ApplicationDecision(DRIVER_ID, SPONSOR_ID, ACCEPTED) {
     body = {
         driver: DRIVER_ID,
         sponsor: SPONSOR_ID,
@@ -51,7 +51,6 @@ window.onload = function () {
                     message = document.getElementById("welcome_message")
                     message.textContent = "Welcome " + result["First Name"] + "!"
                 }
-
             }
         } catch (error) {
             console.error("Error:", error);
@@ -92,6 +91,26 @@ window.onload = function () {
 
                         // Append the item to the list
                         list.appendChild(item);
+
+                        // Event listener for approve button
+                        approve.addEventListener("click", async () => {
+                            try {
+                                await ApplicationDecision(driver["User ID"], USER_ID, true);
+                                list.removeChild(item);
+                            } catch (error) {
+                                console.error("Error:", error);
+                            }
+                        });
+
+                        // Event listener for reject button
+                        reject.addEventListener("click", async () => {
+                            try {
+                                ApplicationDecision(driver["User ID"], USER_ID, false);
+                            } catch (error) {
+                                console.error("Error:", error);
+                            }
+                            list.removeChild(item);
+                        });
                     });
                 }
 
