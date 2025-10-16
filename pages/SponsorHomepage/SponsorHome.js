@@ -3,10 +3,11 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function() {
+    // Navigation bar links
     var list = this.document.getElementById("links")
     const li = document.createElement("li");
     const link = document.createElement("a");
-    link.href = "../driver/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID
+    link.href = "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID
     link.textContent = "Home"
     li.appendChild(link)
     const create = document.createElement("a");
@@ -14,6 +15,12 @@ window.onload = function() {
     create.textContent = "Create Sponsor"
     li.appendChild(create)
     list.appendChild(li);
+    const app = document.createElement("a");
+    app.href = "../SponsorApplicationPage/sponsor-applications.html?id=" + USER_ID + "&org=" + ORG_ID
+    app.textContent = "Applications"
+    li.appendChild(app)
+    list.appendChild(li);
+
     function MakeRulesList(rules) {
         console.log(rules)
         const list = document.getElementById("rule-list")

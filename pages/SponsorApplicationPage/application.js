@@ -35,6 +35,24 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
+    // Navigation bar links
+    var list = this.document.getElementById("links");
+    const li = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
+    link.textContent = "Home";
+    li.appendChild(link);
+    const create = document.createElement("a");
+    create.href = "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" + USER_ID + "&org=" + ORG_ID;
+    create.textContent = "Create Sponsor";
+    li.appendChild(create);
+    list.appendChild(li);
+    const app = document.createElement("a");
+    app.href = "../SponsorApplicationPage/sponsor-applications.html?id=" + USER_ID + "&org=" + ORG_ID;
+    app.textContent = "Applications";
+    li.appendChild(app);
+    list.appendChild(li);
+
     // Gets the user information based on the user id in the query params so that the welcome message will be personalized
     async function GetUser() {
         try {
