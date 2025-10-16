@@ -26,3 +26,19 @@ body {
     margin-top: 8px;
     width: 100%;
 }
+
+.applications-container {
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.applications-container h1 {
+    padding-bottom: .5em;
+}
+
+.applications-container h3 {
+    padding-bottom: .5em;
+}

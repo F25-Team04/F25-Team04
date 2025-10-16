@@ -79,7 +79,9 @@ window.onload = function () {
                         item.id = "pending-row"
                         name.id = "driver-name";
                         approve.id = "approve-button";
+                        approve.classList.add("btn green-btn");
                         reject.id = "reject-button";
+                        reject.classList.add("btn white-btn");
                         name.textContent = driver["First Name"] + " " + driver["Last Name"];
                         approve.textContent = "Approve";
                         reject.textContent = "Reject";
