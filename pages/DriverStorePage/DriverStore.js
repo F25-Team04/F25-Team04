@@ -3,7 +3,7 @@ const USER_ID = params.get("id");
 let User = {};
 let PointConversionRate;
 let currentPage = 1;
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 10;
 let storeItems = [];
 window.onload = function() {
     var list = this.document.getElementById("links")
@@ -132,11 +132,12 @@ window.onload = function() {
                 console.error("Error:", error);
             }
     }
-    function SetPoints(points) {
-        let point = document.getElementById("points")
-        point.innerText = "Current Points: " + points
 
+    function SetPoints(points) {
+        let point = document.getElementById("points");
+        point.innerText = points;
     }
+
     GetUser()
     GetShop()
 }
