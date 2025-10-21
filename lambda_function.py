@@ -235,6 +235,53 @@ def post_change_password(body):
         "message": "User does not exist"
     })
 
+def post_user_update(body):
+    data = json.loads(body) or {}
+    usr_id = data.get("id")
+    if not usr_id:
+        raise Exception("Missing required field: id")
+
+    # accept either top-level fields or an 'updates' object
+    updates_src = data.get("updates") or data
+
+    # map accepted keys to DB columns (support both your UI names and canonical ones)
+    key_map = {
+        "phone": "usr_phone",
+        "firstName": "usr_firstname", "fname": "usr_firstname",
+        "lastName": "usr_lastname",   "lname": "usr_lastname",
+        "driverLicenseNumber": "usr_license", "dln": "usr_license",
+        "address": "usr_address",
+    }
+
+    set_parts = []
+    values = []
+    for k, v in updates_src.items():
+        col = key_map.get(k)
+        if not col:
+            continue
+        if v is None or str(v).strip() == "":
+            continue
+        set_parts.append(f"{col} = %s")
+        values.append(v)
+
+    if not set_parts:
+        raise Exception("No valid fields provided to update.")
+
+    values.append(usr_id)
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            UPDATE Users
+            SET {", ".join(set_parts)}
+            WHERE usr_id = %s
+            AND usr_isdeleted = 0
+        """, values)
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {"success": True, "message": "User updated", "affected": affected})
+    return build_response(404, f"No active user found with id={usr_id}")
+
 def post_application(body):
     # parse login details, find user, verify pw hash, and return success/failure with message
     body = json.loads(body) or {}
@@ -783,6 +830,8 @@ def lambda_handler(event, context):
             response = post_application(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
+        elif (method == "POST" and path == "/user_update"):
+            response = post_user_update(body)
         elif (method == "POST" and path == "/query"):
             response = post_query(body)
         elif (method == "POST" and path == "/point_rules"):
