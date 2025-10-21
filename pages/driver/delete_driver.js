@@ -16,6 +16,12 @@ window.onload = function() {
     li.appendChild(store)
     list.appendChild(li);
 
+    const account = document.createElement("a");
+    account.href = "../driver-change-info/change-info.html?id=" + USER_ID
+    account.textContent = "Update Account Info"
+    li.appendChild(account)
+    list.appendChild(li);
+
     const id = new URLSearchParams(location.search).get("id");
     document.querySelector(".points-header").href = `driver-points/driver-points.html?id=${encodeURIComponent(id)}`;
     document.querySelector(".orders-header").href = `driver-orders/driver-orders.html?id=${encodeURIComponent(id)}`;
