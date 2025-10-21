@@ -675,13 +675,11 @@ def get_organizations():
             ORDER BY org_name
         """)
         result = cur.fetchall()
-        print("DEBUG - Organizations result:", result) 
+        
         org_names = [item["org_name"] for item in result]
         return build_response(200, org_names)
 
 def get_user(queryParams):
-    # returns users matching id/org/role params
-    # only returns non-deleted users
     queryParams = queryParams or {}
     conditions = ["u.usr_isdeleted = 0"]
     values = []
@@ -691,7 +689,6 @@ def get_user(queryParams):
         conditions.append("u.usr_id = %s")
         values.append(usr_id)
 
-    # filter by org via Sponsorships (still return ALL orgs in the array)
     org = queryParams.get("org")
     if org is not None:
         conditions.append("""
@@ -701,7 +698,7 @@ def get_user(queryParams):
                 WHERE s2.spo_user = u.usr_id
                     AND s2.spo_org = %s
                     AND s2.spo_isdeleted = 0
-            )
+            )   
         """)
         values.append(org)
 
@@ -710,53 +707,46 @@ def get_user(queryParams):
         conditions.append("u.usr_role = %s")
         values.append(role)
 
-    # must provide at least one filter (id OR org OR role)
     if not (usr_id is not None or org is not None or role is not None):
         raise Exception("Missing required query parameter: must provide at least one of id, org, role")
 
     sql = f"""
         SELECT
-            u.usr_id              AS "User ID",
-            u.usr_email           AS "Email",
-            u.usr_role            AS "Role",
-            u.usr_firstname       AS "First Name",
-            u.usr_lastname        AS "Last Name",
-            u.usr_employeeid      AS "Employee ID",
-            u.usr_license         AS "License",
-            u.usr_phone           AS "Phone",
-            u.usr_address         AS "Address",
+            u.usr_id         AS "User ID",
+            u.usr_email      AS "Email",
+            u.usr_role       AS "Role",
+            u.usr_firstname  AS "First Name",
+            u.usr_lastname   AS "Last Name",
+            u.usr_employeeid AS "Employee ID",
+            u.usr_license    AS "License",
+            u.usr_phone      AS "Phone",
+            u.usr_address    AS "Address",
             u.usr_securityquestion AS "Security Question",
-            COALESCE(
-                json_agg(
-                    DISTINCT jsonb_build_object(
+            COALESCE((
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
                         'org_id',        o.org_id,
                         'org_name',      o.org_name,
                         'spo_pointbalance', s.spo_pointbalance
                     )
-                ) FILTER (WHERE s.spo_user IS NOT NULL),
-                '[]'::json
-            ) AS "Organizations"
+                )
+                FROM Sponsorships s
+                JOIN Organizations o ON o.org_id = s.spo_org
+                WHERE s.spo_user = u.usr_id
+                    AND s.spo_isdeleted = 0
+            ), JSON_ARRAY()) AS "Organizations"
         FROM Users u
-        LEFT JOIN Sponsorships s
-            ON s.spo_user = u.usr_id
-            AND s.spo_isdeleted = 0
-        LEFT JOIN Organizations o
-            ON o.org_id = s.spo_org
         WHERE {" AND ".join(conditions)}
-        GROUP BY
-            u.usr_id, u.usr_email, u.usr_role, u.usr_firstname, u.usr_lastname,
-            u.usr_employeeid, u.usr_license, u.usr_phone, u.usr_address, u.usr_securityquestion
     """
 
     with conn.cursor() as cur:
-        cur.execute(sql, values)
+        cur.execute(sql, tuple(values))
         users = cur.fetchall()
 
     if users:
         return build_response(200, users)
     else:
         return build_response(404, "No users match the given parameters.")
-
 
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
