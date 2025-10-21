@@ -3,7 +3,7 @@ const USER_ID = params.get("id");
 let User = {};
 let PointConversionRate;
 let currentPage = 1;
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 8;
 let storeItems = [];
 window.onload = function() {
     var list = this.document.getElementById("links")
@@ -53,15 +53,70 @@ window.onload = function() {
             const product_img = document.createElement("img")
             product_img.className = "product_image"
             product_img.src = product["image"] || product.image || ""
-            const product_desc = document.createElement("p")
-            product_desc.className = "product_desc"
-            const PricePoints = ((PointConversionRate || 1) * Number(product["price"] || product.price || 0)).toFixed(2)
+
+            const content = document.createElement("div");
+            content.className = "product_content";
+
+            const totalCents = Math.round(Number(product["price"] || product.price || 0) * 100);
+            const dollars = Math.floor(totalCents / 100);
+            const cents = totalCents % 100;
+            const PricePoints = String(dollars * 10 + cents);
+            
             const rating = (product["rating"] && product["rating"]["rate"]) || (product.rating && product.rating.rate) || "N/A"
-            product_desc.innerText = (product["title"] || product.title || "Untitled") + "\n\nRating: " + rating + " out of 5\nCost: " + PricePoints + " points"
+            const title = (product["title"] || product.title || "Untitled");
+
+            const productName = document.createElement("h3");
+            productName.className = "product_name";
+            productName.textContent = title;
+
+            const metaRow = document.createElement("div");
+            metaRow.className = "product_meta";
+
+            const productRating = document.createElement("span");
+            productRating.className = "product_rating";
+            if (rating === "N/A") {
+                const icon = document.createElement("i");
+                icon.className = "bx bx-star";
+                productRating.append(icon, document.createTextNode(" Rating: N/A"));
+            }
+            else {
+                productRating.append(makeStars(Number(rating)), document.createTextNode(` ${rating} / 5`));
+            }
+
+            const productCost = document.createElement("span");
+            productCost.className = "product_cost";
+            const rewardsIcon = document.createElement("i");
+            rewardsIcon.className = "bx bx-medal-star-alt";
+            const pointsValue = document.createElement("span")
+            pointsValue.className = "points_value";
+            pointsValue.textContent = PricePoints;
+            const pointsText = document.createElement("span");
+            pointsText.className = "points_text";
+            pointsText.textContent = " points";
+            productCost.append(rewardsIcon, pointsValue, pointsText);
+
+            metaRow.appendChild(productRating);
+            metaRow.appendChild(productCost);
+
+            content.appendChild(productName);
+            content.appendChild(metaRow);
+
             product_div.appendChild(product_img)
-            product_div.appendChild(product_desc)
+            product_div.appendChild(content)
             store.appendChild(product_div)
         }
+    }
+
+    function makeStars(value) {
+        const wrap = document.createElement("span");
+        wrap.className = "stars";
+        for (let i = 1; i <= 5; i++) {
+            const iEl = document.createElement("i");
+            iEl.className = value >= i ? "bx bxs-star" : value >= i - 0.5 ? "bx bxs-star-half" : "bx bx-star";
+            iEl.setAttribute("aria-hidden", "true");
+            wrap.appendChild(iEl);
+        }
+        return wrap;
     }
 
     function renderPage() {

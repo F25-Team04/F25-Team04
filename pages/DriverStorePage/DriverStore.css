@@ -7,21 +7,12 @@
 #store-catalog {
     display: flex;
     flex-wrap: wrap;
-}
-
-#product_wrapper {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    top: 30px;
-    height: 450px;
-    width: 20%;
-}
-
-#product_image {
-    object-fit: contain;
-    height: 70%;
-    width: 100%
+    justify-content: center;
+    gap: 36px;
+    background-color: var(--muted-background);
+    padding: 36px 0px;
+    border-top: 2px solid #ccc;
+    border-bottom: 2px solid #ccc;
 }
 
 #pagination {
@@ -29,6 +20,13 @@
     display: flex;
     justify-content: center;
     gap: 0.5rem;
+    margin-bottom: 24px;
+}
+
+#pagination button {
+    padding: 4px;
+    border-radius: 5px;
+    border-width: 1px;
 }
 
 .store-header {
@@ -36,7 +34,6 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid #ccc;
 }
 
 .points-card {
@@ -58,10 +55,15 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 56px;
 }
 
 .points-card span {
     font-weight: 500;
+}
+
+.points-num {
+    font-size: 32px;
 }
 
 .rewards-icon {
@@ -75,8 +77,62 @@
 }
 
 .product_image {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  display: block;
+    width: 320px;
+    height: 320px;
+    object-fit: contain;
+    display: block;
+    margin-top: 24px;
+    margin-bottom: 36px;
+}
+
+.product_wrapper {
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    height: 600px;
+    background-color: white;
+}
+
+.product_content {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16px;
+    gap: 8px;
+}
+
+.product_name {
+    max-width: 280px;
+}
+
+.product_meta {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.product_rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.product_rating .stars {
+    display: inline-flex;
+    align-items: center;
+    color: var(--revvy-green);
+}
+
+.product_cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 20px;
+    font-weight: 750;
+    color: var(--revvy-green);
+}
+
+.points_text {
+    margin-left: 4px;
+    font-size: 16px;
+    color: black;
+    font-weight: 400;
 }
