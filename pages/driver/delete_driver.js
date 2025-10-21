@@ -4,16 +4,21 @@ const USER_ID = params.get("id");
 window.onload = function() {
     var list = this.document.getElementById("links")
     const li = document.createElement("li");
+
     const link = document.createElement("a");
     link.href = "../driver/driver.html?id=" + USER_ID 
-    link.textContent = "Home"
+    link.textContent = "Dashboard"
     li.appendChild(link)
+
     const store = document.createElement("a");
     store.href = "../DriverStorePage/DriverStore.html?id=" + USER_ID
     store.textContent = "Store"
     li.appendChild(store)
     list.appendChild(li);
 
+    const id = new URLSearchParams(location.search).get("id");
+    document.querySelector(".points-header").href = `driver-points/driver-points.html?id=${encodeURIComponent(id)}`;
+    document.querySelector(".orders-header").href = `driver-orders/driver-orders.html?id=${encodeURIComponent(id)}`;
 
     function fillScreen(driverInfo){
         place = document.getElementById("name")

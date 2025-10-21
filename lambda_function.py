@@ -98,6 +98,26 @@ def verify_secret(secret: str, stored: str) -> bool:
     # constant-time compare
     return hmac.compare_digest(dk, expected)
 
+# ==== HELPERS ==========================================================================
+
+def _get_catalog_rules(org):
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                cat_id AS "Catalog Rule ID",
+                cat_type AS "Rule Type",
+                cat_value AS "Rule Value"
+            FROM Catalog_Rules
+            WHERE cat_org = %s
+            AND cat_isdeleted = 0
+            ORDER BY cat_id ASC
+        """, org)
+        rules = cur.fetchall()
+        
+    return rules
+
 # ==== POST =============================================================================
 def post_query(query):
     # returns result of query and commits changes
@@ -450,6 +470,43 @@ def post_point_adjustment(body):
         except Exception as e:
             conn.rollback()
             raise
+        
+def post_catalog_rules(body):
+    body = json.loads(body) or {}
+    org = body.get("org")
+    rule_type = body.get("type")
+    rule_value = body.get("value")
+
+    # check for and report any missing fields
+    required_fields = {
+        "org": org,
+        "type": rule_type,
+        "value": rule_value
+    }
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    if rule_type not in ["category", "max_price", "min_price"]:
+        raise Exception(f"Invalid rule type: {rule_type}")
+    
+    if rule_type in ["max_price", "min_price"]:
+        try:
+            float(rule_value)
+        except ValueError:
+            raise Exception(f"Invalid rule value for type {rule_type}: must be a number")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO Catalog_Rules (cat_org, cat_type, cat_value)
+            VALUES (%s, %s, %s)
+        """, (org, rule_type, rule_value))
+        conn.commit()
+
+    return build_response(200, {
+        "success": True,
+        "message": f"Catalog rules updated for organization: {org}"
+    })
 
 # ==== GET ==============================================================================
 def get_about():
@@ -541,7 +598,6 @@ def get_user(queryParams):
     else:
         return build_response(404, "No users match the given parameters.")
 
-
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
     queryParams = queryParams or {}
@@ -580,29 +636,80 @@ def get_security_questions():
 
 def get_products(queryParams):
     # returns list of products from FakeStoreAPI 
-    """
+    # filters using the catalog rules for the specified organization
     queryParams = queryParams or {}
     org = queryParams.get("org")
+    """
     if org is None:
         raise Exception(f"Missing required query parameter: org")
     """
 
-    # Call the FakeStoreAPI to get the products
-    url = "https://fakestoreapi.com/products"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Connection": "close",
-    }
-    response = requests.get(url, headers=headers, timeout=5)
-    print("DEBUG - Products API response:\n", json.dumps(response.json(), indent=2))
+    try:
+        # Call the FakeStoreAPI to get the products
+        url = "https://fakestoreapi.com/products"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Connection": "close",
+        }
+        response = requests.get(url, headers=headers, timeout=5)
+        print("DEBUG - Products API response:\n", json.dumps(response.json(), indent=2))
+    except requests.RequestException as e:
+        return build_response(500, f"Failed to retrieve products from FakeStoreAPI: {e}")
     
     if response.status_code == 200:
         products = response.json()
+        
+        # if no org specified, return all products
+        if org is None:
+            return build_response(200, products)
+        
+        # otherwise, get catalog rules for org
+        rules = _get_catalog_rules(org)
+        print(f"DEBUG - Catalog Rules for org {org}:\n", json.dumps(rules, indent=2))
+        
+        # initialize filter criteria
+        allowed_categories = []
+        max_price = float('inf')
+        min_price = float(0)
+        
+        # build filters from rules
+        for rule in rules:
+            rule_type = rule.get("Rule Type")
+            rule_value = rule.get("Rule Value")
+
+            if rule_type == "category":
+                allowed_categories.append(rule_value)
+            elif rule_type == "max_price":
+                max_price = min(max_price, float(rule_value))
+            elif rule_type == "min_price":
+                min_price = max(min_price, float(rule_value))
+            # add more rule types as needed
+        
+        print(f"DEBUG - Applying filters: categories={allowed_categories}, max_price={max_price}, min_price={min_price}")
+        # apply filters
+        products = [prod for prod in products if prod.get("category") in allowed_categories]
+        products = [prod for prod in products if float(prod.get("price", 0)) <= max_price]
+        products = [prod for prod in products if float(prod.get("price", 0)) >= min_price]
+
         return build_response(200, products)
     else:
-        return build_response(404, "No products found!")
+        return build_response(500, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
+
+def get_catalog_rules(queryParams):
+    # returns catalog rules for the specified organization
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+
+    rules = _get_catalog_rules(org)
+        
+    if rules:
+        return build_response(200, rules)
+    else:
+        return build_response(404, f"No catalog rules found for organization: {org}")
 
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
@@ -662,6 +769,8 @@ def lambda_handler(event, context):
             response = get_security_questions()
         elif (method == "GET" and path == "/products"):
             response = get_products(queryParams)
+        elif (method == "GET" and path == "/catalog_rules"):
+            response = get_catalog_rules(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
@@ -682,6 +791,9 @@ def lambda_handler(event, context):
             response = post_decision(body)
         elif (method == "POST" and path == "/point_adjustment"):
             response = post_point_adjustment(body)
+        elif (method == "POST" and path == "/catalog_rules"):
+            response = post_catalog_rules(body)
+
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
 

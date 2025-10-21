@@ -126,6 +126,12 @@ body {
     padding: 24px;
 }
 
+.points-header, .orders-header {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
 .transaction {
     display: flex;
     align-items: start;
