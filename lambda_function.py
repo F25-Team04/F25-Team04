@@ -433,14 +433,13 @@ def post_application(body):
             conn.begin()
 
             # Insert new pending application
-            # Assumes Applications(app_id PK, app_driver, app_org, app_status, app_reason, app_note, app_date, app_updated, app_isdeleted)
             cur.execute("""
                 INSERT INTO Applications (
                     app_driver,
                     app_org,
                     app_status,
                     app_note,
-                    app_date
+                    app_datecreated
                 ) VALUES (%s, %s, %s, %s, NOW())
             """, (user_id, org_id, "pending", ""))
 
@@ -488,68 +487,129 @@ def post_point_rule(body):
     })
 
 def post_decision(body):
-    body = json.loads(body) or {}
-    driver = body.get("driver")
-    sponsor = body.get("sponsor")
+    # Parse and validate input
+    body = json.loads(body or "{}")
+    application_id = body.get("application_id")
+    sponsor_user_id = body.get("sponsor")
     accepted = body.get("accepted")
     note = body.get("note", "")
 
-    if driver is None or sponsor is None or accepted is None:
-        raise Exception("Missing required field(s): driver, sponsor, accepted")
-
-    if accepted not in [True, False]:
+    if application_id is None or sponsor_user_id is None or accepted is None:
+        raise Exception("Missing required field(s): application_id, sponsor, accepted")
+    if accepted not in (True, False):
         raise Exception("Invalid 'accepted' value: must be boolean True or False")
 
-    new_status = "accepted" if accepted else "rejected"
+    new_status = "approved" if accepted else "denied"
 
-    # log decision in Applications table
     with conn.cursor() as cur:
-        conn.begin()
-        
-        # update application status and note
-        cur.execute("""
-            UPDATE Applications
-            SET app_sponsor = %s,
-                app_status = %s, 
-                app_note = %s
-            WHERE app_driver = %s
-        """, (sponsor, new_status, note, driver))
-        
-        if accepted:
-            # create new Sponsorship
+        try:
+            conn.begin()
+
+            # 1) Lock and load the application
             cur.execute("""
-                INSERT INTO Sponsorships (
-                    spo_user,
-                    spo_org,
-                    spo_pointbalance
-                ) VALUES (%s, %s, %s)
-            """, (driver, sponsor, 0))
-            
-        conn.commit()
-    
-    return build_response(200, {
-        "message": f"Driver {driver} new account {new_status}."
-    })
+                SELECT app_id, app_driver, app_org, app_status
+                FROM Applications
+                WHERE app_id = %s
+                    AND app_isdeleted = 0
+                FOR UPDATE
+            """, (application_id,))
+            app = cur.fetchone()
+            if not app:
+                conn.rollback()
+                return build_response(404, "Application not found")
+
+            if app["app_status"] != "pending":
+                conn.rollback()
+                return build_response(400, f"Application is not pending (current status: {app['app_status']})")
+
+            driver_id = app["app_driver"]
+            app_org_id = app["app_org"]
+
+            # derive org_id from sponsor user's Sponsorships
+            cur.execute("""
+                SELECT spo_org
+                FROM Sponsorships
+                WHERE spo_user = %s
+                    AND spo_isdeleted = 0
+            """, (sponsor_user_id,))
+            sponsor_org_rows = cur.fetchall()
+
+            if not sponsor_org_rows:
+                conn.rollback()
+                return build_response(404, f"No active organization found for sponsor user {sponsor_user_id}.")
+            if len(sponsor_org_rows) > 1:
+                conn.rollback()
+                return build_response(
+                    409,
+                    "Sponsor user is associated with multiple organizations; provide 'org' in the request body."
+                )
+            org_id = sponsor_org_rows[0]["spo_org"]
+
+            # 3) Guard: the application must be for that org
+            if app_org_id != org_id:
+                conn.rollback()
+                return build_response(
+                    400,
+                    f"Application {application_id} targets org {app_org_id}, which does not match sponsor org {org_id}."
+                )
+
+            # 4) Update application status and note
+            cur.execute("""
+                UPDATE Applications
+                SET app_status  = %s,
+                    app_note    = %s,
+                    app_dateupdated = NOW()
+                WHERE app_id = %s
+            """, (new_status, note, application_id))
+
+            # 5) On approve: ensure Sponsorship exists (create if absent)
+            if new_status == "approved":
+                cur.execute("""
+                    SELECT 1
+                    FROM Sponsorships
+                    WHERE spo_user = %s
+                        AND spo_org  = %s
+                        AND spo_isdeleted = 0
+                    LIMIT 1
+                """, (driver_id, org_id))
+                if not cur.fetchone():
+                    cur.execute("""
+                        INSERT INTO Sponsorships (spo_user, spo_org, spo_pointbalance, spo_isdeleted)
+                        VALUES (%s, %s, %s, 0)
+                    """, (driver_id, org_id, 0))
+
+            conn.commit()
+
+            return build_response(200, {
+                "message": f"Application {new_status}.",
+                "application_id": application_id,
+                "driver": driver_id,
+                "org": org_id
+            })
+
+        except Exception as e:
+            conn.rollback()
+            raise
+
 
 def post_point_adjustment(body):
     # Parse and validate input
-    body = json.loads(body or "{}")
+    body = json.loads(body) or {}
     driver = body.get("driver_id")
-    sponsor = body.get("sponsor_id")
+    sponsor_user = body.get("sponsor_id")
     reason = body.get("reason", "")
     delta = body.get("delta")
 
     # Validate
     missing = [k for k, v in {
         "driver_id": driver,
-        "sponsor_id": sponsor,
+        "sponsor_id": sponsor_user,
         "delta":     delta,
         "reason":    reason
     }.items() if v is None]
     if missing:
         raise Exception(f"Missing required field(s): {', '.join(missing)}")
 
-    # validate delta is integer
     try:
         delta = int(delta)
     except (TypeError, ValueError):
@@ -558,58 +618,77 @@ def post_point_adjustment(body):
     with conn.cursor() as cur:
         try:
             conn.begin()
+            
+            # derive org from sponsor user's active sponsorships
+            cur.execute("""
+                SELECT spo_org
+                FROM Sponsorships
+                WHERE spo_user = %s
+                    AND spo_isdeleted = 0
+            """, (sponsor_user,))
+            sponsor_org_rows = cur.fetchall()
+            if not sponsor_org_rows:
+                conn.rollback()
+                return build_response(404, f"No active organization found for sponsor user {sponsor_user}.")
+            if len(sponsor_org_rows) > 1:
+                conn.rollback()
+                return build_response(
+                    409,
+                    "Sponsor user is associated with multiple organizations; provide 'org' in the request body."
+                )
+            org_id = sponsor_org_rows[0]["spo_org"]
 
-            # Verify sponsorship exists and lock it (per-sponsor balance)
+            # Lock the driver's sponsorship row for that org and update balance
             cur.execute("""
                 SELECT s.spo_pointbalance AS balance
                 FROM Sponsorships s
                 WHERE s.spo_user = %s
-                    AND s.spo_org = %s
+                    AND s.spo_org  = %s
                     AND s.spo_isdeleted = 0
                 FOR UPDATE
-            """, (driver, sponsor))
+            """, (driver, org_id))
             row = cur.fetchone()
             if not row:
                 conn.rollback()
-                return build_response(404,
-                    f"Sponsorship not found for user {driver} and sponsor {sponsor}."
+                return build_response(
+                    404,
+                    f"Sponsorship not found for user {driver} and org {org_id} (derived from sponsor user {sponsor_user})."
                 )
 
             old_balance = int(row["balance"] or 0)
             new_balance = max(old_balance + delta, 0)
 
-            # Update sponsorship balance
             cur.execute("""
                 UPDATE Sponsorships
                 SET spo_pointbalance = %s
                 WHERE spo_user = %s
-                    AND spo_org = %s
+                    AND spo_org  = %s
                     AND spo_isdeleted = 0
-            """, (new_balance, driver, sponsor))
+            """, (new_balance, driver, org_id))
 
-            # Log the transaction (still fine to keep a global table)
+            # Log transaction (ptr_sponsorid here represents ORG context)
             cur.execute("""
                 INSERT INTO Point_Transactions
-                    (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_date)
-                VALUES (%s, %s, %s, %s, %s, NOW())
-            """, (driver, delta, new_balance, reason, sponsor))
+                    (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_org, ptr_date)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            """, (driver, delta, new_balance, reason, sponsor_user, org_id))
 
             conn.commit()
             return build_response(200, {
                 "message": (
-                    f"Sponsorship balance adjusted by {delta} for user {driver} "
-                    f"under sponsor {sponsor}: {old_balance} → {new_balance}."
+                    f"Sponsorship (org {org_id}) balance adjusted by {delta} for user {driver}: "
+                    f"{old_balance} → {new_balance} (derived from sponsor user {sponsor_user})."
                 ),
                 "driver_id": driver,
-                "sponsor_id": sponsor,
+                "sponsor_user_id": sponsor_user,
+                "org_id": org_id,
                 "delta": delta,
                 "old_balance": old_balance,
                 "new_balance": new_balance
             })
         except Exception as e:
             conn.rollback()
-            raise
-
+            raise e
         
 def post_catalog_rules(body):
     body = json.loads(body) or {}
@@ -742,6 +821,11 @@ def get_user(queryParams):
     with conn.cursor() as cur:
         cur.execute(sql, tuple(values))
         users = cur.fetchall()
+        
+        # turn organizations list from JSON string to list
+        for user in users:
+            orgs_json = user.get("Organizations")
+            user["Organizations"] = json.loads(orgs_json) if orgs_json else []
 
     if users:
         return build_response(200, users)
