@@ -9,11 +9,7 @@ window.onload = function () {
   link.textContent = "Home";
   li.appendChild(link);
   const create = document.createElement("a");
-  create.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
+  create.href = "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
   create.textContent = "Create Sponsor";
   li.appendChild(create);
   list.appendChild(li);
