@@ -504,6 +504,9 @@ def post_decision(body):
 
     # log decision in Applications table
     with conn.cursor() as cur:
+        conn.begin()
+        
+        # update application status and note
         cur.execute("""
             UPDATE Applications
             SET app_sponsor = %s,
@@ -511,6 +514,17 @@ def post_decision(body):
                 app_note = %s
             WHERE app_driver = %s
         """, (sponsor, new_status, note, driver))
+        
+        if accepted:
+            # create new Sponsorship
+            cur.execute("""
+                INSERT INTO Sponsorships (
+                    spo_user,
+                    spo_org,
+                    spo_pointbalance
+                ) VALUES (%s, %s, %s)
+            """, (driver, sponsor, 0))
+            
         conn.commit()
     
     return build_response(200, {
