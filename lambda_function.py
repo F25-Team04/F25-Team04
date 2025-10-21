@@ -374,7 +374,7 @@ def post_signup(body):
         "usr_id": driver_id
     })
 
-def post_applications(body):
+def post_application(body):
     # Parse and validate input
     body = json.loads(body or "{}")
     user_id = body.get("user")
@@ -931,8 +931,8 @@ def lambda_handler(event, context):
             response = post_signup(body)
         elif (method == "POST" and path == "/login"):
             response = post_login(body)
-        elif (method == "POST" and path == "/applications"):
-            response = post_applications(body)
+        elif (method == "POST" and path == "/application"):
+            response = post_application(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
         elif (method == "POST" and path == "/user_update"):
