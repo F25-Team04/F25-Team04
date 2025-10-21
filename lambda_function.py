@@ -423,7 +423,7 @@ def post_applications(body):
             WHERE app_driver = %s
                 AND app_org = %s
                 AND app_status = 'pending'
-                AND COALESCE(app_isdeleted, 0) = 0
+                AND app_isdeleted = 0
             LIMIT 1
         """, (user_id, org_id))
         if cur.fetchone():
@@ -569,8 +569,8 @@ def post_point_adjustment(body):
                 UPDATE Sponsorships
                 SET spo_pointbalance = %s
                 WHERE spo_user = %s
-                  AND spo_org = %s
-                  AND COALESCE(spo_isdeleted, 0) = 0
+                    AND spo_org = %s
+                    AND spo_isdeleted = 0
             """, (new_balance, driver, sponsor))
 
             # Log the transaction (still fine to keep a global table)
@@ -696,7 +696,7 @@ def get_user(queryParams):
         conditions.append("u.usr_role = %s")
         values.append(role)
 
-    # Enforce: must provide at least one filter (id OR org OR role)
+    # must provide at least one filter (id OR org OR role)
     if not (usr_id is not None or org is not None or role is not None):
         raise Exception("Missing required query parameter: must provide at least one of id, org, role")
 
