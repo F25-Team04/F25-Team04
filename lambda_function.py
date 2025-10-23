@@ -876,7 +876,7 @@ def get_application(queryParams):
         conditions.append("app_status = %s")
         values.append(status)
 
-    if usr_id is None or org is None:
+    if not (usr_id is not None or org is not None):
         raise Exception("Missing required query parameter: must provide at least one of id, org")
 
     sql = f"""
