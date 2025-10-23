@@ -118,7 +118,10 @@ def _get_catalog_rules(org):
         
     return rules
 
+
+
 # ==== POST =============================================================================
+
 def post_query(query):
     # returns result of query and commits changes
     with conn.cursor() as cur:
@@ -282,22 +285,21 @@ def post_user_update(body):
         return build_response(200, {"success": True, "message": "User updated", "affected": affected})
     return build_response(404, f"No active user found with id={usr_id}")
 
-def post_application(body):
-    # parse login details, find user, verify pw hash, and return success/failure with message
-    body = json.loads(body) or {}
+def post_signup(body):
+    # Parse and validate input
+    body = json.loads(body or "{}")
     email = body.get("email")
     password = body.get("password")
     fName = body.get("fname")
     lName = body.get("lname")
     dln = body.get("dln")
     empID = body.get("empID")
-    org = body.get("searchable")
     ques = body.get("security")
     ans = body.get("answer")
     phone = body.get("phone")
     address = body.get("address")
-    
-    # check for and report any missing fields
+
+    # Required fields for account creation
     required_fields = {
         "email": email,
         "password": password,
@@ -305,94 +307,159 @@ def post_application(body):
         "lname": lName,
         "dln": dln,
         "empID": empID,
-        "searchable": org,
         "security": ques,
         "answer": ans,
         "phone": phone,
-        "address": address
+        "address": address,
     }
+
     missing = [name for name, value in required_fields.items() if value is None]
     if missing:
         raise Exception(f"Missing required field(s): {', '.join(missing)}")
 
-    # check if user with email already exists
     with conn.cursor() as cur:
+        # Check for existing account
         cur.execute("""
-            SELECT * 
+            SELECT usr_id
             FROM Users
             WHERE usr_email = %s
-            AND usr_isdeleted = 0
+                AND usr_isdeleted = 0
         """, (email,))
-
         if cur.fetchone():
-            # return failure, account already exists
-            return build_response(200, {
-                "success": False, 
-                "message": "Email already associated with an account"
-            })  
-    
-        # map org name to org id and check if it exists
-        cur.execute("""
-            SELECT org_id
-            FROM Organizations
-            WHERE org_name = %s
-            AND org_isdeleted = 0
-        """, (org,))
-        org = cur.fetchone()
-        
-        if not org:
-            return build_response(404, {
-                "success": False,
-                "message": "Organization does not exist"
-            })
-        org_id = org.get("org_id")
+            return build_response(400, "Email already associated with an existing account")    
 
         try:
-            # begin insert/update operations
             conn.begin()
-            # adds the account to the database
-            cur.execute("""
-                    INSERT INTO Users (
-                    usr_email, usr_passwordhash, usr_role, usr_organization, 
-                    usr_loginattempts, usr_securityquestion, usr_securityanswer, 
-                    usr_status, usr_firstname, usr_lastname, 
-                    usr_employeeid, usr_phone, usr_license, usr_address,
-                    usr_pointbalance
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    email, hash_secret(password), "driver", org_id,
-                    0, ques, ans,
-                    # now adds pending accounts
-                    "pending", fName, lName,
-                    empID, phone, dln, address,
-                    0      # usr_pointbalance
-                ))
-            # get the new user's id
-            driver_id = cur.lastrowid
 
+            # Insert the new user
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_loginattempts,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                    usr_employeeid,
+                    usr_phone,
+                    usr_license,
+                    usr_address
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                hash_secret(password), # password hash
+                "driver",        # Default role
+                0,               # login attempts
+                ques,
+                ans,
+                fName,
+                lName,
+                empID,
+                phone,
+                dln,
+                address
+            ))
+
+            driver_id = cur.lastrowid
             if not driver_id:
                 raise Exception("Failed to create user account")
 
-            # log application in Applications table
-            cur.execute("""
-                INSERT INTO Applications (
-                    app_driver, 
-                    app_status, 
-                    app_date
-                ) VALUES (%s, %s, NOW())
-            """, (driver_id, "pending"))
-            
-            # commit changes, or rollback on error
             conn.commit()
+
         except Exception as e:
             conn.rollback()
             raise e
 
     return build_response(200, {
-        "success": True, 
-        "message": "Account Created"
+        "message": "Account created successfully. You can now sign in and apply to sponsors.",
+        "usr_id": driver_id
     })
-        
+
+def post_application(body):
+    # Parse and validate input
+    body = json.loads(body or "{}")
+    user_id = body.get("user")
+    org_id = body.get("org")
+
+    if user_id is None or org_id is None:
+        raise Exception("Missing required field(s): user, org")
+
+    with conn.cursor() as cur:
+        # Verify user exists and not deleted
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_id = %s
+                AND usr_isdeleted = 0
+        """, (user_id,))
+        if not cur.fetchone():
+            return build_response(404, "User not found")
+
+        # Verify organization exists and not deleted
+        cur.execute("""
+            SELECT org_id
+            FROM Organizations
+            WHERE org_id = %s
+                AND org_isdeleted = 0
+        """, (org_id,))
+        if not cur.fetchone():
+            return build_response(404, "Organization not found")
+
+        # Block if already a member (active Sponsorship exists)
+        cur.execute("""
+            SELECT 1
+            FROM Sponsorships
+            WHERE spo_user = %s
+                AND spo_org = %s
+                AND spo_isdeleted = 0
+            LIMIT 1
+        """, (user_id, org_id))
+        if cur.fetchone():
+            return build_response(400, "User is already a member of this organization")
+
+        # Block duplicate pending application
+        cur.execute("""
+            SELECT app_id
+            FROM Applications
+            WHERE app_driver = %s
+                AND app_org = %s
+                AND app_status = 'pending'
+                AND app_isdeleted = 0
+            LIMIT 1
+        """, (user_id, org_id))
+        if cur.fetchone():
+            return build_response(400, "There is already a pending application for this organization")
+
+        try:
+            conn.begin()
+
+            # Insert new pending application
+            cur.execute("""
+                INSERT INTO Applications (
+                    app_driver,
+                    app_org,
+                    app_status,
+                    app_note,
+                    app_datecreated
+                ) VALUES (%s, %s, %s, %s, NOW())
+            """, (user_id, org_id, "pending", ""))
+
+            application_id = cur.lastrowid
+            if not application_id:
+                raise Exception("Failed to create application")
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+    return build_response(200, {
+        "message": "Application submitted"
+    })
+
 def post_point_rule(body):
     body = json.loads(body) or {}
     org = body.get("org")
@@ -423,100 +490,208 @@ def post_point_rule(body):
     })
 
 def post_decision(body):
-    body = json.loads(body) or {}
-    driver = body.get("driver")
-    sponsor = body.get("sponsor")
+    # Parse and validate input
+    body = json.loads(body or "{}")
+    application_id = body.get("application_id")
+    sponsor_user_id = body.get("sponsor")
     accepted = body.get("accepted")
     note = body.get("note", "")
 
-    if driver is None or sponsor is None or accepted is None:
-        raise Exception("Missing required field(s): driver, sponsor, accepted")
-
-    if accepted not in [True, False]:
+    if application_id is None or sponsor_user_id is None or accepted is None:
+        raise Exception("Missing required field(s): application_id, sponsor, accepted")
+    if accepted not in (True, False):
         raise Exception("Invalid 'accepted' value: must be boolean True or False")
 
-    new_status = "active" if accepted else "rejected"
-    
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE Users
-            SET usr_status = %s
-            WHERE usr_id = %s
-            AND usr_isdeleted = 0
-            AND usr_status = 'pending'
-        """, (new_status, driver))
-        affected = cur.rowcount
-        conn.commit()
-
-    if affected: 
-        # log decision in Applications table
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE Applications
-                SET app_sponsor = %s,
-                    app_status = %s, 
-                    app_note = %s
-                WHERE app_driver = %s
-            """, (sponsor, new_status, note, driver))
-            conn.commit()
-        
-        return build_response(200, {
-            "message": f"Driver {driver} new account {new_status}."
-        })
-        
-    return build_response(404, f"No pending application found for usr_id={driver}")
-
-def post_point_adjustment(body):
-    # Adjusts a user's point balance and logs the adjustment.
-    body = json.loads(body) or {}
-    driver = body.get("driver_id")
-    sponsor = body.get("sponsor_id")
-    reason = body.get("reason", "")
-    delta = body.get("delta")
-
-    if driver is None or sponsor is None or reason is None or delta is None:
-        raise Exception("Missing required field(s): driver, sponsor, reason, delta")
+    new_status = "approved" if accepted else "denied"
 
     with conn.cursor() as cur:
         try:
             conn.begin()
 
-            # Verify user exists and lock
+            # 1) Lock and load the application
             cur.execute("""
-                SELECT usr_pointbalance
-                FROM Users
-                WHERE usr_id = %s
+                SELECT app_id, app_driver, app_org, app_status
+                FROM Applications
+                WHERE app_id = %s
+                    AND app_isdeleted = 0
                 FOR UPDATE
-            """, (driver,))
-            row = cur.fetchone()
-            if not row:
+            """, (application_id,))
+            app = cur.fetchone()
+            if not app:
                 conn.rollback()
-                return build_response(404, f"User {driver} not found.")
+                return build_response(404, "Application not found")
 
-            old_balance = row["usr_pointbalance"]
-            new_balance = max(old_balance + int(delta), 0)
+            if app["app_status"] != "pending":
+                conn.rollback()
+                return build_response(400, f"Application is not pending (current status: {app['app_status']})")
 
-            # Update (may be no actual operation, that’s fine)
+            driver_id = app["app_driver"]
+            app_org_id = app["app_org"]
+
+            # derive org_id from sponsor user's Sponsorships
             cur.execute("""
-                UPDATE Users
-                SET usr_pointbalance = %s
-                WHERE usr_id = %s
-            """, (new_balance, driver))
+                SELECT spo_org
+                FROM Sponsorships
+                WHERE spo_user = %s
+                    AND spo_isdeleted = 0
+            """, (sponsor_user_id,))
+            sponsor_org_rows = cur.fetchall()
 
-            # Always log the attempted adjustment (even if new_balance==old_balance)
+            if not sponsor_org_rows:
+                conn.rollback()
+                return build_response(404, f"No active organization found for sponsor user {sponsor_user_id}.")
+            if len(sponsor_org_rows) > 1:
+                conn.rollback()
+                return build_response(
+                    409,
+                    "Sponsor user is associated with multiple organizations; provide 'org' in the request body."
+                )
+            org_id = sponsor_org_rows[0]["spo_org"]
+
+            # 3) Guard: the application must be for that org
+            if app_org_id != org_id:
+                conn.rollback()
+                return build_response(
+                    400,
+                    f"Application {application_id} targets org {app_org_id}, which does not match sponsor org {org_id}."
+                )
+
+            # 4) Update application status and note
             cur.execute("""
-                INSERT INTO Point_Transactions
-                    (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_date)
-                VALUES (%s, %s, %s, %s, %s, NOW())
-            """, (driver, delta, new_balance, reason, sponsor))
+                UPDATE Applications
+                SET app_status  = %s,
+                    app_note    = %s,
+                    app_dateupdated = NOW()
+                WHERE app_id = %s
+            """, (new_status, note, application_id))
+
+            # 5) On approve: ensure Sponsorship exists (create if absent)
+            if new_status == "approved":
+                cur.execute("""
+                    SELECT 1
+                    FROM Sponsorships
+                    WHERE spo_user = %s
+                        AND spo_org  = %s
+                        AND spo_isdeleted = 0
+                    LIMIT 1
+                """, (driver_id, org_id))
+                if not cur.fetchone():
+                    cur.execute("""
+                        INSERT INTO Sponsorships (spo_user, spo_org, spo_pointbalance, spo_isdeleted)
+                        VALUES (%s, %s, %s, 0)
+                    """, (driver_id, org_id, 0))
 
             conn.commit()
+
             return build_response(200, {
-                "message": f"User {driver} point balance adjusted by {delta} from {old_balance} to {new_balance}."
+                "message": f"Application {new_status}.",
+                "application_id": application_id,
+                "driver": driver_id,
+                "org": org_id
             })
+
         except Exception as e:
             conn.rollback()
             raise
+
+
+def post_point_adjustment(body):
+    # Parse and validate input
+    body = json.loads(body) or {}
+    driver = body.get("driver_id")
+    sponsor_user = body.get("sponsor_id")
+    reason = body.get("reason", "")
+    delta = body.get("delta")
+
+    # Validate
+    missing = [k for k, v in {
+        "driver_id": driver,
+        "sponsor_id": sponsor_user,
+        "delta":     delta,
+        "reason":    reason
+    }.items() if v is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    try:
+        delta = int(delta)
+    except (TypeError, ValueError):
+        return build_response(400, "Field 'delta' must be an integer")
+
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+            
+            # derive org from sponsor user's active sponsorships
+            cur.execute("""
+                SELECT spo_org
+                FROM Sponsorships
+                WHERE spo_user = %s
+                    AND spo_isdeleted = 0
+            """, (sponsor_user,))
+            sponsor_org_rows = cur.fetchall()
+            if not sponsor_org_rows:
+                conn.rollback()
+                return build_response(404, f"No active organization found for sponsor user {sponsor_user}.")
+            if len(sponsor_org_rows) > 1:
+                conn.rollback()
+                return build_response(
+                    409,
+                    "Sponsor user is associated with multiple organizations; provide 'org' in the request body."
+                )
+            org_id = sponsor_org_rows[0]["spo_org"]
+
+            # Lock the driver's sponsorship row for that org and update balance
+            cur.execute("""
+                SELECT s.spo_pointbalance AS balance
+                FROM Sponsorships s
+                WHERE s.spo_user = %s
+                    AND s.spo_org  = %s
+                    AND s.spo_isdeleted = 0
+                FOR UPDATE
+            """, (driver, org_id))
+            row = cur.fetchone()
+            if not row:
+                conn.rollback()
+                return build_response(
+                    404,
+                    f"Sponsorship not found for user {driver} and org {org_id} (derived from sponsor user {sponsor_user})."
+                )
+
+            old_balance = int(row["balance"] or 0)
+            new_balance = max(old_balance + delta, 0)
+
+            cur.execute("""
+                UPDATE Sponsorships
+                SET spo_pointbalance = %s
+                WHERE spo_user = %s
+                    AND spo_org  = %s
+                    AND spo_isdeleted = 0
+            """, (new_balance, driver, org_id))
+
+            # Log transaction (ptr_sponsorid here represents ORG context)
+            cur.execute("""
+                INSERT INTO Point_Transactions
+                    (ptr_driverid, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_sponsorid, ptr_org, ptr_date)
+                VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            """, (driver, delta, new_balance, reason, sponsor_user, org_id))
+
+            conn.commit()
+            return build_response(200, {
+                "message": (
+                    f"Sponsorship (org {org_id}) balance adjusted by {delta} for user {driver}: "
+                    f"{old_balance} → {new_balance} (derived from sponsor user {sponsor_user})."
+                ),
+                "driver_id": driver,
+                "sponsor_user_id": sponsor_user,
+                "org_id": org_id,
+                "delta": delta,
+                "old_balance": old_balance,
+                "new_balance": new_balance
+            })
+        except Exception as e:
+            conn.rollback()
+            raise e
         
 def post_catalog_rules(body):
     body = json.loads(body) or {}
@@ -556,6 +731,25 @@ def post_catalog_rules(body):
     })
 
 # ==== GET ==============================================================================
+def get_driver_transactions(queryParams):
+    driverID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_driverid = %s
+            AND ptr_isdeleted = 0
+        """, driverID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
@@ -582,63 +776,78 @@ def get_organizations():
             ORDER BY org_name
         """)
         result = cur.fetchall()
-        print("DEBUG - Organizations result:", result) 
+        
         org_names = [item["org_name"] for item in result]
         return build_response(200, org_names)
 
 def get_user(queryParams):
-    # returns users matching id/org/status/role params
-    # only returns non-deleted users
     queryParams = queryParams or {}
-    conditions = ["usr_isdeleted = 0"]
+    conditions = ["u.usr_isdeleted = 0"]
     values = []
 
     usr_id = queryParams.get("id")
     if usr_id is not None:
-        conditions.append("usr_id = %s")
+        conditions.append("u.usr_id = %s")
         values.append(usr_id)
 
     org = queryParams.get("org")
     if org is not None:
-        conditions.append("usr_organization = %s")
+        conditions.append("""
+            EXISTS (
+                SELECT 1
+                FROM Sponsorships s2
+                WHERE s2.spo_user = u.usr_id
+                    AND s2.spo_org = %s
+                    AND s2.spo_isdeleted = 0
+            )   
+        """)
         values.append(org)
 
-    status = queryParams.get("status")
-    if status is not None:
-        conditions.append("usr_status = %s")
-        values.append(status)
-        
     role = queryParams.get("role")
     if role is not None:
-        conditions.append("usr_role = %s")
+        conditions.append("u.usr_role = %s")
         values.append(role)
 
-    if not values:
-        raise Exception("Missing required query parameter: must provide at least one of id, org, status, role")
+    if not (usr_id is not None or org is not None or role is not None):
+        raise Exception("Missing required query parameter: must provide at least one of id, org, role")
 
     sql = f"""
-        SELECT 
-            usr_id AS "User ID",                usr_email AS "Email",
-            usr_role AS "Role",                 usr_organization AS "Organization",
-            usr_status AS "Status",             usr_pointbalance AS "Point Balance",
-            usr_firstname AS "First Name",      usr_lastname AS "Last Name", 
-            usr_employeeid AS "Employee ID",    usr_license AS "License",
-            usr_phone AS "Phone",               usr_address AS "Address",
-            usr_securityquestion AS "Security Question",
-            org_name AS "Organization Name",    org_conversionrate AS "Convert"
-
-        FROM Users 
-            JOIN Organizations 
-            ON usr_organization = org_id
+        SELECT
+            u.usr_id         AS "User ID",
+            u.usr_email      AS "Email",
+            u.usr_role       AS "Role",
+            u.usr_firstname  AS "First Name",
+            u.usr_lastname   AS "Last Name",
+            u.usr_employeeid AS "Employee ID",
+            u.usr_license    AS "License",
+            u.usr_phone      AS "Phone",
+            u.usr_address    AS "Address",
+            u.usr_securityquestion AS "Security Question",
+            COALESCE((
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'org_id',        o.org_id,
+                        'org_name',      o.org_name,
+                        'spo_pointbalance', s.spo_pointbalance
+                    )
+                )
+                FROM Sponsorships s
+                JOIN Organizations o ON o.org_id = s.spo_org
+                WHERE s.spo_user = u.usr_id
+                    AND s.spo_isdeleted = 0
+            ), JSON_ARRAY()) AS "Organizations"
+        FROM Users u
         WHERE {" AND ".join(conditions)}
     """
 
     with conn.cursor() as cur:
-        cur.execute(
-            sql, 
-            values
-        )
+        cur.execute(sql, tuple(values))
         users = cur.fetchall()
+        
+        # turn organizations list from JSON string to list
+        for user in users:
+            orgs_json = user.get("Organizations")
+            user["Organizations"] = json.loads(orgs_json) if orgs_json else []
 
     if users:
         return build_response(200, users)
@@ -818,12 +1027,16 @@ def lambda_handler(event, context):
             response = get_products(queryParams)
         elif (method == "GET" and path == "/catalog_rules"):
             response = get_catalog_rules(queryParams)
+        elif (method == "GET" and path == "/driver_transactions"):
+            response = get_driver_transactions(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
             response = delete_user(queryParams)
         
         # POST
+        elif (method == "POST" and path == "/signup"):
+            response = post_signup(body)
         elif (method == "POST" and path == "/login"):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
