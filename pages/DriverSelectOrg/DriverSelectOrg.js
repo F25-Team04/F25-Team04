@@ -67,7 +67,7 @@ window.onload = function () {
             org_div.appendChild(title);
             list.appendChild(org_div)
         }
-        for (var org of orgs) {
+        for (let org of orgs) {
             const org_div = document.createElement("div")
             org_div.id = "org_div"
             org_div.classList.add("org_div");
