@@ -2,6 +2,7 @@ const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 
 let isDirty = false;
+let bypassLeavePrompt = false;
 
 function enhanceNav() {
   // Try the common nav UL; fall back to #links if present
@@ -23,7 +24,7 @@ function enhanceNav() {
   navUl.appendChild(li);
 }
 
-function collectUpdates(form) {
+async function collectUpdates(form) {
   const fd = new FormData(form);
   const updates = {};
   for (const [key, value] of fd.entries()) {
@@ -58,7 +59,7 @@ window.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("reset", () => { isDirty = false; });
 
   window.addEventListener("beforeunload", (e) => {
-    if (!isDirty) return;
+    if (!isDirty || bypassLeavePrompt) return;
     e.preventDefault();
     e.returnValue = "";
   });
@@ -68,12 +69,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (!USER_ID) {
       alert("Missing user id in URL.");
-      return;
-    }
-
-    const updates = collectUpdates(form);
-    if (Object.keys(updates).length === 0) {
-      alert("Enter at least one field to update.");
       return;
     }
 
