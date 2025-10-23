@@ -913,6 +913,25 @@ def get_application(queryParams):
     else:
         return build_response(404, "No applications match the given parameters.")
 
+def get_driver_transactions(queryParams):
+    driverID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_driverid = %s
+            AND ptr_isdeleted = 0
+        """, driverID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
 def get_security_questions():
     # returns list of security questions
     with conn.cursor() as cur:
@@ -1064,6 +1083,8 @@ def lambda_handler(event, context):
             response = get_catalog_rules(queryParams)
         elif (method == "GET" and path == "/application"):
             response = get_application(queryParams)
+        elif (method == "GET" and path == "/driver_transactions"):
+            response = get_driver_transactions(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
