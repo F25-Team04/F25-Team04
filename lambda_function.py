@@ -478,7 +478,6 @@ def post_leave_organization(body):
 
     if affected:
         return build_response(200, {
-            "success": True,
             "message": f"Driver {driver_id} has left organization {org_id}."
         })
     else:
