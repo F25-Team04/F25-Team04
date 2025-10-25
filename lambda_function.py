@@ -457,6 +457,33 @@ def post_application(body):
         "message": "Application submitted"
     })
 
+def post_leave_organization(body):
+    body = json.loads(body) or {}
+    driver_id = body.get("driver_id")
+    org_id = body.get("org_id")
+
+    if driver_id is None or org_id is None:
+        raise Exception("Missing required field(s): driver_id, org_id")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Sponsorships
+            SET spo_isdeleted = 1
+            WHERE spo_user = %s
+                AND spo_org = %s
+                AND spo_isdeleted = 0
+        """, (driver_id, org_id))
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"Driver {driver_id} has left organization {org_id}."
+        })
+    else:
+        return build_response(404, f"No active sponsorship found for driver {driver_id} in organization {org_id}.")
+
 def post_point_rule(body):
     body = json.loads(body) or {}
     org = body.get("org")
@@ -1111,6 +1138,8 @@ def lambda_handler(event, context):
             response = post_point_adjustment(body)
         elif (method == "POST" and path == "/catalog_rules"):
             response = post_catalog_rules(body)
+        elif (method == "POST" and path == "/leave_organization"):
+            response = post_leave_organization(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
