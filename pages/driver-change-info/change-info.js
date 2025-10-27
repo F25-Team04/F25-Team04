@@ -24,7 +24,7 @@ function enhanceNav() {
   navUl.appendChild(li);
 }
 
-async function collectUpdates(form) {
+function collectUpdates(form) {
   const fd = new FormData(form);
   const updates = {};
   for (const [key, value] of fd.entries()) {
@@ -39,6 +39,7 @@ async function collectUpdates(form) {
       default: break;
     }
   }
+  updates.id = USER_ID;
   return updates;
 }
 
@@ -65,7 +66,9 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   form.addEventListener("submit", async (e) => {
+    const updates = collectUpdates(form);
     e.preventDefault();
+    const body = JSON.stringify(updates);
 
     if (!USER_ID) {
       alert("Missing user id in URL.");
@@ -76,7 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/update_user?id=" + USER_ID, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: USER_ID, updates }),
+        body: body,
       });
       if (!resp.ok) {
         const txt = await resp.text();
