@@ -1,24 +1,41 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
+const ORG_ID = params.get("org");
 
 let isDirty = false;
 
 function enhanceNav() {
   // Try the common nav UL; fall back to #links if present
-  const navUl = document.querySelector("nav .nav-container ul") || document.getElementById("links");
+  const navUl =
+    document.querySelector("nav .nav-container ul") ||
+    document.getElementById("links");
   if (!navUl) return;
 
   const li = document.createElement("li");
+  var aboutPage = this.document.getElementById("aboutPage");
+  aboutPage.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
 
   const dash = document.createElement("a");
-  dash.href = "../driver/driver.html?id=" + USER_ID;
+  dash.href = "../driver/driver.html?id=" + USER_ID + "&org=" + ORG_ID;
   dash.textContent = "Dashboard";
   li.appendChild(dash);
 
   const store = document.createElement("a");
-  store.href = "../DriverStorePage/DriverStore.html?id=" + USER_ID;
+  store.href =
+    "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+
+  const account = document.createElement("a");
+  account.href =
+    "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
+  account.textContent = "Update Account Info";
+  li.appendChild(account);
+
+  const switchOrg = document.createElement("a");
+  switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
+  switchOrg.textContent = "Switch Organization";
+  li.appendChild(switchOrg);
 
   navUl.appendChild(li);
 }
@@ -30,12 +47,23 @@ function collectUpdates(form) {
     const v = (value || "").trim();
     if (!v) continue;
     switch (key) {
-      case "phone":   updates.phone = v; break;
-      case "fname":   updates.firstName = v; break;
-      case "lname":   updates.lastName = v; break;
-      case "dln":     updates.driverLicenseNumber = v; break;
-      case "address": updates.address = v; break;
-      default: break;
+      case "phone":
+        updates.phone = v;
+        break;
+      case "fname":
+        updates.firstName = v;
+        break;
+      case "lname":
+        updates.lastName = v;
+        break;
+      case "dln":
+        updates.driverLicenseNumber = v;
+        break;
+      case "address":
+        updates.address = v;
+        break;
+      default:
+        break;
     }
   }
   return updates;
@@ -49,13 +77,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
   const markDirty = () => {
     // dirty if any field has a non-empty value
-    isDirty = Array.from(form.querySelectorAll("input, textarea, select"))
-      .some(el => (el.value || "").trim() !== "");
+    isDirty = Array.from(form.querySelectorAll("input, textarea, select")).some(
+      (el) => (el.value || "").trim() !== ""
+    );
   };
 
   form.addEventListener("input", markDirty);
   form.addEventListener("change", markDirty);
-  form.addEventListener("reset", () => { isDirty = false; });
+  form.addEventListener("reset", () => {
+    isDirty = false;
+  });
 
   window.addEventListener("beforeunload", (e) => {
     if (!isDirty) return;
@@ -78,11 +109,15 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/update_user?id=" + USER_ID, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: USER_ID, updates }),
-      });
+      const resp = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/update_user?id=" +
+          USER_ID,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: USER_ID, updates }),
+        }
+      );
       if (!resp.ok) {
         const txt = await resp.text();
         throw new Error(`Update failed: ${resp.status} ${txt}`);
