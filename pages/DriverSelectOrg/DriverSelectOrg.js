@@ -35,6 +35,23 @@ window.onload = function () {
       console.error("Error:", error);
     }
   }
+  async function leaveOrganization(orgID, cardEL) {
+    try {
+      const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/leave_organization", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify( { driver_id: USER_ID, org_id: orgID }),
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(`Leave failed: ${response.status} ${message}`);
+      }
+      cardEL.remove();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to leave organization. Please try again.");
+    }
+  }
   function AddEffectsToButtons(org_div) {
     org_div.addEventListener("mouseenter", () => {
       org_div.style.backgroundColor = "#ffffffff";
@@ -84,6 +101,21 @@ window.onload = function () {
       currentPoints.textContent = "Current Points: " + org["spo_pointbalance"];
       AddEffectsToButtons(org_div);
 
+      // Leave button
+      const leaveBtn = document.createElement("button");
+      leaveBtn.className = "leave-btn";
+      leaveBtn.textContent = "Leave";
+      leaveBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const ok = confirm(`Leave ${org["org_name"]}?`);
+        if (!ok) return;
+        leaveBtn.disabled = true;
+        leaveOrganization(org["org_id"], org_div).finally(() => {
+          leaveBtn.disabled = false;
+        });
+      });
+
       org_div.addEventListener("click", () => {
         // Gonna be the application page eventually
         window.location =
@@ -91,6 +123,7 @@ window.onload = function () {
       });
       org_div.appendChild(title);
       org_div.appendChild(currentPoints);
+      org_div.appendChild(leaveBtn);
       list.appendChild(org_div);
     }
   }

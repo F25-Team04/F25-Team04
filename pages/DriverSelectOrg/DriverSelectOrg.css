@@ -39,3 +39,22 @@ h1 {
     position: relative;
     top: 10px;
 }
+
+#org_div .leave-btn {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+}
+
+.leave-btn {
+  padding: 6px 10px;
+  background-color: #E7465B;
+  border-radius: 8px;
+  border: 1px solid #000000;
+  font-weight: 700;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+.leave-btn:hover { background-color: #fff; }
+.leave-btn:disabled { opacity: .6; cursor: not-allowed; }
