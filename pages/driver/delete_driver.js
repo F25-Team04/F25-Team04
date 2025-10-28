@@ -3,6 +3,56 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
+  // Dollars conversion state;
+  let DollarsPerPoint = null; // dollars for 1 point
+  let CurrentPoints = null;
+
+  function formatUSD(amount) {
+    return amount.toLocaleString(undefined, { style: "currency", currency: "USD" });
+  }
+
+  function updateBalanceDollars() {
+    const dollarsEl = document.getElementById("balance-dollars");
+    if (!dollarsEl || CurrentPoints == null || DollarsPerPoint == null) return;
+    const dollars = Number(CurrentPoints) * Number(DollarsPerPoint);
+    dollarsEl.textContent = `(${formatUSD(dollars)})`;
+  }
+
+  async function fetchConversion(orgId) {
+    if (!orgId) return;
+    try {
+      const resp = await fetch(`https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organization_pts_conversion?org_id=${encodeURIComponent(orgId)}`, { method: "GET" });
+      if (!resp.ok) {
+        console.error("Conversion fetch failed:", resp.status);
+        return;
+      }
+      // Prefer JSON with org_conversionrate; fallback to plain text number
+      let rate = null;
+      const ctype = resp.headers.get("content-type") || "";
+      if (ctype.includes("application/json")) {
+        const data = await resp.json();
+        rate = parseFloat(
+          data.org_conversionrate ??
+          data.convert ??
+          data.rate ??
+          data.value
+        );
+      } else {
+        rate = parseFloat((await resp.text()).trim());
+      }
+      if (!Number.isFinite(rate)) {
+        console.warn("Invalid conversion rate returned for org:", orgId);
+        return;
+      }
+      DollarsPerPoint = rate; // dollars per point
+      updateBalanceDollars();
+    } catch (e) {
+      console.error("Error fetching conversion:", e);
+    }
+  }
+
+  fetchConversion(ORG_ID);
+
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
 
@@ -61,6 +111,9 @@ window.onload = function () {
         place.innerHTML = org["org_name"];
         place = document.getElementById("balance");
         place.innerHTML = org["spo_pointbalance"];
+        place = document.getElementById("balance-dollars");
+        CurrentPoints = Number(org["spo_pointbalance"] || 0);
+        updateBalanceDollars();
       }
     }
 
@@ -99,7 +152,6 @@ window.onload = function () {
       }
       newDiv.style.padding = "10px";
 
-      // 3. Append the new div to the parent div
       area.appendChild(newDiv);
     }
   }
@@ -129,6 +181,7 @@ window.onload = function () {
         const result = await response.json();
         const text1 = result[0].Email;
         fillScreen(result[0]);
+        updateBalanceDollars();
       } else {
         //alert("Password or Email is Incorrect  ");
         const text = await response.text();
