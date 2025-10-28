@@ -27,7 +27,7 @@ function enhanceNav() {
   li.appendChild(switchOrg);
 
   const appHistory = document.createElement("a");
-  appHistory.href = "../AppHistory/AppHistory.html";
+  appHistory.href = "../AppHistory/AppHistory.html?id=" + USER_ID;
   appHistory.textContent = "Application History";
   li.appendChild(appHistory);
 
