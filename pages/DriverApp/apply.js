@@ -1,6 +1,5 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
-const ORG_ID = params.get("org")
 
 function enhanceNav() {
   // Try the common nav UL; fall back to #links if present
@@ -12,19 +11,13 @@ function enhanceNav() {
   const li = document.createElement("li");
 
   const dash = document.createElement("a");
-  dash.href = "../driver/driver.html?id=" + USER_ID + "&org=" + ORG_ID;
+  dash.href = "../driver/driver.html?id=" + USER_ID;
   dash.textContent = "Dashboard";
   li.appendChild(dash);
 
-  const store = document.createElement("a");
-  store.href =
-    "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
-  store.textContent = "Store";
-  li.appendChild(store);
-
   const account = document.createElement("a");
   account.href =
-    "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
+    "../driver-change-info/change-info.html?id=" + USER_ID;
   account.textContent = "Update Account Info";
   li.appendChild(account);
 
@@ -32,6 +25,11 @@ function enhanceNav() {
   switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
   switchOrg.textContent = "Switch Organization";
   li.appendChild(switchOrg);
+
+  const appHistory = document.createElement("a");
+  appHistory.href = "../AppHistory/AppHistory.html";
+  appHistory.textContent = "Application History";
+  li.appendChild(appHistory);
 
   navUl.appendChild(li);
 }

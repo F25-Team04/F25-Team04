@@ -4,6 +4,23 @@ const USER_ID = params.get("id");
 window.onload = function () {
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
+  const dash = document.createElement("a");
+  dash.href = "../driver/driver.html?id=" + USER_ID;
+  dash.textContent = "Dashboard";
+  li.appendChild(dash);
+  const account = document.createElement("a");
+  account.href =
+    "../driver-change-info/change-info.html?id=" + USER_ID;
+  account.textContent = "Update Account Info";
+  li.appendChild(account);
+  const switchOrg = document.createElement("a");
+  switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
+  switchOrg.textContent = "Switch Organization";
+  li.appendChild(switchOrg);
+  const appHistory = document.createElement("a");
+  appHistory.href = "../AppHistory/AppHistory.html";
+  appHistory.textContent = "Application History";
+  li.appendChild(appHistory);
   var aboutPage = this.document.getElementById("aboutPage");
   aboutPage.href = "../about/about.html?id=" + USER_ID;
   const link = document.createElement("a");
