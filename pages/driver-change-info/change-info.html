@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html>
-    <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Change Driver Information</title>
-    <link rel="stylesheet" href="../../css/global.css">
-    <link rel="stylesheet" href="change-info.css">
-    <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="../../css/global.css" />
+    <link rel="stylesheet" href="change-info.css" />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
     <script type="text/javascript" src="change-info.js"></script>
   </head>
 
@@ -16,39 +19,40 @@
       <nav class="navbar">
         <div class="nav-container">
           <div class="nav-brand">
-            <a href="../../index.html"><img class="brand-logo" src="../../assets/car-logo-flipped.png"></a>
-            <a href="../../index.html"><img class="brand-name" src="../../assets/revvy.png"></a>
+            <a href="../../index.html"
+              ><img class="brand-logo" src="../../assets/car-logo-flipped.png"
+            /></a>
+            <a href="../../index.html"
+              ><img class="brand-name" src="../../assets/revvy.png"
+            /></a>
           </div>
-          <ul>
-            <li><a href="../about/about.html">About</a></li>
+          <ul id="list">
+            <li><a href="../about/about.html" id="aboutPage">About</a></li>
           </ul>
         </div>
       </nav>
     </header>
 
     <form action="" id="changeInfoForm">
-        <div class="section-title">
-            <h3>Change Driver Information</h3>
-            <p class="instructions">Only input the fields you want to change.</p>
-        </div>
+      <div class="section-title">
+        <h3>Change Driver Information</h3>
+        <p class="instructions">Only input the fields you want to change.</p>
+      </div>
 
-        <div class="driverInfo">
-            <p>Phone Number</p>
-            <input name="phone" type="tel" placeholder="(XXX) XXX-XXXX">
-            <p>First Name</p>
-            <input name="fname" type="text" placeholder="First name">
-            <p>Last Name</p>
-            <input name="lname" type="text" placeholder="Last name">
-            <p>Driver's License Number</p>
-            <input name="dln" type="text" placeholder="DL#">
-            <label for="address">Address</label>
-            <input name="address" placeholder="Address" type="text">
-        </div>
+      <div class="driverInfo">
+        <p>Phone Number</p>
+        <input name="phone" type="tel" placeholder="(XXX) XXX-XXXX" />
+        <p>First Name</p>
+        <input name="fname" type="text" placeholder="First name" />
+        <p>Last Name</p>
+        <input name="lname" type="text" placeholder="Last name" />
+        <p>Driver's License Number</p>
+        <input name="dln" type="text" placeholder="DL#" />
+        <label for="address">Address</label>
+        <input name="address" placeholder="Address" type="text" />
+      </div>
 
-        <button type="submit" class="btn">Submit Changes</button>
+      <button type="submit" class="btn">Submit Changes</button>
     </form>
-    <a class="logout-btn" href="../../index.html">
-      <button type="logout" class="btn">Logout</button>
-    </a>
   </body>
 </html>

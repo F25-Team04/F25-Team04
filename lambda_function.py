@@ -460,6 +460,32 @@ def post_application(body):
         "message": "Application submitted"
     })
 
+def post_leave_organization(body):
+    body = json.loads(body) or {}
+    driver_id = body.get("driver_id")
+    org_id = body.get("org_id")
+
+    if driver_id is None or org_id is None:
+        raise Exception("Missing required field(s): driver_id, org_id")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Sponsorships
+            SET spo_isdeleted = 1
+            WHERE spo_user = %s
+                AND spo_org = %s
+                AND spo_isdeleted = 0
+        """, (driver_id, org_id))
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"Driver {driver_id} has left organization {org_id}."
+        })
+    else:
+        return build_response(404, f"No active sponsorship found for driver {driver_id} in organization {org_id}.")
+
 def post_point_rule(body):
     body = json.loads(body) or {}
     org = body.get("org")
@@ -507,6 +533,20 @@ def post_decision(body):
     with conn.cursor() as cur:
         try:
             conn.begin()
+
+            # 1) Lock and load the application
+            cur.execute("""
+                SELECT app_id, app_driver, app_org, app_status
+                FROM Applications
+                WHERE app_id = %s
+                    AND app_isdeleted = 0
+                FOR UPDATE
+            """, (application_id,))
+            app = cur.fetchone()
+            if not app:
+                conn.rollback()
+                return build_response(404, "Application not found")
+
 
             # 1) Lock and load the application
             cur.execute("""
@@ -878,6 +918,82 @@ def get_point_rules(queryParams):
     else:
         return build_response(404, f"No point rules found for organization: {org}")
 
+def get_application(queryParams):
+    queryParams = queryParams or {}
+    conditions = ["app_isdeleted = 0"]
+    values = []
+
+    usr_id = queryParams.get("id")
+    if usr_id is not None:
+        conditions.append("usr_id = %s")
+        values.append(usr_id)
+
+    org = queryParams.get("org")
+    if org is not None:
+        conditions.append("app_org = %s")        
+        values.append(org)
+
+    status = queryParams.get("status")
+    if status is not None:
+        conditions.append("app_status = %s")
+        values.append(status)
+
+    if not (usr_id is not None or org is not None):
+        raise Exception("Missing required query parameter: must provide at least one of id, org")
+
+    sql = f"""
+        SELECT
+            app_id          AS "Application ID",
+            app_status      AS "Status",
+            app_datecreated AS "Date Created",
+            app_dateupdated AS "Date Updated",
+            app_note        AS "Note",
+            
+            app_driver      AS "User ID",
+            usr_firstname   AS "First Name",
+            usr_lastname    AS "Last Name",
+            usr_employeeid  AS "Employee ID",
+            usr_license     AS "License",
+            usr_email       AS "Email",
+            usr_phone       AS "Phone",
+            usr_address     AS "Address",
+            
+            app_org         AS "Organization ID",
+            org_name        AS "Organization Name"
+        FROM Applications
+            JOIN Users ON Users.usr_id = Applications.app_driver
+            JOIN Organizations ON Organizations.org_id = Applications.app_org
+        WHERE {" AND ".join(conditions)}
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(sql, tuple(values))
+        applications = cur.fetchall()
+
+    if applications:
+        return build_response(200, applications)
+    else:
+        return build_response(404, "No applications match the given parameters.")
+
+def get_driver_transactions(queryParams):
+    driverID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_driverid = %s
+            AND ptr_isdeleted = 0
+        """, driverID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
 def get_security_questions():
     # returns list of security questions
     with conn.cursor() as cur:
@@ -1027,6 +1143,8 @@ def lambda_handler(event, context):
             response = get_products(queryParams)
         elif (method == "GET" and path == "/catalog_rules"):
             response = get_catalog_rules(queryParams)
+        elif (method == "GET" and path == "/application"):
+            response = get_application(queryParams)
         elif (method == "GET" and path == "/driver_transactions"):
             response = get_driver_transactions(queryParams)
 
@@ -1055,6 +1173,8 @@ def lambda_handler(event, context):
             response = post_point_adjustment(body)
         elif (method == "POST" and path == "/catalog_rules"):
             response = post_catalog_rules(body)
+        elif (method == "POST" and path == "/leave_organization"):
+            response = post_leave_organization(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
