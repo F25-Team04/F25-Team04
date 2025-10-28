@@ -71,6 +71,12 @@ window.onload = function () {
       console.error("There was a problem with the fetch operation:", error);
     });
 
+  document.getElementById("link").addEventListener("click", (e) => {
+    e.preventDefault();
+    const url = "../AppHistory/AppHistory.html?id=" + USER_ID;
+    window.location.href = url;
+  });
+
   document
     .getElementById("appForm")
     .addEventListener("submit", async function (event) {
