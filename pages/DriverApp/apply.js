@@ -89,14 +89,14 @@ window.onload = function () {
         return;
       }
 
-        const fd = new FormData(event.target);
-        const note = (fd.get("note") || "").toString().trim();
+      const fd = new FormData(event.target);
+      const note = (fd.get("note") || "").toString().trim();
 
-        const body = {
-            user: USER_ID,
-            org: orgId,
-            app_note: note
-        };
+      const body = {
+        user: USER_ID,
+        org: orgId,
+        app_note: note,
+      };
 
       try {
         const response = await fetch(
@@ -111,6 +111,7 @@ window.onload = function () {
         const ans = await response.json();
         if (ans.success === true) {
           alert("Application submitted succesfully.");
+          GetApplications();
         } else {
           alert(ans.message);
         }

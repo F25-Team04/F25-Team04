@@ -51,7 +51,7 @@ window.onload = function () {
   li.appendChild(switchOrg);
 
   const apply = document.createElement("a");
-  apply.href = "../DriverApp/apply.html?id=" + USER_ID;
+  apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
   apply.textContent = "Apply";
   li.appendChild(apply);
   list.appendChild(li);
