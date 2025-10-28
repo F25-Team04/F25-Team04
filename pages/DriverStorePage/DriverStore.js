@@ -29,6 +29,10 @@ window.onload = function () {
   switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
   switchOrg.textContent = "Switch Organization";
   li.appendChild(switchOrg);
+  const apply = document.createElement("a");
+  apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
+  apply.textContent = "Apply";
+  li.appendChild(apply);
   list.appendChild(li);
 
   async function GetShop() {
