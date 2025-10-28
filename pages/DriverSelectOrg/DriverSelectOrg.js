@@ -8,7 +8,7 @@ window.onload = function () {
   aboutPage.href = "../about/about.html?id=" + USER_ID;
   const link = document.createElement("a");
   //Eventually is going to lead to the application page
-  link.href = "../driver/driver.html?id=" + USER_ID;
+  link.href = "../DriverApp/apply.html?id=" + USER_ID;
   link.textContent = "Apply";
   li.appendChild(link);
   list.appendChild(li);
