@@ -121,8 +121,7 @@ window.onload = function () {
 
       org_div.addEventListener("click", () => {
         // Gonna be the application page eventually
-        window.location =
-          "..\\driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
+        window.location = "..\\DriverApp\\apply.html?id=" + USER_ID;
       });
       org_div.appendChild(title);
       org_div.appendChild(currentPoints);
