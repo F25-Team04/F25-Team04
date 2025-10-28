@@ -6,6 +6,7 @@ let PointConversionRate;
 let currentPage = 1;
 const ITEMS_PER_PAGE = 8;
 let storeItems = [];
+
 window.onload = function () {
   var list = this.document.getElementById("links");
   var aboutPage = this.document.getElementById("aboutPage");
@@ -120,8 +121,15 @@ window.onload = function () {
       pointsText.textContent = " points";
       productCost.append(rewardsIcon, pointsValue, pointsText);
 
+      var orderButton = document.createElement("button");
+      orderButton.innerText = "Order Item";
+      orderButton.addEventListener("click", function () {
+        GenerateOrderSummary(product, PricePoints);
+      });
+
       metaRow.appendChild(productRating);
       metaRow.appendChild(productCost);
+      metaRow.appendChild(orderButton);
 
       content.appendChild(productName);
       content.appendChild(metaRow);
@@ -147,6 +155,13 @@ window.onload = function () {
       wrap.appendChild(iEl);
     }
     return wrap;
+  }
+
+  function GenerateOrderSummary(prod, cost) {
+    document.getElementById("order_img").src = prod["image"];
+    document.getElementById("order_address").innerText = User["Address"];
+    document.getElementById("order_product").innerText = prod["title"];
+    document.getElementById("order_cost").innerText = cost;
   }
 
   function renderPage() {
@@ -232,6 +247,7 @@ window.onload = function () {
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
+          User = result[0];
           PointConversionRate = result[0]["Convert"];
           SetPoints(result[0]["Point Balance"]);
         }
