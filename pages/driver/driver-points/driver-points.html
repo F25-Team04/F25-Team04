@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Store</title>
+    <title>Your Points</title>
     <link rel="stylesheet" href="../../../css/global.css">
     <link rel="stylesheet" href="driver-points.css">
     <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
@@ -25,6 +25,22 @@
       </nav>
     </header>
 
-    <h1>This page is under contruction! Sorry!!</h1>
+    <div class="points-header">
+      <div class="title-div">
+        <i class='bx  bx-trophy-star title-icon'  style='color:#1ED760'></i>
+        <h1 class="points-title">My Points</h1>
+      </div>
+      <div class="points-card">
+        <i class='bx  bx-medal-star-alt rewards-icon'  ></i> 
+        <div class="points-section">
+          <span>Available Points</span>
+          <h2 id="points" class="points-num"></h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="points-content">
+      <div id="transactions"></div>
+    </div>
   </body>
 </html>

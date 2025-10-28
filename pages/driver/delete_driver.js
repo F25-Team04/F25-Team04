@@ -34,13 +34,11 @@ window.onload = function () {
 
   list.appendChild(li);
 
-  const id = new URLSearchParams(location.search).get("id");
-  document.querySelector(
-    ".points-header"
-  ).href = `driver-points/driver-points.html?id=${encodeURIComponent(id)}`;
-  document.querySelector(
-    ".orders-header"
-  ).href = `driver-orders/driver-orders.html?id=${encodeURIComponent(id)}`;
+  const pointsEl = document.querySelector(".points-header");
+  pointsEl.href = `driver-points/driver-points.html?id=${encodeURIComponent(USER_ID)}` + (`&org=${encodeURIComponent(ORG_ID)}`);
+
+  const ordersEl = document.querySelector(".orders-header");
+  ordersEl.href = `driver-orders/driver-orders.html?id=${encodeURIComponent(USER_ID)}` + (`&org=${encodeURIComponent(ORG_ID)}`);
 
   function fillScreen(driverInfo) {
     place = document.getElementById("name");

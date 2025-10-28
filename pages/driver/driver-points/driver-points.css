@@ -3,3 +3,63 @@
     padding: 0;
     box-sizing: border-box;
 }
+
+.points-card {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    align-items: center;
+    justify-self: center;
+    background-color: var(--revvy-green);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin: 24px;
+    padding: 16px;
+    border-bottom: 4px solid var(--revvy-black);
+    border-right: 4px solid var(--revvy-black);
+}
+
+.points-card span {
+    font-weight: 500;
+}
+
+.points-num {
+    font-size: 32px;
+}
+
+.rewards-icon {
+    font-size: 32px;
+}
+
+.points-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.points-content {
+    background-color: var(--muted-background);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 24px;
+    width: 720px;
+    justify-self: center;
+}
+
+.points-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 200px;
+}
+
+.title-div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.title-icon {
+    font-size: 48px;
+}
