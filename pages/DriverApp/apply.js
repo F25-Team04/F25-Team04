@@ -49,10 +49,18 @@ function enhanceNav() {
 
 function generateOrgs(orgs) {
   const dropdown = document.getElementById("dropdown");
+  if (!dropdown) return;
+  dropdown.innerHTML = ""; // clear any previous options
+
   orgs.forEach((org, idx) => {
     const option = document.createElement("option");
-    option.value = org;
-    option.dataset.id = String(idx + 1);
+    const label =
+      (org && typeof org === "object")
+        ? (org.org_name ?? org.name ?? `Org ${idx + 1}`)
+        : String(org);
+
+    option.value = label;            // show name in the UI
+    option.dataset.id = String(idx + 1); // keep 1-based org id to submit
     dropdown.appendChild(option);
   });
 }
