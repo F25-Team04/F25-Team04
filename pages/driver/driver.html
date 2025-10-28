@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="driver.css">
   <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
   <script type="text/javascript" src="driver.js"></script>
+  <script src="delete_driver.js"></script>
 </head>
 
 <body>
@@ -53,9 +54,13 @@
         <a href="driver-points/driver-points.html" class="points-header">
           <h3>Recent Points Transactions</h3>
           <p>Here's how you've been earning and using your points</p>
+          <form id = "showLoss" >
+            <label for="show">Only Show Losses</label>
+            <input type="checkbox", name="show">
+          </form>
         </a>
         <div class="points-content">
-          <div id="recentTransacctions"></div>
+          <div id="recentTransactions"></div>
           <div class="transaction"></div>
         </div>
       </div>
@@ -93,7 +98,6 @@
     <input type="submit" value= "confirm">
   </form> -->
 
-  <script src="delete_driver.js"></script>
 
 </body>
 

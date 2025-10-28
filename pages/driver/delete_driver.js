@@ -65,6 +65,46 @@ window.onload = function () {
     }!`;
   }
 
+  function fillTransactions(transactionInfo){
+    const data = transactionInfo
+    area = document.getElementById("recentTransactions")
+    numTrans = data.length
+
+
+    for (i = 0; i < numTrans; ++i){
+      const newDiv  = document.createElement('div');
+
+      const newp = document.createElement('p');
+      newp.textContent = "Amount: " + data[i]["Amount"];
+      newDiv.appendChild(newp)
+      const newp2 = document.createElement('p');
+      newp2.textContent = "Reason: " + data[i]["Reason"];
+      newDiv.appendChild(newp2)
+      const newp4 = document.createElement('p');
+      newp4.textContent = "Date:  " + data[i]["Date"];
+      newDiv.appendChild(newp4)
+
+
+      newDiv.id = 'childDiv';
+      if (data[i]["Amount"] < 0){
+          newDiv.className = 'loss';
+      }
+      else{
+          newDiv.className = 'gain';
+      }
+
+      if (i%2){
+          newDiv.style.backgroundColor = 'lightblue';
+      }
+      newDiv.style.padding = '10px';
+
+      // 3. Append the new div to the parent div
+      area.appendChild(newDiv)
+    }
+
+
+  }
+
   function getGreeting() {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
@@ -98,9 +138,49 @@ window.onload = function () {
     } catch (error) {
       alert("EROR " + error);
     }
+    
+    try {
+      const response2 = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/driver_transactions?id=" + USER_ID , {
+        method: "GET",
+      })
+            
+        
+      if (response2.ok) {
+        const result2 = await response2.json();
+        fillTransactions(result2)
+
+      } else {
+          const text = await response.text();
+            alert(text);
+        }
+
+    } catch (error) {
+      alert("EROR " + error)
+    }
 
     const place = document.getElementById("test2");
   }
+
+  document.
+    getElementById("showLoss").
+      addEventListener("change", async function (event) {
+        event.preventDefault();
+
+        let dval = ''
+
+        if (event.target.checked){
+          dval = 'none';
+        }
+        else{
+          dval = 'block'
+        }
+
+        tester = document.getElementsByClassName('loss')
+        for (let x = 0; x < tester.length; ++x){
+          tester[x].style.display = dval
+        }
+
+      });
 
   document
     .getElementById("delete")
