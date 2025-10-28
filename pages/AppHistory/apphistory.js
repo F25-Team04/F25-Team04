@@ -55,6 +55,9 @@ window.onload = function () {
 			data = document.createElement('td');
 			data.innerText = app['Status'];
 			row.appendChild(data);
+			data = document.createElement('td');
+			data.innerText = app['Note'];
+			row.appendChild(data);
 
 			table.appendChild(row);
 		}
