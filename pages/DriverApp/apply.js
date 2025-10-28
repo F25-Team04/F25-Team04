@@ -89,12 +89,14 @@ window.onload = function () {
         return;
       }
 
-      const note = document.querySelector("note");
-      const body = {
-        user: USER_ID,
-        org: orgId,
-        app_note: note,
-      };
+        const fd = new FormData(event.target);
+        const note = (fd.get("note") || "").toString().trim();
+
+        const body = {
+            user: USER_ID,
+            org: orgId,
+            app_note: note
+        };
 
       try {
         const response = await fetch(
