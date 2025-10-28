@@ -3,6 +3,7 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 let isDirty = false;
+let bypassLeavePrompt = false;
 
 function enhanceNav() {
   // Try the common nav UL; fall back to #links if present
@@ -72,6 +73,7 @@ function collectUpdates(form) {
         break;
     }
   }
+  updates.id = USER_ID;
   return updates;
 }
 
@@ -95,22 +97,18 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   window.addEventListener("beforeunload", (e) => {
-    if (!isDirty) return;
+    if (!isDirty || bypassLeavePrompt) return;
     e.preventDefault();
     e.returnValue = "";
   });
 
   form.addEventListener("submit", async (e) => {
+    const updates = collectUpdates(form);
     e.preventDefault();
+    const body = JSON.stringify(updates);
 
     if (!USER_ID) {
       alert("Missing user id in URL.");
-      return;
-    }
-
-    const updates = collectUpdates(form);
-    if (Object.keys(updates).length === 0) {
-      alert("Enter at least one field to update.");
       return;
     }
 

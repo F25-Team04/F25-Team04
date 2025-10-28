@@ -118,7 +118,10 @@ def _get_catalog_rules(org):
         
     return rules
 
+
+
 # ==== POST =============================================================================
+
 def post_query(query):
     # returns result of query and commits changes
     with conn.cursor() as cur:
@@ -544,6 +547,20 @@ def post_decision(body):
                 conn.rollback()
                 return build_response(404, "Application not found")
 
+
+            # 1) Lock and load the application
+            cur.execute("""
+                SELECT app_id, app_driver, app_org, app_status
+                FROM Applications
+                WHERE app_id = %s
+                    AND app_isdeleted = 0
+                FOR UPDATE
+            """, (application_id,))
+            app = cur.fetchone()
+            if not app:
+                conn.rollback()
+                return build_response(404, "Application not found")
+
             if app["app_status"] != "pending":
                 conn.rollback()
                 return build_response(400, f"Application is not pending (current status: {app['app_status']})")
@@ -754,6 +771,25 @@ def post_catalog_rules(body):
     })
 
 # ==== GET ==============================================================================
+def get_driver_transactions(queryParams):
+    driverID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_driverid = %s
+            AND ptr_isdeleted = 0
+        """, driverID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
