@@ -66,7 +66,7 @@ window.onload = function () {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
     const pageItems = items.slice(start, end);
-    for (var product of pageItems) {
+    for (let product of pageItems) {
       const product_div = document.createElement("div");
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");
@@ -124,7 +124,13 @@ window.onload = function () {
       var orderButton = document.createElement("button");
       orderButton.innerText = "Order Item";
       orderButton.addEventListener("click", function () {
-        GenerateOrderSummary(product, PricePoints);
+        window.location =
+          "../OrderSummary/OrderSummary.html?id=" +
+          USER_ID +
+          "&org=" +
+          ORG_ID +
+          "&prod=" +
+          product["id"];
       });
 
       metaRow.appendChild(productRating);
@@ -155,13 +161,6 @@ window.onload = function () {
       wrap.appendChild(iEl);
     }
     return wrap;
-  }
-
-  function GenerateOrderSummary(prod, cost) {
-    document.getElementById("order_img").src = prod["image"];
-    document.getElementById("order_address").innerText = User["Address"];
-    document.getElementById("order_product").innerText = prod["title"];
-    document.getElementById("order_cost").innerText = cost;
   }
 
   function renderPage() {
@@ -248,8 +247,12 @@ window.onload = function () {
           alert(result.message);
         } else if (response.status == 200) {
           User = result[0];
+          for (var org of result[0]["Organizations"]) {
+            if (org["org_id"] == ORG_ID) {
+              SetPoints(org["spo_pointbalance"]);
+            }
+          }
           PointConversionRate = result[0]["Convert"];
-          SetPoints(result[0]["Point Balance"]);
         }
       }
     } catch (error) {

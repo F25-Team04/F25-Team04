@@ -86,7 +86,7 @@ window.onload = function () {
       AddEffectsToButtons(org_div);
       org_div.addEventListener("click", () => {
         // This is going to lead to the driver application page
-        window.location = "..\\driver\\driver.html?id=3";
+        window.location = "..\\DriverApp\\apply.html?id=3";
       });
       org_div.appendChild(title);
       list.appendChild(org_div);
@@ -121,7 +121,8 @@ window.onload = function () {
 
       org_div.addEventListener("click", () => {
         // Gonna be the application page eventually
-        window.location = "..\\DriverApp\\apply.html?id=" + USER_ID;
+        window.location =
+          "..\\Driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
       });
       org_div.appendChild(title);
       org_div.appendChild(currentPoints);

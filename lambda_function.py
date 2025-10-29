@@ -1067,7 +1067,33 @@ def get_products(queryParams):
 
         return build_response(200, products)
     else:
-        return build_response(500, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
+        return build_response(400, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
+    
+def get_product(queryParams):
+    queryParams = queryParams or {}
+    id = queryParams.get("id")
+    if id is None:
+        return build_response(400, f"Missing Required Query Parameter, Status Code {response.status_code}")
+    
+    try:
+        # Call the FakeStoreAPI to get the products
+        url = "https://fakestoreapi.com/products/", id
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Connection": "close",
+        }
+        response = requests.get(url, headers=headers, timeout=5)
+        print("DEBUG - Products API response:\n", json.dumps(response.json(), indent=2))
+    except requests.RequestException as e:
+        return build_response(500, f"Failed to retrieve product from FakeStoreAPI: {e}")
+    
+    if response.status_code == 200:
+        products = response.json()
+        return build_response(200, products)
+    else:
+        return build_response(400, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
 
 def get_catalog_rules(queryParams):
     # returns catalog rules for the specified organization
@@ -1141,6 +1167,8 @@ def lambda_handler(event, context):
             response = get_security_questions()
         elif (method == "GET" and path == "/products"):
             response = get_products(queryParams)
+        elif (method == "GET" and path == "/product"):
+            response = get_product(queryParams)
         elif (method == "GET" and path == "/catalog_rules"):
             response = get_catalog_rules(queryParams)
         elif (method == "GET" and path == "/application"):
