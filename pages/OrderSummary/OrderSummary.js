@@ -3,7 +3,7 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 const PROD = params.get("prod");
 let User = {};
-
+let ConversionRate = 0;
 window.onload = function () {
   async function GetUser() {
     try {
@@ -57,9 +57,49 @@ window.onload = function () {
     document.getElementById("order_img").src = prod["image"];
     document.getElementById("order_address").innerText = User["Address"];
     document.getElementById("order_product").innerText = prod["title"];
-    document.getElementById("order_cost").innerText = prod["price"];
+
+    const totalCents = Math.round(
+      Number(prod["price"] || prod.price || 0) * 100
+    );
+    const dollars = Math.floor(totalCents / 100);
+    const cents = totalCents % 100;
+    const PricePoints = String(dollars * 10 + cents);
+    document.getElementById("order_cost").innerText = PricePoints + " Points";
     var confirm = document.createElement("button");
     confirm.innerText = "Confirm Order";
     confirm.addEventListener("click", function () {});
+  }
+
+  async function ConfirmOrder(prod) {
+    const data = {
+      user_id: USER_ID,
+      org_id: ORG_ID,
+      items: prod["id"],
+    };
+
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // IMPORTANT
+          },
+          body: JSON.stringify(data),
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+
+        if (result.success == false) {
+          alert(result.message);
+        } else if (result.success == true) {
+          GetUser(result.message);
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
   }
 };
