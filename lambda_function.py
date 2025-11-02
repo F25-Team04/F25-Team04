@@ -758,6 +758,7 @@ def post_catalog_rules(body):
     })
 
 def post_orders(body):
+    print(body)
     body = json.loads(body) or {}
     user_id = body.get("user_id")
     org_id  = body.get("org_id")
@@ -971,7 +972,8 @@ def get_user(queryParams):
                     JSON_OBJECT(
                         'org_id',        o.org_id,
                         'org_name',      o.org_name,
-                        'spo_pointbalance', s.spo_pointbalance
+                        'spo_pointbalance', s.spo_pointbalance,
+                        'org_conversion_rate', o.org_conversionrate
                     )
                 )
                 FROM Sponsorships s
@@ -1180,7 +1182,7 @@ def get_product(queryParams):
     
     try:
         # Call the FakeStoreAPI to get the products
-        url = "https://fakestoreapi.com/products/", id
+        url = "https://fakestoreapi.com/products/" + str(id)
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
             "Accept": "application/json, text/plain, */*",

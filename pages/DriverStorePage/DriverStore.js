@@ -75,13 +75,14 @@ window.onload = function () {
 
       const content = document.createElement("div");
       content.className = "product_content";
+      console.log(PointConversionRate);
+      const PricePoints = parseInt(product["price"]) / PointConversionRate;
 
       const totalCents = Math.round(
         Number(product["price"] || product.price || 0) * 100
       );
       const dollars = Math.floor(totalCents / 100);
       const cents = totalCents % 100;
-      const PricePoints = String(dollars * 10 + cents);
 
       const rating =
         (product["rating"] && product["rating"]["rate"]) ||
@@ -247,12 +248,15 @@ window.onload = function () {
           alert(result.message);
         } else if (response.status == 200) {
           User = result[0];
+          console.log(User);
+          console.log(PointConversionRate);
           for (var org of result[0]["Organizations"]) {
             if (org["org_id"] == ORG_ID) {
+              console.log(org);
               SetPoints(org["spo_pointbalance"]);
+              PointConversionRate = org["org_conversion_rate"];
             }
           }
-          PointConversionRate = result[0]["Convert"];
         }
       }
     } catch (error) {

@@ -21,6 +21,9 @@ window.onload = function () {
           alert(result.message);
         } else if (response.status == 200) {
           User = result[0];
+          console.log(User);
+          ConversionRate =
+            User["Organizations"][ORG_ID - 1]["org_conversion_rate"];
         }
       }
     } catch (error) {
@@ -53,30 +56,26 @@ window.onload = function () {
   }
   GetProduct();
   function GenerateOrderSummary(prod) {
-    console.log(User);
     document.getElementById("order_img").src = prod["image"];
     document.getElementById("order_address").innerText = User["Address"];
     document.getElementById("order_product").innerText = prod["title"];
 
-    const totalCents = Math.round(
-      Number(prod["price"] || prod.price || 0) * 100
-    );
-    const dollars = Math.floor(totalCents / 100);
-    const cents = totalCents % 100;
-    const PricePoints = String(dollars * 10 + cents);
+    const PricePoints = prod["price"] / ConversionRate;
     document.getElementById("order_cost").innerText = PricePoints + " Points";
-    var confirm = document.createElement("button");
+    var confirm = document.getElementById("order_button");
     confirm.innerText = "Confirm Order";
-    confirm.addEventListener("click", function () {});
+    confirm.addEventListener("click", function () {
+      console.log("Hello");
+      ConfirmOrder(prod);
+    });
   }
 
   async function ConfirmOrder(prod) {
     const data = {
       user_id: USER_ID,
       org_id: ORG_ID,
-      items: prod["id"],
+      items: [parseInt(prod["id"])],
     };
-
     try {
       // Send POST request
       const response = await fetch(
@@ -89,13 +88,19 @@ window.onload = function () {
           body: JSON.stringify(data),
         }
       );
+      console.log(response);
       if (response.ok) {
         const result = await response.json();
 
-        if (result.success == false) {
+        if (response.status != 200) {
           alert(result.message);
-        } else if (result.success == true) {
-          GetUser(result.message);
+        } else if (response.status == 200) {
+          alert("Order Placed");
+          window.location =
+            "../DriverStorePage/DriverStore.html?id=" +
+            USER_ID +
+            "&org=" +
+            ORG_ID;
         }
       }
     } catch (error) {
