@@ -1276,6 +1276,23 @@ def get_orders(queryParams):
         return build_response(404, "No orders match the given parameters.")
     return build_response(200, rows)
 
+def get_notifications(queryParams):
+    userID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT
+                not_id AS "IdNum", 
+                not_message AS "Message",
+                not_date AS "Date"
+            FROM Notifications
+            WHERE not_userid = %s
+            AND not_isdeleted = 0
+        """, userID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
 
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
@@ -1299,6 +1316,31 @@ def delete_user(queryParams):
         return build_response(200, {
             "success": True,
             "message": f"User {usr_id} deleted"
+        })
+    
+    return build_response(404, f"No user found with id={usr_id}")
+
+def delete_notification(queryParams):
+    # marks user as deleted in the database
+    queryParams = queryParams or {}
+    usr_id = queryParams.get("id")
+    if usr_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Notifications
+            SET not_isdeleted = 1
+            WHERE not_id = %s
+            AND not_isdeleted = 0
+        """, usr_id)
+        result = cur.fetchall()
+        affected = cur.rowcount
+        conn.commit()
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"Notifcation {usr_id} deleted"
         })
     
     return build_response(404, f"No user found with id={usr_id}")
@@ -1345,10 +1387,14 @@ def lambda_handler(event, context):
             response = get_driver_transactions(queryParams)
         elif (method == "GET" and path == "/orders"):
             response = get_orders(queryParams)
+        elif (method == "GET" and path == "/notifications"):
+            response = get_notifications(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
             response = delete_user(queryParams)
+        elif (method == "DELETE" and path == "/notifications"):
+            response = delete_notification(queryParams)
         
         # POST
         elif (method == "POST" and path == "/signup"):
