@@ -37,14 +37,43 @@ window.onload = function() {
             console.error("Error:", e);
         }
     }
+
+    const container = document.getElementById("transactions");
+    const controls = document.createElement("div");
+    controls.style.display = "flex";
+    controls.style.gap = "12px";
+    controls.style.alignItems = "center";
+    controls.style.margin = "8px 0 12px";
+
+    const sortSelect = document.createElement("select");
+    sortSelect.id = "transaction_sort";
+    sortSelect.innerHTML = `
+        <option value="date_desc">Date (newest)</option>
+        <option value="date_asc">Date (oldest)</option>
+        <option value="amt_desc">Amount (desc)</option>
+        <option value="amt_asc">Amount (asc)</option>
+    `;
+
+    const filterSelect = document.createElement("select");
+    filterSelect.id = "transaction_filter";
+    filterSelect.innerHTML = `
+        <option value="all">All</option>
+        <option value="earn">Earnings (+)</option>
+        <option value="deduct">Deductions (-)</option>
+    `;
+
+    controls.append(sortSelect, filterSelect);
+    container.parentNode.insertBefore(controls, container);
+
+    controls.addEventListener("change", () => {
+        GetTransactions({ sort: sortSelect.value, filter: filterSelect.value });
+    });
     
-    async function GetTransactions() {
+    async function GetTransactions({ sort = "date_desc", filter = "all" } = {}) {
         if (!USER_ID) {
             console.error("Missing ?id= in URL");
             return;
         }
-
-        const container = document.getElementById("transactions");
 
         try {
             const response = await fetch(
@@ -57,12 +86,23 @@ window.onload = function() {
             }
 
             const data = await response.json();
-            data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+            let rows = data.slice();
+            if (filter === "earn") rows = rows.filter(r => Number(r.Amount) > 0);
+            if (filter === "deduct") rows = rows.filter(r => Number(r.Amount) < 0);
+
+            const comparators = {
+                date_desc: (a, b) => new Date(b.Date) - new Date(a.Date),
+                date_asc: (a, b) => new Date(a.Date) - new Date(b.Date),
+                amt_desc: (a, b) => Number(b.Amount) - Number(a.Amount),
+                amt_asc: (a, b) => Number(a.Amount) - Number(b.Amount),
+            };
+            rows = rows.slice().sort(comparators[sort] || comparators.date_desc);
 
             container.innerHTML = "";
 
-            for (let i = 0; i < data.length; i++) {
-                const t = data[i];
+            for (let i = 0; i < rows.length; i++) {
+                const t = rows[i];
                 const div = document.createElement("div");
                 const isLoss = Number(t.Amount) < 0;
 
@@ -115,7 +155,7 @@ window.onload = function() {
                 div.style.alignItems = "center";
                 div.style.gap = "16px";
                 div.style.padding = "16px";
-                if (i < data.length - 1) div.style.borderBottom = "1px solid #ddd";
+                if (i < rows.length - 1) div.style.borderBottom = "1px solid #ddd";
 
                 container.appendChild(div);
             }
@@ -127,6 +167,6 @@ window.onload = function() {
     }
 
     GetPoints()
-    GetTransactions();
+    GetTransactions({ sort: sortSelect.value, filter: filterSelect.value });
 
 }

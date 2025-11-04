@@ -46,6 +46,7 @@ html, body {
     padding: 10px 24px;
     width: 720px;
     justify-self: center;
+    background-color: white;
 }
 
 .points-header {
