@@ -56,6 +56,12 @@ window.onload = function () {
     }
   }
   function AddEffectsToButtons(org_div) {
+    org_div.style.backgroundColor = "white";
+    org_div.style.transform = "scale(1)";
+    org_div.style.boxShadow = "none";
+    org_div.style.transition = "transform 120ms ease, box-shadow 120ms ease";
+    org_div.style.willChange = "transform";
+
     org_div.addEventListener("mouseenter", () => {
       org_div.style.backgroundColor = "#ffffffff";
       org_div.style.transform = "scale(1.05)";
@@ -68,7 +74,9 @@ window.onload = function () {
       org_div.style.boxShadow = "none";
     });
   }
+  
   GetUserOrgs();
+
   function renderPage(orgs) {
     list = document.getElementById("org-list");
     console.log(orgs);

@@ -17,22 +17,19 @@ h1 {
 }
 
 #org_div {
-    position: relative;
     border: 2px solid var(--revvy-black);
     width: 85%;
     height: 360px;
     cursor: pointer;
     border-radius: 10px;
+    justify-self: center;
 }
 
 #org-list {
-    margin-left: 40px; 
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
-    gap: 10px;
-    max-width: 100%;
-    position: relative;
-    top: 120px;
+    grid-template-columns: repeat(auto-fit, 360px); /* auto-adjusts columns */
+    justify-content: center;
+    margin: 120px auto 0;
 }
 
 #org_title {
