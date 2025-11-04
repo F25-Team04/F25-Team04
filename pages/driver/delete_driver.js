@@ -206,12 +206,102 @@ window.onload = function () {
     return "Good evening";
   }
 
+  function orderDate(order) {
+    const raw = order.ord_confirmeddate;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function parseItems(items) {
+    if (!items) return [];
+    if (Array.isArray(items)) return items;
+    if (typeof items === "string") {
+      try {
+        const parsed = JSON.parse(items);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  async function loadRecentOrders() {
+    const container = document.getElementById("recentOrders");
+    if (!container) return;
+    container.innerHTML = "Loading...";
+
+    try {
+      const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" + USER_ID, { method: "GET" });
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        throw new Error(txt || `Failed to load orders (${resp.status})`);
+      }
+
+      let orders = await resp.json();
+      if (!Array.isArray(orders)) orders = [];
+
+      // Most recent first
+      orders.sort((a, b) => {
+        const da = orderDate(a);
+        const db = orderDate(b);
+        if (da && db) return db - da;
+        const ida = Number(a.ord_id); 
+        const idb = Number(b.ord_id);
+        return idb - ida;
+      });
+
+      const top3 = orders.slice(0, 3);
+
+      container.innerHTML = "";
+      if (!top3.length) {
+        const p = document.createElement("p");
+        p.textContent = "No recent orders.";
+        container.appendChild(p);
+        return;
+      }
+
+      top3.forEach(order => {
+        const row = document.createElement("div");
+        row.className = "recent-order-row";
+
+        const left = document.createElement("div");
+        const d = orderDate(order);
+        const dateStr = d ? d.toLocaleDateString() : "";
+        const status = String(order.ord_status ?? order.status ?? "unknown");
+        left.textContent = `#${order.ord_id ?? order.id ?? ""} • ${status}${dateStr ? " • " + dateStr : ""}`;
+
+        const right = document.createElement("div");
+        const items = parseItems(order.items);
+        const itemCount = items.length;
+        const totalPts = items.reduce((s, it) => s + Number(it.itm_pointcost ?? it.point_cost ?? 0), 0);
+        const totalUsd = items.reduce((s, it) => s + Number(it.itm_usdcost ?? it.usd_cost ?? 0), 0);
+        const parts = [];
+        if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+        if (totalPts) parts.push(`${totalPts} pts`);
+        if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
+        right.textContent = parts.join(" • ");
+
+        row.style.display = "flex";
+        row.style.justifyContent = "space-between";
+        row.style.padding = "6px 0";
+
+        row.appendChild(left);
+        row.appendChild(right);
+        container.appendChild(row);
+      });
+    } catch (e) {
+      console.error("Recent orders error:", e);
+      container.textContent = "Failed to load recent orders.";
+    }
+  }
+
   go();
 
   async function go() {
     try {
       // Send POST request
-
       const response = await fetch(
         "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
           USER_ID,
@@ -226,7 +316,6 @@ window.onload = function () {
         fillScreen(result[0]);
         updateBalanceDollars();
       } else {
-        //alert("Password or Email is Incorrect  ");
         const text = await response.text();
         alert(text);
       }
@@ -253,6 +342,8 @@ window.onload = function () {
     } catch (error) {
       alert("EROR " + error);
     }
+
+    loadRecentOrders();
 
     const place = document.getElementById("test2");
   }
