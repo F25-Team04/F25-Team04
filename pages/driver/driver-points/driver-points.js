@@ -125,8 +125,10 @@ window.onload = function() {
                 // middle: reason + date stacked
                 const content = document.createElement("div");
                 content.className = "reason-date";
+
                 const pReason = document.createElement("p");
                 pReason.textContent = t.Reason ?? "";
+                pReason.style.fontWeight = "500";
                 content.appendChild(pReason);
 
                 const pDate = document.createElement("p");
