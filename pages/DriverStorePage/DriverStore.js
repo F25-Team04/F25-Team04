@@ -22,6 +22,10 @@ window.onload = function () {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+  const orders = document.createElement("a");
+  orders.href = "../driver/driver-orders/driver-orders.html?id=" + USER_ID + "&org=" + ORG_ID;
+  orders.textContent = "Orders";
+  li.appendChild(orders);
   const account = document.createElement("a");
   account.href =
     "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -41,7 +45,7 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products",
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products?org=" + ORG_ID,
         {
           method: "GET",
         }
