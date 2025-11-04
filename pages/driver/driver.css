@@ -39,7 +39,7 @@ body {
     display: grid;
     grid-template-columns: 150px 1fr 1fr;
     background-color: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     margin-bottom: 24px;
 }
@@ -72,7 +72,7 @@ body {
     align-items: center;
     justify-self: flex-end;
     background-color: var(--revvy-green);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     margin: 24px;
     padding: 24px;
@@ -121,9 +121,10 @@ body {
 
 .points-history, .order-history {
     background-color: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     padding: 24px;
+    padding-bottom: 8px;
 }
 
 .points-header, .orders-header {
@@ -132,15 +133,6 @@ body {
     display: block;
 }
 
-.transaction {
-    display: flex;
-    align-items: start;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #ddd;
-}
-
-.transaction:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+.points-value {
+    margin-left: auto;
 }

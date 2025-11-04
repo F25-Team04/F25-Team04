@@ -124,35 +124,73 @@ window.onload = function () {
 
   function fillTransactions(transactionInfo) {
     const data = transactionInfo;
-    area = document.getElementById("recentTransactions");
-    numTrans = data.length;
+    data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+    const area = document.getElementById("recentTransactions");
+
+    const rows = data.slice(0, 3);
+    const numTrans = rows.length;
 
     for (i = 0; i < numTrans; ++i) {
-      const newDiv = document.createElement("div");
+      const t = rows[i];
+      const div = document.createElement("div");
+      const isLoss = Number(t.Amount) < 0;
 
-      const newp = document.createElement("p");
-      newp.textContent = "Amount: " + data[i]["Amount"];
-      newDiv.appendChild(newp);
-      const newp2 = document.createElement("p");
-      newp2.textContent = "Reason: " + data[i]["Reason"];
-      newDiv.appendChild(newp2);
-      const newp4 = document.createElement("p");
-      newp4.textContent = "Date:  " + data[i]["Date"];
-      newDiv.appendChild(newp4);
+      // left: icon
+      const icon_div = document.createElement("span");
+      icon_div.style.display = "inline-flex";
+      icon_div.style.alignItems = "center";
+      icon_div.style.justifyContent = "center";
+      icon_div.style.width = "36px";
+      icon_div.style.height = "36px";
+      icon_div.style.borderRadius = "50%";
+      icon_div.style.backgroundColor = isLoss ? "rgba(239, 68, 68, 0.10)" : "rgba(30, 215, 96, 0.10)";
 
-      newDiv.id = "childDiv";
-      if (data[i]["Amount"] < 0) {
-        newDiv.className = "loss";
-      } else {
-        newDiv.className = "gain";
-      }
+      const icon = document.createElement("i");
+      icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
+      icon.style.color = isLoss ? "#EF4444" : "#1ED760";
+      icon.style.fontSize = "24px";
+      icon_div.appendChild(icon);
 
-      if (i % 2) {
-        newDiv.style.backgroundColor = "lightblue";
-      }
-      newDiv.style.padding = "10px";
+      // middle: reason + date stacked
+      const content = document.createElement("div");
+      content.className = "reason-date";
 
-      area.appendChild(newDiv);
+      const pReason = document.createElement("p");
+      pReason.textContent = t.Reason ?? "";
+      pReason.style.color = "black";
+      pReason.style.fontWeight = "500";
+      content.appendChild(pReason);
+
+      const pDate = document.createElement("p");
+      pDate.textContent = new Date(t.Date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      pDate.style.color = "#6b7280";
+      content.appendChild(pDate);
+
+      // right: amount
+      const pAmount = document.createElement("h3");
+      pAmount.className = "points-value";
+      pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
+      pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
+
+      // assemble
+      div.appendChild(icon_div);
+      div.appendChild(content);
+      div.appendChild(pAmount);
+
+      // row styling
+      div.className = isLoss ? "loss" : "gain";
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "16px";
+      div.style.padding = "16px";
+      if (i < numTrans - 1) div.style.borderBottom = "1px solid #ddd";
+
+      area.appendChild(div);
     }
   }
 
@@ -213,25 +251,6 @@ window.onload = function () {
 
     const place = document.getElementById("test2");
   }
-
-  document
-    .getElementById("showLoss")
-    .addEventListener("change", async function (event) {
-      event.preventDefault();
-
-      let dval = "";
-
-      if (event.target.checked) {
-        dval = "none";
-      } else {
-        dval = "block";
-      }
-
-      tester = document.getElementsByClassName("loss");
-      for (let x = 0; x < tester.length; ++x) {
-        tester[x].style.display = dval;
-      }
-    });
 
   document
     .getElementById("delete")
