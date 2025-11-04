@@ -1,0 +1,21 @@
+#order_summary {
+  border: 2px solid black;
+  width: 50%;
+  position: absolute;
+  left: 30%;
+  text-align: center;
+}
+
+#order_img {
+  height: auto;
+  width: 30%;
+}
+
+#order_head {
+  text-align: center;
+}
+
+#order_address,
+#order_cost,
+#order_product {
+}

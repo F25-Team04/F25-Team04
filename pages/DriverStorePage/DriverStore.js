@@ -6,6 +6,8 @@ let PointConversionRate;
 let currentPage = 1;
 const ITEMS_PER_PAGE = 8;
 let storeItems = [];
+let CurrDriverPoints;
+
 window.onload = function () {
   var list = this.document.getElementById("links");
   var aboutPage = this.document.getElementById("aboutPage");
@@ -20,6 +22,10 @@ window.onload = function () {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+  const orders = document.createElement("a");
+  orders.href = "../driver/driver-orders/driver-orders.html?id=" + USER_ID + "&org=" + ORG_ID;
+  orders.textContent = "Orders";
+  li.appendChild(orders);
   const account = document.createElement("a");
   account.href =
     "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -39,7 +45,7 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products",
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products?org=" + ORG_ID,
         {
           method: "GET",
         }
@@ -65,7 +71,7 @@ window.onload = function () {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
     const pageItems = items.slice(start, end);
-    for (var product of pageItems) {
+    for (let product of pageItems) {
       const product_div = document.createElement("div");
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");
@@ -74,13 +80,14 @@ window.onload = function () {
 
       const content = document.createElement("div");
       content.className = "product_content";
+      console.log(PointConversionRate);
+      const PricePoints = parseInt(product["price"]) / PointConversionRate;
 
       const totalCents = Math.round(
         Number(product["price"] || product.price || 0) * 100
       );
       const dollars = Math.floor(totalCents / 100);
       const cents = totalCents % 100;
-      const PricePoints = String(dollars * 10 + cents);
 
       const rating =
         (product["rating"] && product["rating"]["rate"]) ||
@@ -120,8 +127,25 @@ window.onload = function () {
       pointsText.textContent = " points";
       productCost.append(rewardsIcon, pointsValue, pointsText);
 
+      var orderButton = document.createElement("button");
+      orderButton.innerText = "Order Item";
+      orderButton.addEventListener("click", function () {
+        if (PricePoints > CurrDriverPoints) {
+          alert("Item is to expensive");
+        } else {
+          window.location =
+            "../OrderSummary/OrderSummary.html?id=" +
+            USER_ID +
+            "&org=" +
+            ORG_ID +
+            "&prod=" +
+            product["id"];
+        }
+      });
+
       metaRow.appendChild(productRating);
       metaRow.appendChild(productCost);
+      metaRow.appendChild(orderButton);
 
       content.appendChild(productName);
       content.appendChild(metaRow);
@@ -232,8 +256,16 @@ window.onload = function () {
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
-          PointConversionRate = result[0]["Convert"];
-          SetPoints(result[0]["Point Balance"]);
+          User = result[0];
+          console.log(User);
+          console.log(PointConversionRate);
+          for (var org of result[0]["Organizations"]) {
+            if (org["org_id"] == ORG_ID) {
+              console.log(org);
+              SetPoints(org["spo_pointbalance"]);
+              PointConversionRate = org["org_conversion_rate"];
+            }
+          }
         }
       }
     } catch (error) {
@@ -244,6 +276,7 @@ window.onload = function () {
   function SetPoints(points) {
     let point = document.getElementById("points");
     point.innerText = points;
+    CurrDriverPoints = parseInt(points);
   }
 
   GetUser();

@@ -71,6 +71,16 @@ window.onload = function () {
   li.appendChild(store);
   list.appendChild(li);
 
+  const orders = document.createElement("a");
+  orders.href = "driver-orders/driver-orders.html?id=" + USER_ID +"&org=" + ORG_ID;
+  orders.textContent = "Orders";
+  li.appendChild(orders);
+
+  const apply = document.createElement("a");
+  apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
+  apply.textContent = "Apply";
+  li.appendChild(apply);
+
   const account = document.createElement("a");
   account.href =
     "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -81,12 +91,6 @@ window.onload = function () {
   switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
   switchOrg.textContent = "Switch Organization";
   li.appendChild(switchOrg);
-
-  const apply = document.createElement("a");
-  apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
-  apply.textContent = "Apply";
-  li.appendChild(apply);
-  list.appendChild(li);
 
   list.appendChild(li);
 
@@ -124,35 +128,73 @@ window.onload = function () {
 
   function fillTransactions(transactionInfo) {
     const data = transactionInfo;
-    area = document.getElementById("recentTransactions");
-    numTrans = data.length;
+    data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+
+    const area = document.getElementById("recentTransactions");
+
+    const rows = data.slice(0, 3);
+    const numTrans = rows.length;
 
     for (i = 0; i < numTrans; ++i) {
-      const newDiv = document.createElement("div");
+      const t = rows[i];
+      const div = document.createElement("div");
+      const isLoss = Number(t.Amount) < 0;
 
-      const newp = document.createElement("p");
-      newp.textContent = "Amount: " + data[i]["Amount"];
-      newDiv.appendChild(newp);
-      const newp2 = document.createElement("p");
-      newp2.textContent = "Reason: " + data[i]["Reason"];
-      newDiv.appendChild(newp2);
-      const newp4 = document.createElement("p");
-      newp4.textContent = "Date:  " + data[i]["Date"];
-      newDiv.appendChild(newp4);
+      // left: icon
+      const icon_div = document.createElement("span");
+      icon_div.style.display = "inline-flex";
+      icon_div.style.alignItems = "center";
+      icon_div.style.justifyContent = "center";
+      icon_div.style.width = "36px";
+      icon_div.style.height = "36px";
+      icon_div.style.borderRadius = "50%";
+      icon_div.style.backgroundColor = isLoss ? "rgba(239, 68, 68, 0.10)" : "rgba(30, 215, 96, 0.10)";
 
-      newDiv.id = "childDiv";
-      if (data[i]["Amount"] < 0) {
-        newDiv.className = "loss";
-      } else {
-        newDiv.className = "gain";
-      }
+      const icon = document.createElement("i");
+      icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
+      icon.style.color = isLoss ? "#EF4444" : "#1ED760";
+      icon.style.fontSize = "24px";
+      icon_div.appendChild(icon);
 
-      if (i % 2) {
-        newDiv.style.backgroundColor = "lightblue";
-      }
-      newDiv.style.padding = "10px";
+      // middle: reason + date stacked
+      const content = document.createElement("div");
+      content.className = "reason-date";
 
-      area.appendChild(newDiv);
+      const pReason = document.createElement("p");
+      pReason.textContent = t.Reason ?? "";
+      pReason.style.color = "black";
+      pReason.style.fontWeight = "500";
+      content.appendChild(pReason);
+
+      const pDate = document.createElement("p");
+      pDate.textContent = new Date(t.Date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      pDate.style.color = "#6b7280";
+      content.appendChild(pDate);
+
+      // right: amount
+      const pAmount = document.createElement("h3");
+      pAmount.className = "points-value";
+      pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
+      pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
+
+      // assemble
+      div.appendChild(icon_div);
+      div.appendChild(content);
+      div.appendChild(pAmount);
+
+      // row styling
+      div.className = isLoss ? "loss" : "gain";
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "16px";
+      div.style.padding = "16px";
+      if (i < numTrans - 1) div.style.borderBottom = "1px solid #ddd";
+
+      area.appendChild(div);
     }
   }
 
@@ -163,12 +205,102 @@ window.onload = function () {
     return "Good evening";
   }
 
+  function orderDate(order) {
+    const raw = order.ord_confirmeddate;
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function parseItems(items) {
+    if (!items) return [];
+    if (Array.isArray(items)) return items;
+    if (typeof items === "string") {
+      try {
+        const parsed = JSON.parse(items);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  async function loadRecentOrders() {
+    const container = document.getElementById("recentOrders");
+    if (!container) return;
+    container.innerHTML = "Loading...";
+
+    try {
+      const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" + USER_ID, { method: "GET" });
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => "");
+        throw new Error(txt || `Failed to load orders (${resp.status})`);
+      }
+
+      let orders = await resp.json();
+      if (!Array.isArray(orders)) orders = [];
+
+      // Most recent first
+      orders.sort((a, b) => {
+        const da = orderDate(a);
+        const db = orderDate(b);
+        if (da && db) return db - da;
+        const ida = Number(a.ord_id); 
+        const idb = Number(b.ord_id);
+        return idb - ida;
+      });
+
+      const top3 = orders.slice(0, 3);
+
+      container.innerHTML = "";
+      if (!top3.length) {
+        const p = document.createElement("p");
+        p.textContent = "No recent orders.";
+        container.appendChild(p);
+        return;
+      }
+
+      top3.forEach(order => {
+        const row = document.createElement("div");
+        row.className = "recent-order-row";
+
+        const left = document.createElement("div");
+        const d = orderDate(order);
+        const dateStr = d ? d.toLocaleDateString() : "";
+        const status = String(order.ord_status ?? order.status ?? "unknown");
+        left.textContent = `#${order.ord_id ?? order.id ?? ""} • ${status}${dateStr ? " • " + dateStr : ""}`;
+
+        const right = document.createElement("div");
+        const items = parseItems(order.items);
+        const itemCount = items.length;
+        const totalPts = items.reduce((s, it) => s + Number(it.itm_pointcost ?? it.point_cost ?? 0), 0);
+        const totalUsd = items.reduce((s, it) => s + Number(it.itm_usdcost ?? it.usd_cost ?? 0), 0);
+        const parts = [];
+        if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+        if (totalPts) parts.push(`${totalPts} pts`);
+        if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
+        right.textContent = parts.join(" • ");
+
+        row.style.display = "flex";
+        row.style.justifyContent = "space-between";
+        row.style.padding = "6px 0";
+
+        row.appendChild(left);
+        row.appendChild(right);
+        container.appendChild(row);
+      });
+    } catch (e) {
+      console.error("Recent orders error:", e);
+      container.textContent = "Failed to load recent orders.";
+    }
+  }
+
   go();
 
   async function go() {
     try {
       // Send POST request
-
       const response = await fetch(
         "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
           USER_ID,
@@ -183,7 +315,6 @@ window.onload = function () {
         fillScreen(result[0]);
         updateBalanceDollars();
       } else {
-        //alert("Password or Email is Incorrect  ");
         const text = await response.text();
         alert(text);
       }
@@ -211,27 +342,10 @@ window.onload = function () {
       alert("EROR " + error);
     }
 
+    loadRecentOrders();
+
     const place = document.getElementById("test2");
   }
-
-  document
-    .getElementById("showLoss")
-    .addEventListener("change", async function (event) {
-      event.preventDefault();
-
-      let dval = "";
-
-      if (event.target.checked) {
-        dval = "none";
-      } else {
-        dval = "block";
-      }
-
-      tester = document.getElementsByClassName("loss");
-      for (let x = 0; x < tester.length; ++x) {
-        tester[x].style.display = dval;
-      }
-    });
 
   document
     .getElementById("delete")

@@ -27,6 +27,11 @@ function enhanceNav() {
   store.textContent = "Store";
   li.appendChild(store);
 
+  const orders = document.createElement("a");
+  orders.href = "../driver/driver-orders/driver-orders.html?id=" + USER_ID + "&org=" + ORG_ID;
+  orders.textContent = "Orders";
+  li.appendChild(orders);
+
   const account = document.createElement("a");
   account.href =
     "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;

@@ -56,6 +56,12 @@ window.onload = function () {
     }
   }
   function AddEffectsToButtons(org_div) {
+    org_div.style.backgroundColor = "white";
+    org_div.style.transform = "scale(1)";
+    org_div.style.boxShadow = "none";
+    org_div.style.transition = "transform 120ms ease, box-shadow 120ms ease";
+    org_div.style.willChange = "transform";
+
     org_div.addEventListener("mouseenter", () => {
       org_div.style.backgroundColor = "#ffffffff";
       org_div.style.transform = "scale(1.05)";
@@ -68,7 +74,9 @@ window.onload = function () {
       org_div.style.boxShadow = "none";
     });
   }
+  
   GetUserOrgs();
+
   function renderPage(orgs) {
     list = document.getElementById("org-list");
     console.log(orgs);
@@ -86,7 +94,7 @@ window.onload = function () {
       AddEffectsToButtons(org_div);
       org_div.addEventListener("click", () => {
         // This is going to lead to the driver application page
-        window.location = "..\\driver\\driver.html?id=3";
+        window.location = "..\\DriverApp\\apply.html?id=3";
       });
       org_div.appendChild(title);
       list.appendChild(org_div);
@@ -99,9 +107,21 @@ window.onload = function () {
       var title = document.createElement("p");
       title.id = "org_title";
       title.innerText = org["org_name"];
-      var currentPoints = document.createElement("p");
-      currentPoints.id = "usr_points";
-      currentPoints.textContent = "Current Points: " + org["spo_pointbalance"];
+
+      const points_div = document.createElement("div");
+      points_div.className = "usr_points";
+
+      const pointsLabel = document.createElement("p");
+      pointsLabel.className = "points-label";
+      pointsLabel.textContent = "Current Points:";
+
+      const pointsValue = document.createElement("p");
+      pointsValue.className = "points-value";
+      pointsValue.textContent = org["spo_pointbalance"];
+
+      points_div.appendChild(pointsLabel);
+      points_div.appendChild(pointsValue);
+
       AddEffectsToButtons(org_div);
 
       // Leave button
@@ -122,10 +142,10 @@ window.onload = function () {
       org_div.addEventListener("click", () => {
         // Gonna be the application page eventually
         window.location =
-          "..\\driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
+          "..\\Driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
       });
       org_div.appendChild(title);
-      org_div.appendChild(currentPoints);
+      org_div.appendChild(points_div);
       org_div.appendChild(leaveBtn);
       list.appendChild(org_div);
     }

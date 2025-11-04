@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  background-color: var(--muted-background);
+  height: 100vh;
+}
+
 h1 {
   position: absolute;
   top: 90px;
@@ -12,46 +17,67 @@ h1 {
 }
 
 #org_div {
-    position: relative;
-    border: 2px solid black;
+    border: 2px solid var(--revvy-black);
     width: 85%;
-    height: 200px;
-    cursor: pointer;;
+    height: 360px;
+    cursor: pointer;
+    border-radius: 10px;
+    justify-self: center;
 }
-
 
 #org-list {
-    margin-left: 40px; 
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
-    gap: 10px;
-    max-width: 100%;
-    position: relative;
-    top: 120px;
-}
-#org_title {
-    text-align: center;
-    font-size: 250%;
+    grid-template-columns: repeat(auto-fit, 360px); /* auto-adjusts columns */
+    justify-content: center;
+    margin: 120px auto 0;
 }
 
-#usr_points {
+#org_title {
+    display: grid;
+    text-align: center;
+    font-size: 250%;
+    margin: 24px;
+    height: 120px;
+    align-items: center;
+    font-weight: 650;
+}
+
+.usr_points {
     text-align: center;
     position: relative;
     top: 10px;
+    background-color: var(--revvy-green);
+    border-bottom: 4px solid var(--revvy-black);
+    border-right: 4px solid var(--revvy-black);
+    width: 200px;
+    border-radius: 10px;
+    justify-self: center;
+    padding: 12px;
+}
+
+.points-label {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.points-value {
+  font-size: 24px;
+  font-weight: 700;
 }
 
 #org_div .leave-btn {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  bottom: 24px;
   transform: translateX(-50%);
 }
 
 .leave-btn {
   padding: 6px 10px;
   background-color: #E7465B;
-  border-radius: 8px;
-  border: 1px solid #000000;
+  border-radius: 10px;
+  border-bottom: 3px solid var(--revvy-black);
+  border-right: 3px solid var(--revvy-black);
   font-weight: 700;
   transition: background-color 0.2s ease;
   cursor: pointer;

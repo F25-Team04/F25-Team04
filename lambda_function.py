@@ -9,6 +9,7 @@ import base64
 import secrets
 import unicodedata
 import requests
+import math
 
 # ==== response builder =================================================================
 def build_response(status: int, payload):
@@ -547,20 +548,6 @@ def post_decision(body):
                 conn.rollback()
                 return build_response(404, "Application not found")
 
-
-            # 1) Lock and load the application
-            cur.execute("""
-                SELECT app_id, app_driver, app_org, app_status
-                FROM Applications
-                WHERE app_id = %s
-                    AND app_isdeleted = 0
-                FOR UPDATE
-            """, (application_id,))
-            app = cur.fetchone()
-            if not app:
-                conn.rollback()
-                return build_response(404, "Application not found")
-
             if app["app_status"] != "pending":
                 conn.rollback()
                 return build_response(400, f"Application is not pending (current status: {app['app_status']})")
@@ -770,6 +757,123 @@ def post_catalog_rules(body):
         "message": f"Catalog rules updated for organization: {org}"
     })
 
+def post_orders(body):
+    print(body)
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    items   = body.get("items")  # list[int]
+
+    if user_id is None or org_id is None or items is None:
+        raise Exception("Missing required field(s): user_id, org_id, items")
+    if not isinstance(items, list) or not all(isinstance(i, int) for i in items):
+        raise Exception("Field 'items' must be a list of item IDs (integers)")
+
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) Fetch products (normalize price to float)
+            items_data = []
+            for item_id in items:
+                url = f"https://fakestoreapi.com/products/{item_id}"
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Connection": "close",
+                }
+                r = requests.get(url, headers=headers, timeout=5)
+                if r.status_code != 200:
+                    raise Exception(f"Failed to fetch item {item_id} from FakeStore API")
+                item = r.json()
+                item["price_f"] = float(item["price"])
+                items_data.append(item)
+
+            total_usd = round(sum(i["price_f"] for i in items_data), 2)
+
+            # 2) Org conversion rate (float)
+            cur.execute("""
+                SELECT org_conversionrate
+                FROM Organizations
+                WHERE org_id = %s
+            """, (org_id,))
+            row = cur.fetchone()
+            if not row:
+                raise Exception("Organization not found")
+            conversion_rate = float(row["org_conversionrate"])
+            if conversion_rate <= 0:
+                raise Exception("Invalid org conversion rate")
+
+            # 3) Compute points per item (ceil(price / rate))
+            for i in items_data:
+                i["points_int"] = int(math.ceil(i["price_f"] / conversion_rate))
+
+            total_points = sum(i["points_int"] for i in items_data)
+
+            # 4) Get user's current point balance (lock row)
+            cur.execute("""
+                SELECT spo_pointbalance
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_org = %s
+                FOR UPDATE
+            """, (user_id, org_id))
+            bal_row = cur.fetchone()
+            if not bal_row:
+                raise Exception("User sponsorship not found")
+            user_points = int(bal_row["spo_pointbalance"] or 0)
+
+            if user_points < total_points:
+                raise Exception(f"Insufficient points for this order, {user_points} < {total_points}")
+
+            # 5) Deduct points
+            cur.execute("""
+                UPDATE Sponsorships
+                SET spo_pointbalance = spo_pointbalance - %s
+                WHERE spo_user = %s AND spo_org = %s
+            """, (total_points, user_id, org_id))
+
+            # 6) Insert order
+            cur.execute("""
+                INSERT INTO Orders (
+                    ord_userid, ord_orgid, ord_placedby,
+                    ord_confirmeddate, ord_status,
+                    ord_totalpoints, ord_totalusd
+                ) VALUES (
+                    %s, %s, %s,
+                    NOW(), %s,
+                    %s, %s
+                )
+            """, (user_id, org_id, user_id, "confirmed", total_points, total_usd))
+            order_id = cur.lastrowid
+            if not order_id:
+                raise Exception("Failed to create order")
+
+            # 7) Insert order items
+            for i in items_data:
+                cur.execute("""
+                    INSERT INTO Order_Items (
+                        itm_orderid, itm_productid, itm_name,
+                        itm_desc, itm_image,
+                        itm_usdcost, itm_pointcost
+                    ) VALUES (
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s
+                    )
+                """, (
+                    order_id, i["id"], i["title"],
+                    i["description"], i["image"],
+                    i["price_f"], i["points_int"]
+                ))
+
+            conn.commit()
+            return build_response(200, {"message": "Order placed successfully", "order_id": order_id})
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
     driverID = queryParams.get("id")
@@ -868,7 +972,8 @@ def get_user(queryParams):
                     JSON_OBJECT(
                         'org_id',        o.org_id,
                         'org_name',      o.org_name,
-                        'spo_pointbalance', s.spo_pointbalance
+                        'spo_pointbalance', s.spo_pointbalance,
+                        'org_conversion_rate', o.org_conversionrate
                     )
                 )
                 FROM Sponsorships s
@@ -1067,7 +1172,33 @@ def get_products(queryParams):
 
         return build_response(200, products)
     else:
-        return build_response(500, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
+        return build_response(400, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
+    
+def get_product(queryParams):
+    queryParams = queryParams or {}
+    id = queryParams.get("id")
+    if id is None:
+        return build_response(400, f"Missing Required Query Parameter, Status Code {response.status_code}")
+    
+    try:
+        # Call the FakeStoreAPI to get the products
+        url = "https://fakestoreapi.com/products/" + str(id)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Connection": "close",
+        }
+        response = requests.get(url, headers=headers, timeout=5)
+        print("DEBUG - Products API response:\n", json.dumps(response.json(), indent=2))
+    except requests.RequestException as e:
+        return build_response(500, f"Failed to retrieve product from FakeStoreAPI: {e}")
+    
+    if response.status_code == 200:
+        products = response.json()
+        return build_response(200, products)
+    else:
+        return build_response(400, f"Failed to retrieve products from FakeStoreAPI: Status code {response.status_code}")
 
 def get_catalog_rules(queryParams):
     # returns catalog rules for the specified organization
@@ -1082,6 +1213,86 @@ def get_catalog_rules(queryParams):
         return build_response(200, rules)
     else:
         return build_response(404, f"No catalog rules found for organization: {org}")
+
+def get_orders(queryParams):
+    queryParams = queryParams or {}
+    user_id  = queryParams.get("id")
+    org_id   = queryParams.get("org")
+    order_id = queryParams.get("order")
+    status   = queryParams.get("status")
+
+    if user_id is None:
+        raise Exception("Missing required query parameter: id")
+
+    # qualify columns to avoid ambiguity
+    conditions = ["Users.usr_id = %s"]
+    values = [user_id]
+
+    if org_id is not None:
+        conditions.append("Orders.ord_orgid = %s")
+        values.append(org_id)
+    if order_id is not None:
+        conditions.append("Orders.ord_id = %s")
+        values.append(order_id)
+    if status is not None:
+        conditions.append("Orders.ord_status = %s")
+        values.append(status)
+
+    sql = f"""
+        SELECT
+            Orders.*,
+
+            COALESCE((
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'itm_id',           i.itm_id,
+                        'itm_productid',    i.itm_productid,
+                        'itm_name',         i.itm_name,
+                        'itm_desc',         i.itm_desc,
+                        'itm_image',        i.itm_image,
+                        'itm_pointcost',    i.itm_pointcost,
+                        'itm_usdcost',      i.itm_usdcost
+                    )
+                )
+                FROM Order_Items i
+                WHERE i.itm_orderid = Orders.ord_id
+            ), JSON_ARRAY()) AS items
+
+        FROM Orders
+        JOIN Users ON Users.usr_id = Orders.ord_userid
+        WHERE { " AND ".join(conditions) }
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(sql, values)
+        rows = cur.fetchall()
+        
+        # turn organizations list from JSON string to list
+        for row in rows:
+            items_json = row.get("items")
+            row["items"] = json.loads(items_json) if items_json else []
+
+    if not rows:
+        return build_response(404, "No orders match the given parameters.")
+    return build_response(200, rows)
+
+def get_notifications(queryParams):
+    userID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT
+                not_id AS "IdNum", 
+                not_message AS "Message",
+                not_date AS "Date"
+            FROM Notifications
+            WHERE not_userid = %s
+            AND not_isdeleted = 0
+        """, userID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
 
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
@@ -1105,6 +1316,31 @@ def delete_user(queryParams):
         return build_response(200, {
             "success": True,
             "message": f"User {usr_id} deleted"
+        })
+    
+    return build_response(404, f"No user found with id={usr_id}")
+
+def delete_notification(queryParams):
+    # marks user as deleted in the database
+    queryParams = queryParams or {}
+    usr_id = queryParams.get("id")
+    if usr_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Notifications
+            SET not_isdeleted = 1
+            WHERE not_id = %s
+            AND not_isdeleted = 0
+        """, usr_id)
+        result = cur.fetchall()
+        affected = cur.rowcount
+        conn.commit()
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"Notifcation {usr_id} deleted"
         })
     
     return build_response(404, f"No user found with id={usr_id}")
@@ -1141,16 +1377,24 @@ def lambda_handler(event, context):
             response = get_security_questions()
         elif (method == "GET" and path == "/products"):
             response = get_products(queryParams)
+        elif (method == "GET" and path == "/product"):
+            response = get_product(queryParams)
         elif (method == "GET" and path == "/catalog_rules"):
             response = get_catalog_rules(queryParams)
         elif (method == "GET" and path == "/application"):
             response = get_application(queryParams)
         elif (method == "GET" and path == "/driver_transactions"):
             response = get_driver_transactions(queryParams)
+        elif (method == "GET" and path == "/orders"):
+            response = get_orders(queryParams)
+        elif (method == "GET" and path == "/notifications"):
+            response = get_notifications(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
             response = delete_user(queryParams)
+        elif (method == "DELETE" and path == "/notifications"):
+            response = delete_notification(queryParams)
         
         # POST
         elif (method == "POST" and path == "/signup"):
@@ -1175,6 +1419,10 @@ def lambda_handler(event, context):
             response = post_catalog_rules(body)
         elif (method == "POST" and path == "/leave_organization"):
             response = post_leave_organization(body)
+        elif (method == "POST" and path == "/orders"):
+            response = post_orders(body)
+        elif (method == "POST" and path == "/checkout"):
+            response = post_checkout(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
