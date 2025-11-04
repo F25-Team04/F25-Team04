@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+html, body {
+    background-color: var(--muted-background);
+}
+
 .points-card {
     display: grid;
     grid-template-columns: 40px 1fr;
@@ -37,10 +41,9 @@
 }
 
 .points-content {
-    background-color: var(--muted-background);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
     border-radius: 10px;
-    padding: 24px;
+    padding: 10px 24px;
     width: 720px;
     justify-self: center;
 }
@@ -62,4 +65,8 @@
 
 .title-icon {
     font-size: 48px;
+}
+
+.points-value {
+    margin-left: auto;
 }

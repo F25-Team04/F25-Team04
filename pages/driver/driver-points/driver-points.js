@@ -64,40 +64,58 @@ window.onload = function() {
             for (let i = 0; i < data.length; i++) {
                 const t = data[i];
                 const div = document.createElement("div");
-
-                // icon (left)
-                const icon = document.createElement("i");
                 const isLoss = Number(t.Amount) < 0;
+
+                // left: icon
+                const icon_div = document.createElement("span");
+                icon_div.style.display = "inline-flex";
+                icon_div.style.alignItems = "center";
+                icon_div.style.justifyContent = "center";
+                icon_div.style.width = "36px";
+                icon_div.style.height = "36px";
+                icon_div.style.borderRadius = "50%";
+                icon_div.style.backgroundColor = isLoss ? "rgba(239, 68, 68, 0.10)" : "rgba(30, 215, 96, 0.10)";
+
+                const icon = document.createElement("i");
                 icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
                 icon.style.color = isLoss ? "#EF4444" : "#1ED760";
                 icon.style.fontSize = "24px";
+                icon_div.appendChild(icon);
 
-                // text content (right)
+                // middle: reason + date stacked
                 const content = document.createElement("div");
+                content.className = "reason-date";
+                const pReason = document.createElement("p");
+                pReason.textContent = t.Reason ?? "";
+                content.appendChild(pReason);
 
-                const p1 = document.createElement("p");
-                p1.textContent = "Amount: " + t.Amount;
-                content.appendChild(p1);
+                const pDate = document.createElement("p");
+                pDate.textContent = new Date(t.Date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                    }) ?? "";
+                pDate.style.color = "#6b7280";
+                content.appendChild(pDate);
 
-                const p2 = document.createElement("p");
-                p2.textContent = "Reason: " + (t.Reason ?? "");
-                content.appendChild(p2);
-
-                const p3 = document.createElement("p");
-                p3.textContent = "Date: " + (t.Date ?? "");
-                content.appendChild(p3);
+                // right: amount
+                const pAmount = document.createElement("h3");
+                pAmount.className = "points-value";
+                pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
+                pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
 
                 // assemble
-                div.appendChild(icon);
+                div.appendChild(icon_div);
                 div.appendChild(content);
+                div.appendChild(pAmount);
 
                 // styling
                 div.className = isLoss ? "loss" : "gain";
                 div.style.display = "flex";
                 div.style.alignItems = "center";
                 div.style.gap = "16px";
-                if (i % 2) div.style.backgroundColor = "#ddd";
-                div.style.padding = "10px";
+                div.style.padding = "16px";
+                if (i < data.length - 1) div.style.borderBottom = "1px solid #ddd";
 
                 container.appendChild(div);
             }
