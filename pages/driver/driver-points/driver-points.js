@@ -111,15 +111,15 @@ window.onload = function() {
                 icon_div.style.display = "inline-flex";
                 icon_div.style.alignItems = "center";
                 icon_div.style.justifyContent = "center";
-                icon_div.style.width = "36px";
-                icon_div.style.height = "36px";
+                icon_div.style.width = "40px";
+                icon_div.style.height = "40px";
                 icon_div.style.borderRadius = "50%";
                 icon_div.style.backgroundColor = isLoss ? "rgba(239, 68, 68, 0.10)" : "rgba(30, 215, 96, 0.10)";
 
                 const icon = document.createElement("i");
                 icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
                 icon.style.color = isLoss ? "#EF4444" : "#1ED760";
-                icon.style.fontSize = "24px";
+                icon.style.fontSize = "32px";
                 icon_div.appendChild(icon);
 
                 // middle: reason + date stacked
@@ -145,6 +145,7 @@ window.onload = function() {
                 pAmount.className = "points-value";
                 pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
                 pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
+                pAmount.style.fontSize = "22px"
 
                 // assemble
                 div.appendChild(icon_div);
