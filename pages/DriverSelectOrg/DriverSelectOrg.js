@@ -99,9 +99,21 @@ window.onload = function () {
       var title = document.createElement("p");
       title.id = "org_title";
       title.innerText = org["org_name"];
-      var currentPoints = document.createElement("p");
-      currentPoints.id = "usr_points";
-      currentPoints.textContent = "Current Points: " + org["spo_pointbalance"];
+
+      const points_div = document.createElement("div");
+      points_div.className = "usr_points";
+
+      const pointsLabel = document.createElement("p");
+      pointsLabel.className = "points-label";
+      pointsLabel.textContent = "Current Points:";
+
+      const pointsValue = document.createElement("p");
+      pointsValue.className = "points-value";
+      pointsValue.textContent = org["spo_pointbalance"];
+
+      points_div.appendChild(pointsLabel);
+      points_div.appendChild(pointsValue);
+
       AddEffectsToButtons(org_div);
 
       // Leave button
@@ -125,7 +137,7 @@ window.onload = function () {
           "..\\Driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
       });
       org_div.appendChild(title);
-      org_div.appendChild(currentPoints);
+      org_div.appendChild(points_div);
       org_div.appendChild(leaveBtn);
       list.appendChild(org_div);
     }
