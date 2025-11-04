@@ -6,6 +6,7 @@ let PointConversionRate;
 let currentPage = 1;
 const ITEMS_PER_PAGE = 8;
 let storeItems = [];
+let CurrDriverPoints;
 
 window.onload = function () {
   var list = this.document.getElementById("links");
@@ -125,13 +126,17 @@ window.onload = function () {
       var orderButton = document.createElement("button");
       orderButton.innerText = "Order Item";
       orderButton.addEventListener("click", function () {
-        window.location =
-          "../OrderSummary/OrderSummary.html?id=" +
-          USER_ID +
-          "&org=" +
-          ORG_ID +
-          "&prod=" +
-          product["id"];
+        if (PricePoints > CurrDriverPoints) {
+          alert("Item is to expensive");
+        } else {
+          window.location =
+            "../OrderSummary/OrderSummary.html?id=" +
+            USER_ID +
+            "&org=" +
+            ORG_ID +
+            "&prod=" +
+            product["id"];
+        }
       });
 
       metaRow.appendChild(productRating);
@@ -267,6 +272,7 @@ window.onload = function () {
   function SetPoints(points) {
     let point = document.getElementById("points");
     point.innerText = points;
+    CurrDriverPoints = parseInt(points);
   }
 
   GetUser();

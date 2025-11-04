@@ -5,6 +5,12 @@ const PROD = params.get("prod");
 let User = {};
 let ConversionRate = 0;
 window.onload = function () {
+  this.document
+    .getElementById("back_button")
+    .addEventListener("click", function () {
+      window.location =
+        "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
+    });
   async function GetUser() {
     try {
       // Send POST request
