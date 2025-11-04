@@ -45,7 +45,7 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products",
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products?org=" + ORG_ID,
         {
           method: "GET",
         }
