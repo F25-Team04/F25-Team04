@@ -119,7 +119,29 @@ def _get_catalog_rules(org):
         
     return rules
 
+def _update_order_totals(order_id):
+    # internal use function
+    # recalculates and updates the total points and USD for the specified order
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                SUM(itm_pointcost) AS total_points,
+                SUM(itm_usdcost) AS total_usd
+            FROM Order_Items
+            WHERE itm_orderid = %s
+            AND itm_isdeleted = 0
+        """, order_id)
+        totals = cur.fetchone()
+        total_points = totals.get("total_points") or 0
+        total_usd = totals.get("total_usd") or 0.0
 
+        cur.execute("""
+            UPDATE Orders
+            SET ord_totalpoints = %s,
+                ord_totalusd = %s
+            WHERE ord_id = %s
+        """, (total_points, total_usd, order_id))
+        conn.commit()
 
 # ==== POST =============================================================================
 
@@ -758,7 +780,6 @@ def post_catalog_rules(body):
     })
 
 def post_orders(body):
-    print(body)
     body = json.loads(body) or {}
     user_id = body.get("user_id")
     org_id  = body.get("org_id")
@@ -880,6 +901,166 @@ def post_orders(body):
 
             conn.commit()
             return build_response(200, {"message": "Order placed successfully", "order_id": order_id})
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+        
+def post_add_to_cart(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    items   = body.get("items")  # list[int]
+
+    if user_id is None or org_id is None or items is None:
+        raise Exception("Missing required field(s): user_id, org_id, items")
+    if not isinstance(items, list) or not all(isinstance(i, int) for i in items):
+        raise Exception("Field 'items' must be a list of item IDs (integers)")
+
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) Fetch products (normalize price to float)
+            items_data = []
+            for item_id in items:
+                url = f"https://fakestoreapi.com/products/{item_id}"
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Connection": "close",
+                }
+                r = requests.get(url, headers=headers, timeout=5)
+                if r.status_code != 200:
+                    raise Exception(f"Failed to fetch item {item_id} from FakeStore API. Please check the item ID and try again.")
+                item = r.json()
+                item["price_f"] = float(item["price"])
+                items_data.append(item)
+
+            total_usd = round(sum(i["price_f"] for i in items_data), 2)
+
+            # 2) Org conversion rate (float)
+            cur.execute("""
+                SELECT org_conversionrate
+                FROM Organizations
+                WHERE org_id = %s
+                AND org_isdeleted = 0
+            """, (org_id,))
+            row = cur.fetchone()
+            if not row:
+                raise Exception("Organization not found")
+            conversion_rate = float(row["org_conversionrate"])
+            if conversion_rate <= 0:
+                raise Exception("Invalid org conversion rate")
+
+            # 3) Compute points per item (ceil(price / rate))
+            for i in items_data:
+                i["points_int"] = int(math.ceil(i["price_f"] / conversion_rate))
+
+            total_points = sum(i["points_int"] for i in items_data)
+
+            # 4) check for existing cart and create if absent
+            cur.execute("""
+                SELECT ord_id
+                FROM Orders
+                WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
+                AND ord_isdeleted = 0
+            """, (user_id, org_id))
+            cart_row = cur.fetchone()
+            if cart_row:
+                order_id = cart_row["ord_id"]
+            else:
+                # Create a new cart order
+                cur.execute("""
+                    INSERT INTO Orders (
+                        ord_userid, ord_orgid,
+                        ord_status,
+                        ord_totalpoints, ord_totalusd
+                    ) VALUES (
+                        %s, %s,
+                        'cart',
+                        0, 0
+                    )
+                """, (user_id, org_id))
+                order_id = cur.lastrowid
+
+            # 5) Insert items into cart
+            for i in items_data:
+                cur.execute("""
+                    INSERT INTO Order_Items (
+                        itm_orderid, itm_productid, itm_name,
+                        itm_desc, itm_image,
+                        itm_usdcost, itm_pointcost
+                    ) VALUES (
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s
+                    )
+                """, (
+                    order_id, i["id"], i["title"],
+                    i["description"], i["image"],
+                    i["price_f"], i["points_int"]
+                ))
+            
+            # 6) Update order totals
+            _update_order_totals(order_id)
+
+            conn.commit()
+            return build_response(200, {"message": f"User {user_id} cart in org {org_id} updated successfully.", "order_id": order_id})
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+    
+def post_remove_from_cart(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    items   = body.get("items")  # list[int]
+    # note: products are only deleted if they exist, and nothing is done otherwise.
+
+    if user_id is None or org_id is None or items is None:
+        raise Exception("Missing required field(s): user_id, org_id, items")
+    if not isinstance(items, list) or not all(isinstance(i, int) for i in items):
+        raise Exception("Field 'items' must be a list of item IDs (integers)")
+
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) check for existing cart
+            cur.execute("""
+                SELECT ord_id
+                FROM Orders
+                WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
+                AND ord_isdeleted = 0
+            """, (user_id, org_id))
+            cart_row = cur.fetchone()
+            if cart_row:
+                order_id = cart_row["ord_id"]
+            else:
+                return build_response(404, f"No existing cart found for user {user_id} and organization {org_id}")
+
+            # 2) remove items from cart
+            for i in items:
+                cur.execute("""
+                    UPDATE Order_Items
+                    SET itm_isdeleted = 1
+                    WHERE itm_id = (
+                        SELECT itm_id
+                        FROM Order_Items
+                        WHERE itm_orderid = %s AND itm_productid = %s
+                        AND itm_isdeleted = 0
+                        LIMIT 1
+                    )
+                """, (order_id, i))
+
+            # 3) Update order totals
+            _update_order_totals(order_id)
+
+            conn.commit()
+            return build_response(200, {"message": f"User {user_id} cart in org {org_id} updated successfully.", "order_id": order_id})
 
         except Exception as e:
             conn.rollback()
@@ -1452,6 +1633,8 @@ def lambda_handler(event, context):
             response = get_orders(queryParams)
         elif (method == "GET" and path == "/notifications"):
             response = get_notifications(queryParams)
+        elif (method == "GET" and path == "/cart"):
+            response = get_cart(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
@@ -1484,6 +1667,10 @@ def lambda_handler(event, context):
             response = post_leave_organization(body)
         elif (method == "POST" and path == "/orders"):
             response = post_orders(body)
+        elif (method == "POST" and path == "/add_to_cart"):
+            response = post_add_to_cart(body)
+        elif (method == "POST" and path == "/remove_from_cart"):
+            response = post_remove_from_cart(body)
         elif (method == "POST" and path == "/checkout"):
             response = post_checkout(body)
 
