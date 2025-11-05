@@ -1065,6 +1065,99 @@ def post_remove_from_cart(body):
         except Exception as e:
             conn.rollback()
             raise e
+        
+def post_checkout(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    # note: checkout fails if no cart exists or if insufficient points
+    
+    if user_id is None or org_id is None:
+        raise Exception("Missing required field(s): user_id, org_id")
+    
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) check for existing cart
+            cur.execute("""
+                SELECT ord_id
+                FROM Orders
+                WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
+                AND ord_isdeleted = 0
+            """, (user_id, org_id))
+            cart_row = cur.fetchone()
+            if cart_row:
+                order_id = cart_row["ord_id"]
+            else:
+                return build_response(404, f"No existing cart found for user {user_id} and organization {org_id}")
+
+            # 4) Get user's current point balance (lock row)
+            cur.execute("""
+                SELECT spo_pointbalance
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_org = %s
+                AND spo_isdeleted = 0
+                FOR UPDATE
+            """, (user_id, org_id))
+            bal_row = cur.fetchone()
+            if not bal_row:
+                raise Exception("User sponsorship not found")
+            user_points = int(bal_row["spo_pointbalance"] or 0)
+
+            # 5) get cart totals
+            cur.execute("""
+                SELECT ord_totalpoints, ord_totalusd
+                FROM Orders
+                WHERE ord_id = %s
+            """, (order_id,))
+            order_row = cur.fetchone()
+            if not order_row:
+                raise Exception("Cart not found")
+            
+            total_points = int(order_row["ord_totalpoints"] or 0)
+            total_usd = float(order_row["ord_totalusd"] or 0.0)
+            
+            if user_points < total_points:
+                raise Exception(f"Insufficient points for this order, {user_points} < {total_points}")
+
+            new_balance = user_points - total_points
+            
+            # 6) Deduct points by setting new balance
+            cur.execute("""
+                UPDATE Sponsorships
+                SET spo_pointbalance = new_balance
+                WHERE spo_user = %s AND spo_org = %s
+            """, (new_balance, user_id, org_id))
+            
+            # 7) Log point transaction, sponsor id is null for orders placed by user themselves
+            cur.execute("""
+                INSERT INTO Point_Transactions (
+                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
+                ) VALUES (
+                    %s, %s, %s, %s, NOW()
+                )
+            """, (user_id, org_id, -total_points, "Order placed"))
+
+            # 8) confirm order
+            cur.execute("""
+                UPDATE Orders 
+                SET ord_placedby = %s,
+                    ord_confirmeddate = NOW(), ord_status = %s,
+                    ord_totalpoints = %s, ord_totalusd = %s
+                WHERE ord_id = %s
+            """, (user_id, "confirmed", total_points, total_usd, order_id))
+            order_id = cur.lastrowid
+            if not order_id:
+                raise Exception("Failed to checkout cart")
+
+            conn.commit()
+            return build_response(200, {"message": "Cart checked out successfully", "order_id": order_id})
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+        
 
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
