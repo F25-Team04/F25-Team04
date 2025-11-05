@@ -3,8 +3,6 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 let User = {};
 let PointConversionRate;
-let currentPage = 1;
-const ITEMS_PER_PAGE = 8;
 let storeItems = [];
 let CurrDriverPoints;
 
@@ -61,8 +59,7 @@ window.onload = function () {
           alert(result.message);
         } else if (response.status == 200) {
           storeItems = Array.isArray(result) ? result : [];
-          renderPage();
-          renderPagination();
+          GenerateStore(storeItems);
         }
       }
     } catch (error) {
@@ -73,10 +70,7 @@ window.onload = function () {
     var store = document.getElementById("store-catalog");
     store.innerHTML = "";
     console.log(items);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    const pageItems = items.slice(start, end);
-    for (let product of pageItems) {
+    for (let product of items) {
       const product_div = document.createElement("div");
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");
@@ -149,9 +143,10 @@ window.onload = function () {
       });
 
       var addCart = document.createElement("button");
-      addCart.innerText = "Add To Cart";
+      addCart.innerText = "Remove From Cart";
       addCart.addEventListener("click", function () {
-        AddItemCart(product["id"]);
+        RemoveItem();
+        GetShop();
       });
 
       metaRow.appendChild(productRating);
@@ -183,74 +178,6 @@ window.onload = function () {
       wrap.appendChild(iEl);
     }
     return wrap;
-  }
-
-  function renderPage() {
-    if (!storeItems || storeItems.length === 0) {
-      document.getElementById("store-catalog").innerHTML =
-        "<p>No items available in the store.</p>";
-      document.getElementById("pagination").innerHTML = "";
-      return;
-    }
-    const totalPages = Math.max(
-      1,
-      Math.ceil(storeItems.length / ITEMS_PER_PAGE)
-    );
-    if (currentPage > totalPages) {
-      currentPage = totalPages;
-    }
-    GenerateStore(storeItems);
-  }
-
-  function renderPagination() {
-    const totalPages = Math.max(
-      1,
-      Math.ceil(storeItems.length / ITEMS_PER_PAGE)
-    );
-    const pag = document.getElementById("pagination");
-    pag.innerHTML = "";
-
-    const makeButton = (label, page, disabled = false, isActive = false) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = label;
-      button.className = "page-btn";
-      // store page number and disabled state
-      button.dataset.page = page;
-      button.disabled = !!disabled;
-      if (isActive) button.classList.add("active");
-      button.addEventListener("click", () => {
-        const targetPage = Number(button.dataset.page);
-        if (targetPage === currentPage) return;
-        currentPage = targetPage;
-        renderPage();
-        renderPagination();
-      });
-      return button;
-    };
-
-    // Previous button
-    pag.appendChild(
-      makeButton(
-        "Previous",
-        Math.max(1, currentPage - 1),
-        currentPage === 1,
-        false
-      )
-    );
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-      pag.appendChild(makeButton(i, i, false, i === currentPage));
-    }
-    // Next button
-    pag.appendChild(
-      makeButton(
-        "Next",
-        Math.min(totalPages, currentPage + 1),
-        currentPage === totalPages,
-        false
-      )
-    );
   }
 
   async function GetUser() {
@@ -291,7 +218,7 @@ window.onload = function () {
     CurrDriverPoints = parseInt(points);
   }
 
-  async function AddItemCart(id) {
+  async function RemoveItem(id) {
     try {
       // Send POST request
       const response = await fetch(
@@ -312,7 +239,6 @@ window.onload = function () {
       console.error("Error:", error);
     }
   }
-
   GetUser();
   GetShop();
 };
