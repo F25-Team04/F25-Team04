@@ -98,15 +98,16 @@ window.onload = function() {
 
 
         // Posts the signup form to the API
-        const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/application", {
+        const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/signup", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            // headers: {
+            //     "Content-Type": "application/json"
+            // },
             body: JSON.stringify(data)
         });
-
+        
         if (!response.ok) {
+            alert("NOT sent")
             throw new Error("Network response was not ok " + response.statusText);
         }
 

@@ -11,6 +11,15 @@ import unicodedata
 import requests
 import math
 
+#from dotenv import load_dotenv
+import os
+
+#load_dotenv()
+
+import time
+import smtplib
+from email.message import EmailMessage
+
 # ==== response builder =================================================================
 def build_response(status: int, payload):
     return {
@@ -119,6 +128,30 @@ def _get_catalog_rules(org):
         
     return rules
 
+def emailSend(to, body, subject):
+    send= EmailMessage()
+    send.set_content(body)
+    send["subject"] = subject
+    send["to"] = to
+
+    #login variables
+    user = "revvyrewards@gmail.com"
+    send['from'] = user
+    password = "psimxzagzdgsetpi" #is a specific app password seperate from gmail password
+
+    #code below will login to email send message and then quit 
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(user, password)
+    server.send_message(send)
+    server.quit()
+
+
+def sendIt(newMessage):
+    tempTarget = "cambro7192@gmail.com"
+    emailSend(tempTarget, newMessage, "New Application")#phone number or email can be substituted
+    
+    return
 
 
 # ==== POST =============================================================================
@@ -237,6 +270,44 @@ def post_change_password(body):
     return build_response(200, {
         "success": False, 
         "message": "User does not exist"
+    })
+
+def post_change_point_rule(body):
+    body = json.loads(body) or {}
+    reason = body.get("reason")
+    amount = body.get("amount")
+    rule_id = body.get("ruleId")
+    if reason is None or amount is None:
+        raise Exception("Missing required field(s): reason, amount")
+        
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT * 
+            FROM Point_Rules
+            WHERE rul_id = %s
+            AND rul_isdeleted = 0
+        """, rule_id)
+        user = cur.fetchone()
+
+    if user:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE Point_Rules 
+                    SET rul_reason = %s, 
+                    rul_pointdelta = %s
+                    WHERE rul_id = %s
+                    AND rul_isdeleted = 0
+                """, (reason, amount, rule_id))
+            conn.commit()
+
+            return build_response(200, {
+                "success": True, 
+                "message": "Point_Rule successfully updated."
+            })
+
+    return build_response(200, {
+        "success": False, 
+        "message": "Rule does not exist"
     })
 
 def post_user_update(body):
@@ -456,7 +527,7 @@ def post_application(body):
         except Exception as e:
             conn.rollback()
             raise e
-
+    sendIt("New User Sent Application")
     return build_response(200, {
         "message": "Application submitted"
     })
@@ -1345,6 +1416,31 @@ def delete_notification(queryParams):
     
     return build_response(404, f"No user found with id={usr_id}")
 
+def delete_change_point_rule(queryParams):
+    # marks user as deleted in the database
+    queryParams = queryParams or {}
+    rule_id = queryParams.get("id")
+    if rule_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Point_Rules
+            SET rul_isdeleted = 1
+            WHERE rul_id = %s
+            AND rul_isdeleted = 0
+        """, rule_id)
+        result = cur.fetchall()
+        affected = cur.rowcount
+        conn.commit()
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"Rule {rule_id} deleted"
+        })
+    
+    return build_response(404, f"No Rule found with id={rule_id}")
+
 # ==== handler (main) ===================================================================
 # overall handler for requests
 def lambda_handler(event, context):
@@ -1395,6 +1491,8 @@ def lambda_handler(event, context):
             response = delete_user(queryParams)
         elif (method == "DELETE" and path == "/notifications"):
             response = delete_notification(queryParams)
+        elif (method == "DELETE" and path == "/change_point_rule"):
+            response = delete_change_point_rule(queryParams)
         
         # POST
         elif (method == "POST" and path == "/signup"):
@@ -1405,6 +1503,8 @@ def lambda_handler(event, context):
             response = post_application(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
+        elif (method == "POST" and path == "/change_point_rule"):
+            response = post_change_point_rule(body)
         elif (method == "POST" and path == "/user_update"):
             response = post_user_update(body)
         elif (method == "POST" and path == "/query"):
