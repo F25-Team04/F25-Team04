@@ -1267,6 +1267,7 @@ def get_orders(queryParams):
                 )
                 FROM Order_Items i
                 WHERE i.itm_orderid = Orders.ord_id
+                AND i.itm_isdeleted = 0
             ), JSON_ARRAY()) AS items
 
         FROM Orders
@@ -1278,7 +1279,7 @@ def get_orders(queryParams):
         cur.execute(sql, values)
         rows = cur.fetchall()
         
-        # turn organizations list from JSON string to list
+        # turn items list from JSON string to list
         for row in rows:
             items_json = row.get("items")
             row["items"] = json.loads(items_json) if items_json else []
@@ -1304,6 +1305,57 @@ def get_notifications(queryParams):
         transactions = cur.fetchall()
         
     return build_response(200, transactions)
+
+def get_cart(queryParams):
+    queryParams = queryParams or {}
+    user_id  = queryParams.get("id")
+    org_id   = queryParams.get("org")
+
+    if user_id is None or org_id is None:
+        raise Exception("Missing required query parameter: id, org")
+
+    # qualify columns to avoid ambiguity
+    conditions = ["Users.usr_id = %s", "Organizations.org_id = %s", "Orders.ord_status = 'cart'"]
+    values = [user_id, org_id]
+
+    sql = f"""
+        SELECT
+            Orders.*,
+
+            COALESCE((
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'itm_id',           i.itm_id,
+                        'itm_productid',    i.itm_productid,
+                        'itm_name',         i.itm_name,
+                        'itm_desc',         i.itm_desc,
+                        'itm_image',        i.itm_image,
+                        'itm_pointcost',    i.itm_pointcost,
+                        'itm_usdcost',      i.itm_usdcost
+                    )
+                )
+                FROM Order_Items i
+                WHERE i.itm_orderid = Orders.ord_id
+                AND i.itm_isdeleted = 0
+            ), JSON_ARRAY()) AS items
+
+        FROM Orders
+        JOIN Users ON Users.usr_id = Orders.ord_userid
+        WHERE { " AND ".join(conditions) }
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(sql, values)
+        rows = cur.fetchall()
+        
+        # turn items list from JSON string to list
+        for row in rows:
+            items_json = row.get("items")
+            row["items"] = json.loads(items_json) if items_json else []
+
+    if not rows:
+        return build_response(404, f"No cart items found for user {user_id} in org {org_id}.")
+    return build_response(200, rows)
 
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
