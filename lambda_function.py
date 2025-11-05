@@ -826,14 +826,25 @@ def post_orders(body):
             if user_points < total_points:
                 raise Exception(f"Insufficient points for this order, {user_points} < {total_points}")
 
-            # 5) Deduct points
+            new_balance = user_points - total_points
+            
+            # 5) Deduct points by setting new balance
             cur.execute("""
                 UPDATE Sponsorships
-                SET spo_pointbalance = spo_pointbalance - %s
+                SET spo_pointbalance = new_balance
                 WHERE spo_user = %s AND spo_org = %s
-            """, (total_points, user_id, org_id))
+            """, (new_balance, user_id, org_id))
+            
+            # 6) Log point transaction, sponsor id is null for orders placed by user themselves
+            cur.execute("""
+                INSERT INTO Point_Transactions (
+                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
+                ) VALUES (
+                    %s, %s, %s, %s, NOW()
+                )
+            """, (user_id, org_id, -total_points, "Order placed"))
 
-            # 6) Insert order
+            # 7) Insert order
             cur.execute("""
                 INSERT INTO Orders (
                     ord_userid, ord_orgid, ord_placedby,
@@ -849,7 +860,7 @@ def post_orders(body):
             if not order_id:
                 raise Exception("Failed to create order")
 
-            # 7) Insert order items
+            # 8) Insert order items
             for i in items_data:
                 cur.execute("""
                     INSERT INTO Order_Items (
