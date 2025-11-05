@@ -1013,58 +1013,108 @@ def post_add_to_cart(body):
             conn.rollback()
             raise e
     
+from collections import Counter
+
 def post_remove_from_cart(body):
     body = json.loads(body) or {}
     user_id = body.get("user_id")
     org_id  = body.get("org_id")
-    items   = body.get("items")  # list[int]
-    # note: products are only deleted if they exist, and nothing is done otherwise.
+    items   = body.get("items")  # list[int], may contain duplicates
 
     if user_id is None or org_id is None or items is None:
         raise Exception("Missing required field(s): user_id, org_id, items")
     if not isinstance(items, list) or not all(isinstance(i, int) for i in items):
         raise Exception("Field 'items' must be a list of item IDs (integers)")
 
+    if not items:
+        return build_response(200, {"message": "Nothing to remove.", "removed": [], "not_found": []})
+
+    # Count requested quantities per product id
+    req_counts = Counter(items)
+
     with conn.cursor() as cur:
         try:
             conn.begin()
 
-            # 1) check for existing cart
+            # 1) find existing cart
             cur.execute("""
                 SELECT ord_id
                 FROM Orders
-                WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
-                AND ord_isdeleted = 0
+                WHERE ord_userid = %s AND ord_orgid = %s
+                  AND ord_status = 'cart' AND ord_isdeleted = 0
+                LIMIT 1
             """, (user_id, org_id))
-            cart_row = cur.fetchone()
-            if cart_row:
-                order_id = cart_row["ord_id"]
-            else:
+            row = cur.fetchone()
+            if not row:
+                conn.rollback()
                 return build_response(404, f"No existing cart found for user {user_id} and organization {org_id}")
 
-            # 2) remove items from cart
-            for i in items:
-                cur.execute("""
-                    UPDATE Order_Items
-                    SET itm_isdeleted = 1
-                    WHERE itm_id = (
-                        SELECT itm_id
-                        FROM Order_Items
-                        WHERE itm_orderid = %s AND itm_productid = %s
-                        AND itm_isdeleted = 0
-                        LIMIT 1
-                    )
-                """, (order_id, i))
+            order_id = row["ord_id"]
 
-            # 3) Update order totals
+            # 2) for each product, select as many rows as requested (no duplicates)
+            ids_to_delete = []
+            removed_summary = {}   # product_id -> removed_count
+            not_found = {}         # product_id -> shortfall
+
+            for product_id, needed in req_counts.items():
+                # lock the candidate rows so concurrent updates can't race us
+                cur.execute("""
+                    SELECT itm_id
+                    FROM Order_Items
+                    WHERE itm_orderid = %s
+                      AND itm_productid = %s
+                      AND itm_isdeleted = 0
+                    ORDER BY itm_id
+                    LIMIT %s
+                    FOR UPDATE
+                """, (order_id, product_id, needed))
+                rows = cur.fetchall()
+                found = len(rows)
+                if found:
+                    ids_to_delete.extend(r["itm_id"] for r in rows)
+                    removed_summary[product_id] = found
+                if found < needed:
+                    not_found[product_id] = needed - found
+
+            if not ids_to_delete:
+                # nothing matched, but cart exists
+                conn.commit()
+                return build_response(200, {
+                    "message": "No matching items found in the cart to remove.",
+                    "removed": [],
+                    "not_found": sorted(list(req_counts.keys())),  # all requested were missing
+                    "order_id": order_id
+                })
+
+            # 3) soft-delete selected rows by primary key (avoids the MySQL subquery limitation)
+            placeholders = ",".join(["%s"] * len(ids_to_delete))
+            cur.execute(f"""
+                UPDATE Order_Items
+                SET itm_isdeleted = 1
+                WHERE itm_id IN ({placeholders})
+            """, ids_to_delete)
+
+            # 4) recompute order totals from remaining items
             _update_order_totals(order_id)
 
+            # format response
+            removed_products = sorted(removed_summary.keys())
+            not_found_products = sorted([p for p, short in not_found.items() if short > 0])
+
             conn.commit()
-            return build_response(200, {"message": f"User {user_id} cart in org {org_id} updated successfully.", "order_id": order_id})
+            return build_response(200, {
+                "message": f"Removed {len(ids_to_delete)} item row(s) from cart.",
+                "removed_product_counts": removed_summary,   # {product_id: removed_rows}
+                "not_fulfilled_counts": not_found,          # {product_id: shortfall}
+                "removed_product_ids": removed_products,
+                "not_found": not_found_products,
+                "order_id": order_id
+            })
 
         except Exception as e:
             conn.rollback()
             raise e
+
         
 def post_checkout(body):
     body = json.loads(body) or {}
@@ -1079,12 +1129,13 @@ def post_checkout(body):
         try:
             conn.begin()
 
-            # 1) check for existing cart
+            # 1) check for existing, non-empty cart
             cur.execute("""
                 SELECT ord_id
                 FROM Orders
                 WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
                 AND ord_isdeleted = 0
+                AND (SELECT COUNT(*) FROM Order_Items WHERE itm_orderid = Orders.ord_id AND itm_isdeleted = 0) > 0
             """, (user_id, org_id))
             cart_row = cur.fetchone()
             if cart_row:
@@ -1092,7 +1143,7 @@ def post_checkout(body):
             else:
                 return build_response(404, f"No existing cart found for user {user_id} and organization {org_id}")
 
-            # 4) Get user's current point balance (lock row)
+            # 2) Get user's current point balance (lock row)
             cur.execute("""
                 SELECT spo_pointbalance
                 FROM Sponsorships
@@ -1105,7 +1156,7 @@ def post_checkout(body):
                 raise Exception("User sponsorship not found")
             user_points = int(bal_row["spo_pointbalance"] or 0)
 
-            # 5) get cart totals
+            # 3) get cart totals
             cur.execute("""
                 SELECT ord_totalpoints, ord_totalusd
                 FROM Orders
@@ -1123,14 +1174,14 @@ def post_checkout(body):
 
             new_balance = user_points - total_points
             
-            # 6) Deduct points by setting new balance
+            # 4) Deduct points by setting new balance
             cur.execute("""
                 UPDATE Sponsorships
-                SET spo_pointbalance = new_balance
+                SET spo_pointbalance = %s
                 WHERE spo_user = %s AND spo_org = %s
             """, (new_balance, user_id, org_id))
             
-            # 7) Log point transaction, sponsor id is null for orders placed by user themselves
+            # 5) Log point transaction, sponsor id is null for orders placed by user themselves
             cur.execute("""
                 INSERT INTO Point_Transactions (
                     ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
@@ -1139,7 +1190,7 @@ def post_checkout(body):
                 )
             """, (user_id, org_id, -total_points, "Order placed"))
 
-            # 8) confirm order
+            # 6) confirm order
             cur.execute("""
                 UPDATE Orders 
                 SET ord_placedby = %s,
@@ -1147,9 +1198,6 @@ def post_checkout(body):
                     ord_totalpoints = %s, ord_totalusd = %s
                 WHERE ord_id = %s
             """, (user_id, "confirmed", total_points, total_usd, order_id))
-            order_id = cur.lastrowid
-            if not order_id:
-                raise Exception("Failed to checkout cart")
 
             conn.commit()
             return build_response(200, {"message": "Cart checked out successfully", "order_id": order_id})
@@ -1589,7 +1637,7 @@ def get_cart(queryParams):
         raise Exception("Missing required query parameter: id, org")
 
     # qualify columns to avoid ambiguity
-    conditions = ["Users.usr_id = %s", "Organizations.org_id = %s", "Orders.ord_status = 'cart'"]
+    conditions = ["Users.usr_id = %s", "Orders.ord_orgid = %s", "Orders.ord_status = 'cart'"]
     values = [user_id, org_id]
 
     sql = f"""
