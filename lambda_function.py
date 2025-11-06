@@ -11,6 +11,16 @@ import unicodedata
 import requests
 import math
 
+
+import smtplib
+from email.message import EmailMessage
+
+# import random
+
+emailBody =""#will be filled with information from the api
+TARGET_EMAIL = "cambro7192@gmail.com"
+#APP_MAIL_PASSWORD = os.getenv("APP-MAIL-PASSWORD")
+
 # ==== response builder =================================================================
 def build_response(status: int, payload):
     return {
@@ -143,6 +153,30 @@ def _update_order_totals(order_id):
         """, (total_points, total_usd, order_id))
         conn.commit()
 
+def emailSend(to, body, subject):
+    send= EmailMessage()
+    send.set_content(body)
+    send["subject"] = subject
+    send["to"] = to
+
+    #login variables
+    user = "revvyrewards@gmail.com"
+    send['from'] = user
+    password = "psimxzagzdgsetpi" #is a specific app password seperate from gmail password
+
+    #code below will login to email send message and then quit 
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(user, password)
+    server.send_message(send)
+    server.quit()
+
+
+def sendIt(newMessage):
+    tempTarget = "cambro7192@gmail.com"
+    emailSend(tempTarget, newMessage, "Daily Affirmation")#phone number or email can be substituted
+    print("Report sent")#confirms function has been run
+    return
 # ==== POST =============================================================================
 
 def post_query(query):
@@ -479,6 +513,7 @@ def post_application(body):
             conn.rollback()
             raise e
 
+    sendIt("New User Applied to Your Org")
     return build_response(200, {
         "message": "Application submitted"
     })
