@@ -47,18 +47,22 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products?org=" +
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/cart?id=" +
+          USER_ID +
+          "&org=" +
           ORG_ID,
         {
           method: "GET",
         }
       );
       if (response.ok) {
-        const result = await response.json();
+        result = await response.json();
+        result = result[0];
+        console.log(result);
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
-          storeItems = Array.isArray(result) ? result : [];
+          storeItems = Array.isArray(result["items"]) ? result["items"] : [];
           GenerateStore(storeItems);
         }
       }
@@ -75,12 +79,12 @@ window.onload = function () {
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");
       product_img.className = "product_image";
-      product_img.src = product["image"] || product.image || "";
+      product_img.src = product["itm_image"] || product.image || "";
 
       const content = document.createElement("div");
       content.className = "product_content";
       console.log(PointConversionRate);
-      const PricePoints = parseInt(product["price"]) / PointConversionRate;
+      const PricePoints = parseInt(product["itm_pointcost"]);
 
       const totalCents = Math.round(
         Number(product["price"] || product.price || 0) * 100
@@ -92,7 +96,7 @@ window.onload = function () {
         (product["rating"] && product["rating"]["rate"]) ||
         (product.rating && product.rating.rate) ||
         "N/A";
-      const title = product["title"] || product.title || "Untitled";
+      const title = product["itm_name"] || product.title || "Untitled";
 
       const productName = document.createElement("h3");
       productName.className = "product_name";
@@ -145,7 +149,7 @@ window.onload = function () {
       var addCart = document.createElement("button");
       addCart.innerText = "Remove From Cart";
       addCart.addEventListener("click", function () {
-        RemoveItem();
+        RemoveItem(product["id"]);
         GetShop();
       });
 
@@ -197,7 +201,6 @@ window.onload = function () {
         } else if (response.status == 200) {
           User = result[0];
           console.log(User);
-          console.log(PointConversionRate);
           for (var org of result[0]["Organizations"]) {
             if (org["org_id"] == ORG_ID) {
               console.log(org);
@@ -219,20 +222,29 @@ window.onload = function () {
   }
 
   async function RemoveItem(id) {
+    const data = {
+      user_id: USER_ID,
+      org_id: ORG_ID,
+      items: [parseInt(id)],
+    };
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
-          id,
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/remove_from_cart",
         {
-          method: "GET",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // IMPORTANT
+          },
+          body: JSON.stringify(data),
         }
       );
+      console.log(response);
       if (response.ok) {
         const result = await response.json();
-        if (response.success == false) {
+
+        if (response.status != 200) {
           alert(result.message);
-        } else if (response.status == 200) {
         }
       }
     } catch (error) {

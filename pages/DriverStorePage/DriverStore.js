@@ -292,20 +292,29 @@ window.onload = function () {
   }
 
   async function AddItemCart(id) {
+    const data = {
+      user_id: USER_ID,
+      org_id: ORG_ID,
+      items: [parseInt(id)],
+    };
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
-          id,
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/add_to_cart",
         {
-          method: "GET",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // IMPORTANT
+          },
+          body: JSON.stringify(data),
         }
       );
+      console.log(response);
       if (response.ok) {
         const result = await response.json();
-        if (response.success == false) {
+
+        if (response.status != 200) {
           alert(result.message);
-        } else if (response.status == 200) {
         }
       }
     } catch (error) {
