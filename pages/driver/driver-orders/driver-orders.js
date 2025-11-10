@@ -2,22 +2,28 @@ const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
-window.onload = function() {
+window.onload = function () {
   // build nav
   const list = document.getElementById("links");
   if (list) {
     const li = document.createElement("li");
 
     const link = document.createElement("a");
-    link.href = "../driver.html?id=" + USER_ID + "&org=" + ORG_ID; 
+    link.href = "../driver.html?id=" + USER_ID + "&org=" + ORG_ID;
     link.textContent = "Dashboard";
     li.appendChild(link);
 
     const store = document.createElement("a");
-    store.href = "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID; 
+    store.href =
+      "../../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
     store.textContent = "Store";
     li.appendChild(store);
 
+    const cart = document.createElement("a");
+    cart.href =
+      "../../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+    cart.textContent = "Cart";
+    li.appendChild(cart);
     list.appendChild(li);
   }
 
@@ -31,8 +37,11 @@ async function loadOrders() {
   container.textContent = "Loading orders...";
 
   try {
-    const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" + USER_ID, 
-        { method: "GET" });
+    const resp = await fetch(
+      "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" +
+        USER_ID,
+      { method: "GET" }
+    );
     if (!resp.ok) {
       const txt = await resp.text().catch(() => "");
       throw new Error(txt || `Failed to load orders (${resp.status})`);
@@ -60,7 +69,7 @@ async function loadOrders() {
 }
 
 function orderDate(order) {
-  const raw = order.ord_confirmeddate
+  const raw = order.ord_confirmeddate;
   if (!raw) return null;
   const d = new Date(raw);
   return isNaN(d.getTime()) ? null : d;
@@ -91,7 +100,7 @@ function renderOrders(orders) {
     return;
   }
 
-  orders.forEach(order => {
+  orders.forEach((order) => {
     const card = document.createElement("div");
     card.className = "order-card";
 
@@ -119,7 +128,7 @@ function renderOrders(orders) {
     let totalPts = 0;
     let totalUsd = 0;
 
-    items.forEach(it => {
+    items.forEach((it) => {
       const li = document.createElement("li");
       li.className = "order-item";
       const name = it.itm_name;
@@ -127,7 +136,9 @@ function renderOrders(orders) {
       const usd = Number(it.itm_usdcost);
       totalPts += pts;
       totalUsd += usd;
-      li.textContent = `${name} — ${pts ? pts + " pts" : ""}${(pts && usd) ? " / " : ""}${usd ? "$" + usd.toFixed(2) : ""}`;
+      li.textContent = `${name} — ${pts ? pts + " pts" : ""}${
+        pts && usd ? " / " : ""
+      }${usd ? "$" + usd.toFixed(2) : ""}`;
       list.appendChild(li);
     });
 
@@ -138,7 +149,9 @@ function renderOrders(orders) {
     const totalsParts = [];
     if (totalPts) totalsParts.push(`${totalPts} pts`);
     if (totalUsd) totalsParts.push(`$${totalUsd.toFixed(2)}`);
-    totals.textContent = totalsParts.length ? `Total: ${totalsParts.join(" / ")}` : "";
+    totals.textContent = totalsParts.length
+      ? `Total: ${totalsParts.join(" / ")}`
+      : "";
 
     footer.appendChild(totals);
 

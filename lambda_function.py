@@ -1123,6 +1123,7 @@ def post_remove_from_cart(body):
 
             # 3) soft-delete selected rows by primary key (avoids the MySQL subquery limitation)
             placeholders = ",".join(["%s"] * len(ids_to_delete))
+            print("Placeholders: ", placeholders)
             cur.execute(f"""
                 UPDATE Order_Items
                 SET itm_isdeleted = 1

@@ -8,7 +8,10 @@ window.onload = function () {
   let CurrentPoints = null;
 
   function formatUSD(amount) {
-    return amount.toLocaleString(undefined, { style: "currency", currency: "USD" });
+    return amount.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+    });
   }
 
   function updateBalanceDollars() {
@@ -21,7 +24,12 @@ window.onload = function () {
   async function fetchConversion(orgId) {
     if (!orgId) return;
     try {
-      const resp = await fetch(`https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organization_pts_conversion?org_id=${encodeURIComponent(orgId)}`, { method: "GET" });
+      const resp = await fetch(
+        `https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organization_pts_conversion?org_id=${encodeURIComponent(
+          orgId
+        )}`,
+        { method: "GET" }
+      );
       if (!resp.ok) {
         console.error("Conversion fetch failed:", resp.status);
         return;
@@ -32,10 +40,7 @@ window.onload = function () {
       if (ctype.includes("application/json")) {
         const data = await resp.json();
         rate = parseFloat(
-          data.org_conversionrate ??
-          data.convert ??
-          data.rate ??
-          data.value
+          data.org_conversionrate ?? data.convert ?? data.rate ?? data.value
         );
       } else {
         rate = parseFloat((await resp.text()).trim());
@@ -69,10 +74,17 @@ window.onload = function () {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+
+  const cart = document.createElement("a");
+  cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+  cart.textContent = "Cart";
+  li.appendChild(cart);
+
   list.appendChild(li);
 
   const orders = document.createElement("a");
-  orders.href = "driver-orders/driver-orders.html?id=" + USER_ID +"&org=" + ORG_ID;
+  orders.href =
+    "driver-orders/driver-orders.html?id=" + USER_ID + "&org=" + ORG_ID;
   orders.textContent = "Orders";
   li.appendChild(orders);
 
@@ -95,10 +107,14 @@ window.onload = function () {
   list.appendChild(li);
 
   const pointsEl = document.querySelector(".points-header");
-  pointsEl.href = `driver-points/driver-points.html?id=${encodeURIComponent(USER_ID)}` + (`&org=${encodeURIComponent(ORG_ID)}`);
+  pointsEl.href =
+    `driver-points/driver-points.html?id=${encodeURIComponent(USER_ID)}` +
+    `&org=${encodeURIComponent(ORG_ID)}`;
 
   const ordersEl = document.querySelector(".orders-header");
-  ordersEl.href = `driver-orders/driver-orders.html?id=${encodeURIComponent(USER_ID)}` + (`&org=${encodeURIComponent(ORG_ID)}`);
+  ordersEl.href =
+    `driver-orders/driver-orders.html?id=${encodeURIComponent(USER_ID)}` +
+    `&org=${encodeURIComponent(ORG_ID)}`;
 
   function fillScreen(driverInfo) {
     place = document.getElementById("name");
@@ -148,7 +164,9 @@ window.onload = function () {
       icon_div.style.width = "36px";
       icon_div.style.height = "36px";
       icon_div.style.borderRadius = "50%";
-      icon_div.style.backgroundColor = isLoss ? "rgba(239, 68, 68, 0.10)" : "rgba(30, 215, 96, 0.10)";
+      icon_div.style.backgroundColor = isLoss
+        ? "rgba(239, 68, 68, 0.10)"
+        : "rgba(30, 215, 96, 0.10)";
 
       const icon = document.createElement("i");
       icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
@@ -232,7 +250,11 @@ window.onload = function () {
     container.innerHTML = "Loading...";
 
     try {
-      const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" + USER_ID, { method: "GET" });
+      const resp = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" +
+          USER_ID,
+        { method: "GET" }
+      );
       if (!resp.ok) {
         const txt = await resp.text().catch(() => "");
         throw new Error(txt || `Failed to load orders (${resp.status})`);
@@ -246,7 +268,7 @@ window.onload = function () {
         const da = orderDate(a);
         const db = orderDate(b);
         if (da && db) return db - da;
-        const ida = Number(a.ord_id); 
+        const ida = Number(a.ord_id);
         const idb = Number(b.ord_id);
         return idb - ida;
       });
@@ -261,7 +283,7 @@ window.onload = function () {
         return;
       }
 
-      top3.forEach(order => {
+      top3.forEach((order) => {
         const row = document.createElement("div");
         row.className = "recent-order-row";
 
@@ -269,15 +291,24 @@ window.onload = function () {
         const d = orderDate(order);
         const dateStr = d ? d.toLocaleDateString() : "";
         const status = String(order.ord_status ?? order.status ?? "unknown");
-        left.textContent = `#${order.ord_id ?? order.id ?? ""} • ${status}${dateStr ? " • " + dateStr : ""}`;
+        left.textContent = `#${order.ord_id ?? order.id ?? ""} • ${status}${
+          dateStr ? " • " + dateStr : ""
+        }`;
 
         const right = document.createElement("div");
         const items = parseItems(order.items);
         const itemCount = items.length;
-        const totalPts = items.reduce((s, it) => s + Number(it.itm_pointcost ?? it.point_cost ?? 0), 0);
-        const totalUsd = items.reduce((s, it) => s + Number(it.itm_usdcost ?? it.usd_cost ?? 0), 0);
+        const totalPts = items.reduce(
+          (s, it) => s + Number(it.itm_pointcost ?? it.point_cost ?? 0),
+          0
+        );
+        const totalUsd = items.reduce(
+          (s, it) => s + Number(it.itm_usdcost ?? it.usd_cost ?? 0),
+          0
+        );
         const parts = [];
-        if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+        if (itemCount)
+          parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
         if (totalPts) parts.push(`${totalPts} pts`);
         if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
         right.textContent = parts.join(" • ");

@@ -20,6 +20,10 @@ window.onload = function () {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+  const cart = document.createElement("a");
+  cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+  cart.textContent = "Cart";
+  li.appendChild(cart);
   const orders = document.createElement("a");
   orders.href =
     "../driver/driver-orders/driver-orders.html?id=" +
@@ -58,19 +62,30 @@ window.onload = function () {
       if (response.ok) {
         result = await response.json();
         result = result[0];
-        console.log(result);
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
           storeItems = Array.isArray(result["items"]) ? result["items"] : [];
-          GenerateStore(storeItems);
+          console.log(storeItems.length);
+          if (storeItems.length == 0) {
+            EmptyCart();
+          } else {
+            GenerateStore(storeItems);
+          }
         }
       }
     } catch (error) {
       console.error("Error:", error);
     }
   }
+  function EmptyCart() {
+    head = document.createElement("h1");
+    head.innerText = "Your Cart Is Empty";
+    document.getElementById("store-catalog").innerHTML = "";
+    document.getElementById("store-catalog").appendChild(head);
+  }
   function GenerateStore(items) {
+    console.log(items);
     var store = document.getElementById("store-catalog");
     store.innerHTML = "";
     console.log(items);
@@ -83,7 +98,6 @@ window.onload = function () {
 
       const content = document.createElement("div");
       content.className = "product_content";
-      console.log(PointConversionRate);
       const PricePoints = parseInt(product["itm_pointcost"]);
 
       const totalCents = Math.round(
@@ -149,8 +163,7 @@ window.onload = function () {
       var addCart = document.createElement("button");
       addCart.innerText = "Remove From Cart";
       addCart.addEventListener("click", function () {
-        RemoveItem(product["id"]);
-        GetShop();
+        RemoveItem(product["itm_productid"]);
       });
 
       metaRow.appendChild(productRating);
@@ -222,6 +235,7 @@ window.onload = function () {
   }
 
   async function RemoveItem(id) {
+    console.log(id);
     const data = {
       user_id: USER_ID,
       org_id: ORG_ID,
@@ -239,12 +253,14 @@ window.onload = function () {
           body: JSON.stringify(data),
         }
       );
-      console.log(response);
+
       if (response.ok) {
         const result = await response.json();
-
+        console.log(result);
         if (response.status != 200) {
           alert(result.message);
+        } else if (response.status == 200) {
+          GetShop();
         }
       }
     } catch (error) {
