@@ -1863,7 +1863,7 @@ def lambda_handler(event, context):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
             response = post_application(body)
-        elif (method == "POST" and path == "/create_organization"):
+        elif (method == "POST" and path == "/organizations"):
             response = post_create_organization(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
