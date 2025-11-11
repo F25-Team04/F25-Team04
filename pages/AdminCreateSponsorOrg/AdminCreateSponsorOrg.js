@@ -27,6 +27,17 @@ window.onload = function () {
       const form = event.target;
       const formData = new FormData(form);
       const payload = Object.fromEntries(formData.entries());
+
+      // Confirmation prompt
+      const orgName = payload["org_name"];
+      const convRate = payload["org_conversion_rate"];
+      const confirmCreate = confirm(
+        `Are you sure you want to create this organization?\n\nName: ${orgName}\nConversion Rate: ${convRate}`
+      );
+      if (!confirmCreate) {
+        return;
+      }
+
       try {
         // Send POST request
         const response = await fetch(
@@ -39,7 +50,10 @@ window.onload = function () {
             body: JSON.stringify(payload),
           }
         );
-        if (response.ok) {
+        if (!response.ok) {
+          const result = await response.json();
+          alert(result.message);
+        } else {
           const result = await response.json();
           alert(result.message);
         }
