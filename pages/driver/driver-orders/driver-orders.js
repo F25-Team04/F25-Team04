@@ -27,10 +27,46 @@ window.onload = function () {
     list.appendChild(li);
   }
 
-  loadOrders();
+  attachOrderControls();
+
+  const sel = document.getElementById("orders_sort");
+  loadOrders({ sort: sel ? sel.value : "date_desc" });
 };
 
-async function loadOrders() {
+function attachOrderControls() {
+  const container = document.getElementById("orders");
+  if (!container || !container.parentNode) return;
+
+  // Avoid duplicating controls if this runs twice
+  if (document.getElementById("orders_sort")) return;
+
+  const controls = document.createElement("div");
+  controls.style.display = "flex";
+  controls.style.gap = "12px";
+  controls.style.alignItems = "center";
+  controls.style.margin = "8px 0 12px";
+
+  const sortSelect = document.createElement("select");
+  sortSelect.id = "orders_sort";
+  sortSelect.innerHTML = `
+    <option value="date_desc">Date (newest)</option>
+    <option value="date_asc">Date (oldest)</option>
+    <option value="id_desc">Order # (desc)</option>
+    <option value="id_asc">Order # (asc)</option>
+    <option value="pts_desc">Points (desc)</option>
+    <option value="pts_asc">Points (asc)</option>
+  `;
+  sortSelect.value = "date_desc";
+
+  controls.append(sortSelect);
+  container.parentNode.insertBefore(controls, container);
+
+  controls.addEventListener("change", () => {
+    loadOrders({ sort: sortSelect.value });
+  });
+}
+
+async function loadOrders({ sort = "date_desc" } = {}) {
   const container = document.getElementById("orders");
   if (!container) return;
 
@@ -49,21 +85,41 @@ async function loadOrders() {
     let orders = await resp.json();
 
     if (!Array.isArray(orders)) orders = [];
+    const num = (v) => Number(v ?? 0) || 0;
 
-    // sort most-recent-first by date if available, else by ord_id desc
-    orders.sort((a, b) => {
-      const da = orderDate(a);
-      const db = orderDate(b);
-      if (da && db) return db - da;
-      const ida = Number(a.ord_id);
-      const idb = Number(b.ord_id);
-      return idb - ida;
+    // Precompute date + total points
+    const withTotals = orders.map((o) => {
+      const d = orderDate(o);
+      const items = parseItems(o.items);
+      let totalPts = 0;
+      for (const it of items) {
+        totalPts += num(it.itm_pointcost ?? it.point_cost);
+      }
+      return {
+        raw: o,
+        dateMs: d ? d.getTime() : 0,
+        ordId: num(o.ord_id ?? o.id),
+        totalPts,
+      };
     });
 
-    const countEl = document.getElementById("order_count");
-    if (countEl) countEl.textContent = Array.isArray(orders) ? orders.length : 0;
+    const comparators = {
+      date_desc: (a, b) => b.dateMs - a.dateMs,
+      date_asc: (a, b) => a.dateMs - b.dateMs,
+      id_desc: (a, b) => b.ordId - a.ordId,
+      id_asc: (a, b) => a.ordId - b.ordId,
+      pts_desc: (a, b) => b.totalPts - a.totalPts,
+      pts_asc: (a, b) => a.totalPts - b.totalPts,
+    };
 
-    renderOrders(orders);
+    withTotals.sort(comparators[sort] || comparators.date_desc);
+
+    // Update header count
+    const countEl = document.getElementById("order_count");
+    if (countEl) countEl.textContent = withTotals.length;
+
+    renderOrders(withTotals.map(x => x.raw));
+    
   } catch (e) {
     console.error("Orders load error:", e);
     container.textContent = "Failed to load orders.";
