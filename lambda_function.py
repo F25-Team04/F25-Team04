@@ -21,15 +21,6 @@ emailBody =""#will be filled with information from the api
 TARGET_EMAIL = "cambro7192@gmail.com"
 #APP_MAIL_PASSWORD = os.getenv("APP-MAIL-PASSWORD")
 
-#from dotenv import load_dotenv
-import os
-
-#load_dotenv()
-
-import time
-import smtplib
-from email.message import EmailMessage
-
 # ==== response builder =================================================================
 def build_response(status: int, payload):
     return {
@@ -153,31 +144,6 @@ def _update_order_totals(order_id):
         totals = cur.fetchone()
         total_points = totals.get("total_points") or 0
         total_usd = totals.get("total_usd") or 0.0
-       
-def emailSend(to, body, subject):
-    send= EmailMessage()
-    send.set_content(body)
-    send["subject"] = subject
-    send["to"] = to
-
-    #login variables
-    user = "revvyrewards@gmail.com"
-    send['from'] = user
-    password = "psimxzagzdgsetpi" #is a specific app password seperate from gmail password
-
-    #code below will login to email send message and then quit 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login(user, password)
-    server.send_message(send)
-    server.quit()
-
-
-def sendIt(newMessage):
-    tempTarget = "cambro7192@gmail.com"
-    emailSend(tempTarget, newMessage, "New Application")#phone number or email can be substituted
-    
-    return
 
         cur.execute("""
             UPDATE Orders
@@ -329,44 +295,6 @@ def post_change_password(body):
         "message": "User does not exist"
     })
 
-def post_change_point_rule(body):
-    body = json.loads(body) or {}
-    reason = body.get("reason")
-    amount = body.get("amount")
-    rule_id = body.get("ruleId")
-    if reason is None or amount is None:
-        raise Exception("Missing required field(s): reason, amount")
-        
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT * 
-            FROM Point_Rules
-            WHERE rul_id = %s
-            AND rul_isdeleted = 0
-        """, rule_id)
-        user = cur.fetchone()
-
-    if user:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE Point_Rules 
-                    SET rul_reason = %s, 
-                    rul_pointdelta = %s
-                    WHERE rul_id = %s
-                    AND rul_isdeleted = 0
-                """, (reason, amount, rule_id))
-            conn.commit()
-
-            return build_response(200, {
-                "success": True, 
-                "message": "Point_Rule successfully updated."
-            })
-
-    return build_response(200, {
-        "success": False, 
-        "message": "Rule does not exist"
-    })
-
 def post_user_update(body):
     data = json.loads(body) or {}
     usr_id = data.get("id")
@@ -506,43 +434,6 @@ def post_signup(body):
         "usr_id": driver_id
     })
 
-def post_create_organization(body):
-    body = json.loads(body) or {}
-    org_name = body.get("org_name")
-    org_conversion_rate = body.get("org_conversion_rate")
-
-    if org_name is None or org_conversion_rate is None:
-        return build_response(400, { "message": "Missing required field(s): org_name, org_conversion_rate" })
-
-    # Verify conversion rate is a valid float
-    try:
-        org_conversion_rate = float(org_conversion_rate)
-    except ValueError:
-        return build_response(400, { "message": "Invalid org_conversion_rate: must be a number" })
-
-    # Verify org does not already exist
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT org_id
-            FROM Organizations
-            WHERE org_name = %s
-                AND org_isdeleted = 0
-        """, (org_name,))
-        if cur.fetchone():
-            return build_response(400, { "message": "Organization with that name already exists" })
-
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO Organizations (
-                org_name,
-                org_conversionrate
-            ) VALUES (%s, %s)
-        """, (org_name, org_conversion_rate))
-        conn.commit()
-    return build_response(200, {
-        "message": f"Organization '{org_name}' created with conversion rate {org_conversion_rate}"
-    })
-
 def post_application(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -621,7 +512,8 @@ def post_application(body):
         except Exception as e:
             conn.rollback()
             raise e
-    sendIt("New User Sent Application")
+
+    sendIt("New User Applied to Your Org")
     return build_response(200, {
         "message": "Application submitted"
     })
@@ -1906,31 +1798,6 @@ def delete_notification(queryParams):
     
     return build_response(404, f"No user found with id={usr_id}")
 
-def delete_change_point_rule(queryParams):
-    # marks user as deleted in the database
-    queryParams = queryParams or {}
-    rule_id = queryParams.get("id")
-    if rule_id is None:
-        raise Exception(f"Missing required query parameter: id")
-    
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE Point_Rules
-            SET rul_isdeleted = 1
-            WHERE rul_id = %s
-            AND rul_isdeleted = 0
-        """, rule_id)
-        result = cur.fetchall()
-        affected = cur.rowcount
-        conn.commit()
-    if affected:
-        return build_response(200, {
-            "success": True,
-            "message": f"Rule {rule_id} deleted"
-        })
-    
-    return build_response(404, f"No Rule found with id={rule_id}")
-
 # ==== handler (main) ===================================================================
 # overall handler for requests
 def lambda_handler(event, context):
@@ -1983,8 +1850,6 @@ def lambda_handler(event, context):
             response = delete_user(queryParams)
         elif (method == "DELETE" and path == "/notifications"):
             response = delete_notification(queryParams)
-        elif (method == "DELETE" and path == "/change_point_rule"):
-            response = delete_change_point_rule(queryParams)
         
         # POST
         elif (method == "POST" and path == "/signup"):
@@ -1993,12 +1858,8 @@ def lambda_handler(event, context):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
             response = post_application(body)
-        elif (method == "POST" and path == "/organizations"):
-            response = post_create_organization(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
-        elif (method == "POST" and path == "/change_point_rule"):
-            response = post_change_point_rule(body)
         elif (method == "POST" and path == "/user_update"):
             response = post_user_update(body)
         elif (method == "POST" and path == "/query"):
