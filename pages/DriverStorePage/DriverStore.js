@@ -24,7 +24,7 @@ window.onload = function () {
   li.appendChild(store);
   const cart = document.createElement("a");
   cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
-  cart.textContent = "User Cart";
+  cart.textContent = "Cart";
   li.appendChild(cart);
   const orders = document.createElement("a");
   orders.href =

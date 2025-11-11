@@ -887,7 +887,7 @@ def post_orders(body):
             # 5) Deduct points by setting new balance
             cur.execute("""
                 UPDATE Sponsorships
-                SET spo_pointbalance = new_balance
+                SET spo_pointbalance = %s
                 WHERE spo_user = %s AND spo_org = %s
             """, (new_balance, user_id, org_id))
             
