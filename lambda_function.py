@@ -440,13 +440,13 @@ def post_create_organization(body):
     org_conversion_rate = body.get("org_conversion_rate")
 
     if org_name is None or org_conversion_rate is None:
-        raise Exception("Missing required field(s): org_name, org_conversion_rate")
+        return build_response(400, { "message": "Missing required field(s): org_name, org_conversion_rate" })
 
     # Verify conversion rate is a valid float
     try:
         org_conversion_rate = float(org_conversion_rate)
     except ValueError:
-        raise Exception("Invalid org_conversion_rate: must be a number")
+        return build_response(400, { "message": "Invalid org_conversion_rate: must be a number" })
 
     # Verify org does not already exist
     with conn.cursor() as cur:
@@ -457,7 +457,7 @@ def post_create_organization(body):
                 AND org_isdeleted = 0
         """, (org_name,))
         if cur.fetchone():
-            raise Exception("Organization already exists")
+            return build_response(400, { "message": "Organization with that name already exists" })
 
     with conn.cursor() as cur:
         cur.execute("""
