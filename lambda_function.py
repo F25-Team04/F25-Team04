@@ -761,6 +761,8 @@ def post_point_adjustment(body):
             """, (driver, delta, new_balance, reason, sponsor_user, org_id))
 
             conn.commit()
+            notifMessage = "Points adjusted by " + str(delta) + ". New Balance is " + str(new_balance) + "."
+            post_notifications(driver, "Points", notifMessage)
             return build_response(200, {
                 "message": (
                     f"Sponsorship (org {org_id}) balance adjusted by {delta} for user {driver}: "
@@ -1123,6 +1125,7 @@ def post_remove_from_cart(body):
 
             # 3) soft-delete selected rows by primary key (avoids the MySQL subquery limitation)
             placeholders = ",".join(["%s"] * len(ids_to_delete))
+            print("Placeholders: ", placeholders)
             cur.execute(f"""
                 UPDATE Order_Items
                 SET itm_isdeleted = 1
@@ -1240,7 +1243,36 @@ def post_checkout(body):
         except Exception as e:
             conn.rollback()
             raise e
+
+def post_notifications(reciever, subject, message):
+    # body = json.loads(body) or {}
+    # user_id = body.get("recieve_id")
+
+    # if driver_id is None or org_id is None:
+    #     raise Exception("Missing required field(s): driver_id, org_id")
+
+    with conn.cursor() as cur:
+
         
+        cur.execute("""
+            INSERT INTO Notifications (
+                    not_message,
+                    not_userid,
+                    not_date,
+                    not_isread,
+                    not_subject,
+                    not_isdeleted
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+            """, (message, reciever, "TestDate", 0, subject,0))
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"Sent Notification."
+        })
+    else:
+        return build_response(404, f"Could Not send Notification.")      
 
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
@@ -1654,7 +1686,8 @@ def get_notifications(queryParams):
             SELECT
                 not_id AS "IdNum", 
                 not_message AS "Message",
-                not_date AS "Date"
+                not_date AS "Date",
+                not_subject AS "Subject"
             FROM Notifications
             WHERE not_userid = %s
             AND not_isdeleted = 0

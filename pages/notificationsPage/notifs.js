@@ -19,7 +19,8 @@ window.onload = function() {
             
             notif.appendChild(date)
             notif.appendChild(mess)
-            area.appendChild(notif)
+            notif.className = orgInfo[i]["Subject"]
+            //area.appendChild(notif)
 
             const newForm = document.createElement("form")
             newForm.id = orgInfo[i]["IdNum"]
@@ -30,7 +31,8 @@ window.onload = function() {
             newInput.id = orgInfo[i]["IdNum"]
             newInput.name = orgInfo[i]
             newForm.appendChild(newInput)
-            area.appendChild(newForm)
+            notif.appendChild(newForm)
+            area.appendChild(notif)
             const newLine = document.createElement("hr")
             area.appendChild(newLine)
         }
@@ -100,7 +102,13 @@ window.onload = function() {
 
     };
 
-    
+    document.getElementById("hidePts").addEventListener("change", async function (event) {
+        const ptNots = document.getElementsByClassName("Points")
 
+        for (let i = 0; i < ptNots.length; i++) {
+            const element = ptNots[i];
+            element.style.display = 'none'
+        }
+    })
 
   };
