@@ -2,6 +2,12 @@ const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
+// For pagination
+let ORDERS_CACHE = [];
+let ORDERS_CURRENT_PAGE = 1;
+const ORDERS_PER_PAGE = 10;
+
+
 window.onload = function () {
   // build nav
   const list = document.getElementById("links");
@@ -61,7 +67,25 @@ function attachOrderControls() {
   controls.append(sortSelect);
   container.parentNode.insertBefore(controls, container);
 
+  // Pagination
+  let pag = document.getElementById("orders_pagination");
+  if (!pag) {
+    pag = document.createElement("div");
+    pag.id = "orders_pagination";
+    pag.style.display = "flex";
+    pag.style.flexWrap = "wrap";
+    pag.style.gap = "6px";
+    pag.style.marginTop = "12px";
+    pag.style.width = "100%";
+    pag.style.justifyContent = "center";
+    pag.style.alignItems = "center";
+    pag.style.marginBottom = "8px";
+    container.parentNode.appendChild(pag);
+  }
+
   controls.addEventListener("change", () => {
+    // Reset to page 1 when changing sort
+    ORDERS_CURRENT_PAGE = 1;
     loadOrders({ sort: sortSelect.value });
   });
 }
@@ -111,20 +135,85 @@ async function loadOrders({ sort = "date_desc" } = {}) {
       pts_desc: (a, b) => b.totalPts - a.totalPts,
       pts_asc: (a, b) => a.totalPts - b.totalPts,
     };
-
     withTotals.sort(comparators[sort] || comparators.date_desc);
+
+    // Cache raw orders in sorted order
+    ORDERS_CACHE = withTotals.map(x => x.raw);
 
     // Update header count
     const countEl = document.getElementById("order_count");
     if (countEl) countEl.textContent = withTotals.length;
 
-    renderOrders(withTotals.map(x => x.raw));
-    
+    // Make sure current page is valid after re-sort / re-fetch
+    const totalPages = ordersTotalPages();
+    if (ORDERS_CURRENT_PAGE > totalPages) ORDERS_CURRENT_PAGE = totalPages || 1;
+
+    // Render current page + pagination
+    renderOrdersPage();
+    renderOrdersPagination();
+        
   } catch (e) {
     console.error("Orders load error:", e);
     container.textContent = "Failed to load orders.";
     alert(e.message || "Failed to load orders.");
   }
+}
+
+function ordersTotalPages() {
+  return Math.max(1, Math.ceil(ORDERS_CACHE.length / ORDERS_PER_PAGE));
+}
+
+function getOrdersSliceForPage(page) {
+  const p = Math.max(1, Math.min(page, ordersTotalPages()));
+  const start = (p - 1) * ORDERS_PER_PAGE;
+  const end = start + ORDERS_PER_PAGE;
+  return ORDERS_CACHE.slice(start, end);
+}
+
+function renderOrdersPage() {
+  const slice = getOrdersSliceForPage(ORDERS_CURRENT_PAGE);
+  renderOrders(slice);
+}
+
+function renderOrdersPagination() {
+  const pag = document.getElementById("orders_pagination");
+  if (!pag) return;
+
+  const totalPages = ordersTotalPages();
+  pag.innerHTML = "";
+
+  const makeButton = (label, page, disabled = false, isActive = false) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.className = "page-btn";
+    button.dataset.page = String(page);
+    button.disabled = !!disabled;
+    if (isActive) button.classList.add("active");
+    button.addEventListener("click", () => {
+      const target = Number(button.dataset.page);
+      if (target === ORDERS_CURRENT_PAGE) return;
+      ORDERS_CURRENT_PAGE = target;
+      renderOrdersPage();
+      renderOrdersPagination();
+    });
+    return button;
+  };
+
+  // Prev
+  pag.appendChild(
+    makeButton("Previous", Math.max(1, ORDERS_CURRENT_PAGE - 1), ORDERS_CURRENT_PAGE === 1)
+  );
+
+  // Numbered pages
+  for (let i = 1; i <= totalPages; i++) {
+    pag.appendChild(makeButton(String(i), i, false, i === ORDERS_CURRENT_PAGE));
+  }
+
+  // Next
+  pag.appendChild(
+    makeButton("Next", Math.min(totalPages, ORDERS_CURRENT_PAGE + 1), ORDERS_CURRENT_PAGE === totalPages)
+  );
 }
 
 function orderDate(order) {
@@ -233,8 +322,8 @@ function renderOrders(orders) {
       const section = document.createElement("div");
       section.style.marginTop = "6px";
       section.style.paddingTop = "6px";
-      section.style.borderTop = "1px solid #eee";              // thin divider
-      section.style.borderLeft = "3px solid rgba(59,130,246,0.25)"; // subtle blue accent (optional)
+      section.style.borderTop = "1px solid #ddd";
+      section.style.borderLeft = "3px solid rgba(59,130,246,0.25)";
       section.style.paddingLeft = "10px";
 
       // label row
