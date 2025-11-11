@@ -6,7 +6,7 @@ window.onload = function () {
   const li = document.createElement("li");
   const link = document.createElement("a");
   link.href = "../AdminHomepage/AdminHome.html?id=" + USER_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
   const create = document.createElement("a");
   create.href = "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
@@ -17,4 +17,16 @@ window.onload = function () {
   li.appendChild(create);
   li.appendChild(create_org);
   list.appendChild(li);
+
+  const createOrgButton = document.getElementById("create_org_btn");
+  createOrgButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
+  });
+
+  const createSponsorButton = document.getElementById("create_sponsor_btn");
+  createSponsorButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
+  });
 };
