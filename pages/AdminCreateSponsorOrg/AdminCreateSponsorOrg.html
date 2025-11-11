@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Sponsor</title>
+    <link
+      rel="stylesheet"
+      href="../SponsorCreateSponsor/SponsorCreateSponsor.css"
+    />
+    <link rel="stylesheet" href="../../css/global.css" />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <script type="text/javascript" src="AdminCreateSponsorOrg.js"></script>
+  </head>
+  <header>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <a href="../../index.html"
+            ><img class="brand-logo" src="../../assets/car-logo-flipped.png"
+          /></a>
+          <a href="../../index.html"
+            ><img class="brand-name" src="../../assets/revvy.png"
+          /></a>
+        </div>
+        <ul id="links">
+          <li><a href="../about/about.html">About</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+  <body>
+    <h1>Create Sponsor</h1>
+    <form id="create">
+      <label for="org_name">Organization Name: </label>
+      <input name="org_name" type="text" placeholder="Name" required />
+      <br />
+      <label for="point_conversion_rate">Point Conversion Rate: </label>
+      <input name="point_conversion_rate" type="text" placeholder="1 point = $X.XX" required />
+      <br />
+      <button type="submit" class="btn">Create Organization</button>
+      <br />
+    </form>
+  </body>
+</html>
