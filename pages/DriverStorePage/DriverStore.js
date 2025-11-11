@@ -22,6 +22,10 @@ window.onload = function () {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+  const cart = document.createElement("a");
+  cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+  cart.textContent = "Cart";
+  li.appendChild(cart);
   const orders = document.createElement("a");
   orders.href =
     "../driver/driver-orders/driver-orders.html?id=" +
@@ -292,20 +296,29 @@ window.onload = function () {
   }
 
   async function AddItemCart(id) {
+    const data = {
+      user_id: USER_ID,
+      org_id: ORG_ID,
+      items: [parseInt(id)],
+    };
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
-          id,
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/add_to_cart",
         {
-          method: "GET",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // IMPORTANT
+          },
+          body: JSON.stringify(data),
         }
       );
+      console.log(response);
       if (response.ok) {
         const result = await response.json();
-        if (response.success == false) {
+
+        if (response.status != 200) {
           alert(result.message);
-        } else if (response.status == 200) {
         }
       }
     } catch (error) {

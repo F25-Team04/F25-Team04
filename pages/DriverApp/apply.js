@@ -29,6 +29,10 @@ function enhanceNav() {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+  const cart = document.createElement("a");
+  cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+  cart.textContent = "Cart";
+  li.appendChild(cart);
   const account = document.createElement("a");
   account.href =
     "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -55,11 +59,11 @@ function generateOrgs(orgs) {
   orgs.forEach((org, idx) => {
     const option = document.createElement("option");
     const label =
-      (org && typeof org === "object")
-        ? (org.org_name ?? org.name ?? `Org ${idx + 1}`)
+      org && typeof org === "object"
+        ? org.org_name ?? org.name ?? `Org ${idx + 1}`
         : String(org);
 
-    option.value = label;            // show name in the UI
+    option.value = label; // show name in the UI
     option.dataset.id = String(idx + 1); // keep 1-based org id to submit
     dropdown.appendChild(option);
   });

@@ -20,6 +20,10 @@ window.onload = function () {
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
   store.textContent = "Store";
   li.appendChild(store);
+  const cart = document.createElement("a");
+  cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+  cart.textContent = "Cart";
+  li.appendChild(cart);
   const orders = document.createElement("a");
   orders.href =
     "../driver/driver-orders/driver-orders.html?id=" +
@@ -47,26 +51,41 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products?org=" +
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/cart?id=" +
+          USER_ID +
+          "&org=" +
           ORG_ID,
         {
           method: "GET",
         }
       );
       if (response.ok) {
-        const result = await response.json();
+        result = await response.json();
+        result = result[0];
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
-          storeItems = Array.isArray(result) ? result : [];
-          GenerateStore(storeItems);
+          storeItems = Array.isArray(result["items"]) ? result["items"] : [];
+          console.log(storeItems.length);
+          if (storeItems.length == 0) {
+            EmptyCart();
+          } else {
+            GenerateStore(storeItems);
+          }
         }
       }
     } catch (error) {
       console.error("Error:", error);
     }
   }
+  function EmptyCart() {
+    head = document.createElement("h1");
+    head.innerText = "Your Cart Is Empty";
+    document.getElementById("store-catalog").innerHTML = "";
+    document.getElementById("store-catalog").appendChild(head);
+  }
   function GenerateStore(items) {
+    console.log(items);
     var store = document.getElementById("store-catalog");
     store.innerHTML = "";
     console.log(items);
@@ -75,12 +94,11 @@ window.onload = function () {
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");
       product_img.className = "product_image";
-      product_img.src = product["image"] || product.image || "";
+      product_img.src = product["itm_image"] || product.image || "";
 
       const content = document.createElement("div");
       content.className = "product_content";
-      console.log(PointConversionRate);
-      const PricePoints = parseInt(product["price"]) / PointConversionRate;
+      const PricePoints = parseInt(product["itm_pointcost"]);
 
       const totalCents = Math.round(
         Number(product["price"] || product.price || 0) * 100
@@ -92,7 +110,7 @@ window.onload = function () {
         (product["rating"] && product["rating"]["rate"]) ||
         (product.rating && product.rating.rate) ||
         "N/A";
-      const title = product["title"] || product.title || "Untitled";
+      const title = product["itm_name"] || product.title || "Untitled";
 
       const productName = document.createElement("h3");
       productName.className = "product_name";
@@ -145,8 +163,7 @@ window.onload = function () {
       var addCart = document.createElement("button");
       addCart.innerText = "Remove From Cart";
       addCart.addEventListener("click", function () {
-        RemoveItem();
-        GetShop();
+        RemoveItem(product["itm_productid"]);
       });
 
       metaRow.appendChild(productRating);
@@ -197,7 +214,6 @@ window.onload = function () {
         } else if (response.status == 200) {
           User = result[0];
           console.log(User);
-          console.log(PointConversionRate);
           for (var org of result[0]["Organizations"]) {
             if (org["org_id"] == ORG_ID) {
               console.log(org);
@@ -219,20 +235,32 @@ window.onload = function () {
   }
 
   async function RemoveItem(id) {
+    console.log(id);
+    const data = {
+      user_id: USER_ID,
+      org_id: ORG_ID,
+      items: [parseInt(id)],
+    };
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
-          id,
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/remove_from_cart",
         {
-          method: "GET",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // IMPORTANT
+          },
+          body: JSON.stringify(data),
         }
       );
+
       if (response.ok) {
         const result = await response.json();
-        if (response.success == false) {
+        console.log(result);
+        if (response.status != 200) {
           alert(result.message);
         } else if (response.status == 200) {
+          GetShop();
         }
       }
     } catch (error) {

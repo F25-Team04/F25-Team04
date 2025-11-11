@@ -434,6 +434,43 @@ def post_signup(body):
         "usr_id": driver_id
     })
 
+def post_create_organization(body):
+    body = json.loads(body) or {}
+    org_name = body.get("org_name")
+    org_conversion_rate = body.get("org_conversion_rate")
+
+    if org_name is None or org_conversion_rate is None:
+        return build_response(400, { "message": "Missing required field(s): org_name, org_conversion_rate" })
+
+    # Verify conversion rate is a valid float
+    try:
+        org_conversion_rate = float(org_conversion_rate)
+    except ValueError:
+        return build_response(400, { "message": "Invalid org_conversion_rate: must be a number" })
+
+    # Verify org does not already exist
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT org_id
+            FROM Organizations
+            WHERE org_name = %s
+                AND org_isdeleted = 0
+        """, (org_name,))
+        if cur.fetchone():
+            return build_response(400, { "message": "Organization with that name already exists" })
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO Organizations (
+                org_name,
+                org_conversionrate
+            ) VALUES (%s, %s)
+        """, (org_name, org_conversion_rate))
+        conn.commit()
+    return build_response(200, {
+        "message": f"Organization '{org_name}' created with conversion rate {org_conversion_rate}"
+    })
+
 def post_application(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -889,7 +926,7 @@ def post_orders(body):
             # 5) Deduct points by setting new balance
             cur.execute("""
                 UPDATE Sponsorships
-                SET spo_pointbalance = new_balance
+                SET spo_pointbalance = %s
                 WHERE spo_user = %s AND spo_org = %s
             """, (new_balance, user_id, org_id))
             
@@ -1858,6 +1895,8 @@ def lambda_handler(event, context):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
             response = post_application(body)
+        elif (method == "POST" and path == "/organizations"):
+            response = post_create_organization(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
         elif (method == "POST" and path == "/user_update"):
