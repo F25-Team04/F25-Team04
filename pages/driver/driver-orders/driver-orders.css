@@ -3,3 +3,73 @@
     padding: 0;
     box-sizing: border-box;
 }
+
+html, body {
+     background-color: var(--muted-background);
+}
+
+.orders-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 200px;
+    margin-top: 8px;
+}
+
+.title-div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+.title-icon {
+     font-size: 48px;
+}
+.orders-title {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.orders-card {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    align-items: center;
+    justify-self: center;
+    background-color: #DBEAFE;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    margin: 24px;
+    padding: 16px;
+    border-bottom: 4px solid var(--revvy-black);
+    border-right: 4px solid var(--revvy-black);
+}
+.orders-card span {
+     font-weight: 500;
+}
+.orders-num {
+    font-size: 32px;
+}
+.orders-card-icon {
+    font-size: 32px;
+    color: #3B82F6;
+}
+.orders-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.orders-content {
+    box-shadow: 0 0 6px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    padding: 10px 24px;
+    width: 720px;
+    justify-self: center;
+    background-color: white;
+    margin: 0 auto 32px;
+}
+
+.points-value {
+    margin-left: auto;
+}

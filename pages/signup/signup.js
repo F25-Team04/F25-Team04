@@ -107,7 +107,7 @@ window.onload = function() {
         });
         
         if (!response.ok) {
-            alert("NOT sent")
+            alert("NOT sent");
             throw new Error("Network response was not ok " + response.statusText);
         }
 

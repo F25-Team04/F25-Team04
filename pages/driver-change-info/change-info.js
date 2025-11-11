@@ -27,8 +27,17 @@ function enhanceNav() {
   store.textContent = "Store";
   li.appendChild(store);
 
+  const cart = document.createElement("a");
+  cart.href = "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
+  cart.textContent = "Cart";
+  li.appendChild(cart);
+
   const orders = document.createElement("a");
-  orders.href = "../driver/driver-orders/driver-orders.html?id=" + USER_ID + "&org=" + ORG_ID;
+  orders.href =
+    "../driver/driver-orders/driver-orders.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
   orders.textContent = "Orders";
   li.appendChild(orders);
 

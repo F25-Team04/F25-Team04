@@ -87,11 +87,12 @@ window.onload = function () {
             window.location =
               "../DriverSelectOrg/DriverSelectOrg.html?id=" + UserID;
           } else if (result["Role"] == "sponsor") {
+            console.log(result["Organizations"][0]);
             window.location =
               "../SponsorHomepage/SponsorHome.html?id=" +
               UserID +
               "&org=" +
-              result["Organization"];
+              result["Organizations"][0]["org_id"];
           } else if (result["Role"] == "admin") {
             window.location = "../AdminHomepage/AdminHome.html";
           }

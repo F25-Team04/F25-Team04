@@ -3,8 +3,6 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 let User = {};
 let PointConversionRate;
-let currentPage = 1;
-const ITEMS_PER_PAGE = 8;
 let storeItems = [];
 let CurrDriverPoints;
 
@@ -53,44 +51,54 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/products?org=" +
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/cart?id=" +
+          USER_ID +
+          "&org=" +
           ORG_ID,
         {
           method: "GET",
         }
       );
       if (response.ok) {
-        const result = await response.json();
+        result = await response.json();
+        result = result[0];
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
-          storeItems = Array.isArray(result) ? result : [];
-          renderPage();
-          renderPagination();
+          storeItems = Array.isArray(result["items"]) ? result["items"] : [];
+          console.log(storeItems.length);
+          if (storeItems.length == 0) {
+            EmptyCart();
+          } else {
+            GenerateStore(storeItems);
+          }
         }
       }
     } catch (error) {
       console.error("Error:", error);
     }
   }
+  function EmptyCart() {
+    head = document.createElement("h1");
+    head.innerText = "Your Cart Is Empty";
+    document.getElementById("store-catalog").innerHTML = "";
+    document.getElementById("store-catalog").appendChild(head);
+  }
   function GenerateStore(items) {
+    console.log(items);
     var store = document.getElementById("store-catalog");
     store.innerHTML = "";
     console.log(items);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    const pageItems = items.slice(start, end);
-    for (let product of pageItems) {
+    for (let product of items) {
       const product_div = document.createElement("div");
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");
       product_img.className = "product_image";
-      product_img.src = product["image"] || product.image || "";
+      product_img.src = product["itm_image"] || product.image || "";
 
       const content = document.createElement("div");
       content.className = "product_content";
-      console.log(PointConversionRate);
-      const PricePoints = parseInt(product["price"]) / PointConversionRate;
+      const PricePoints = parseInt(product["itm_pointcost"]);
 
       const totalCents = Math.round(
         Number(product["price"] || product.price || 0) * 100
@@ -102,7 +110,7 @@ window.onload = function () {
         (product["rating"] && product["rating"]["rate"]) ||
         (product.rating && product.rating.rate) ||
         "N/A";
-      const title = product["title"] || product.title || "Untitled";
+      const title = product["itm_name"] || product.title || "Untitled";
 
       const productName = document.createElement("h3");
       productName.className = "product_name";
@@ -153,9 +161,9 @@ window.onload = function () {
       });
 
       var addCart = document.createElement("button");
-      addCart.innerText = "Add To Cart";
+      addCart.innerText = "Remove From Cart";
       addCart.addEventListener("click", function () {
-        AddItemCart(product["id"]);
+        RemoveItem(product["itm_productid"]);
       });
 
       metaRow.appendChild(productRating);
@@ -189,74 +197,6 @@ window.onload = function () {
     return wrap;
   }
 
-  function renderPage() {
-    if (!storeItems || storeItems.length === 0) {
-      document.getElementById("store-catalog").innerHTML =
-        "<p>No items available in the store.</p>";
-      document.getElementById("pagination").innerHTML = "";
-      return;
-    }
-    const totalPages = Math.max(
-      1,
-      Math.ceil(storeItems.length / ITEMS_PER_PAGE)
-    );
-    if (currentPage > totalPages) {
-      currentPage = totalPages;
-    }
-    GenerateStore(storeItems);
-  }
-
-  function renderPagination() {
-    const totalPages = Math.max(
-      1,
-      Math.ceil(storeItems.length / ITEMS_PER_PAGE)
-    );
-    const pag = document.getElementById("pagination");
-    pag.innerHTML = "";
-
-    const makeButton = (label, page, disabled = false, isActive = false) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = label;
-      button.className = "page-btn";
-      // store page number and disabled state
-      button.dataset.page = page;
-      button.disabled = !!disabled;
-      if (isActive) button.classList.add("active");
-      button.addEventListener("click", () => {
-        const targetPage = Number(button.dataset.page);
-        if (targetPage === currentPage) return;
-        currentPage = targetPage;
-        renderPage();
-        renderPagination();
-      });
-      return button;
-    };
-
-    // Previous button
-    pag.appendChild(
-      makeButton(
-        "Previous",
-        Math.max(1, currentPage - 1),
-        currentPage === 1,
-        false
-      )
-    );
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-      pag.appendChild(makeButton(i, i, false, i === currentPage));
-    }
-    // Next button
-    pag.appendChild(
-      makeButton(
-        "Next",
-        Math.min(totalPages, currentPage + 1),
-        currentPage === totalPages,
-        false
-      )
-    );
-  }
-
   async function GetUser() {
     try {
       // Send POST request
@@ -274,7 +214,6 @@ window.onload = function () {
         } else if (response.status == 200) {
           User = result[0];
           console.log(User);
-          console.log(PointConversionRate);
           for (var org of result[0]["Organizations"]) {
             if (org["org_id"] == ORG_ID) {
               console.log(org);
@@ -295,7 +234,8 @@ window.onload = function () {
     CurrDriverPoints = parseInt(points);
   }
 
-  async function AddItemCart(id) {
+  async function RemoveItem(id) {
+    console.log(id);
     const data = {
       user_id: USER_ID,
       org_id: ORG_ID,
@@ -304,7 +244,7 @@ window.onload = function () {
     try {
       // Send POST request
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/add_to_cart",
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/remove_from_cart",
         {
           method: "POST",
           headers: {
@@ -313,19 +253,20 @@ window.onload = function () {
           body: JSON.stringify(data),
         }
       );
-      console.log(response);
+
       if (response.ok) {
         const result = await response.json();
-
+        console.log(result);
         if (response.status != 200) {
           alert(result.message);
+        } else if (response.status == 200) {
+          GetShop();
         }
       }
     } catch (error) {
       console.error("Error:", error);
     }
   }
-
   GetUser();
   GetShop();
 };

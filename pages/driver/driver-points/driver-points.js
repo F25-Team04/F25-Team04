@@ -105,6 +105,7 @@ window.onload = function() {
                 const t = rows[i];
                 const div = document.createElement("div");
                 const isLoss = Number(t.Amount) < 0;
+                const isOrder = t.Giver == null;
 
                 // left: icon
                 const icon_div = document.createElement("span");
@@ -114,12 +115,34 @@ window.onload = function() {
                 icon_div.style.width = "40px";
                 icon_div.style.height = "40px";
                 icon_div.style.borderRadius = "50%";
-                icon_div.style.backgroundColor = isLoss ? "rgba(239, 68, 68, 0.10)" : "rgba(30, 215, 96, 0.10)";
+
+                let bg, iconClass, iconColor;
+
+                // If it's an order
+                if (isOrder) {
+                    bg = "rgba(59, 130, 246, 0.10)";
+                    iconClass = "bx bx-shopping-bag-alt";
+                    iconColor = "#3B82F6";
+                }
+                // If it's a deduction
+                else if (isLoss) {
+                    bg = "rgba(239, 68, 68, 0.10)";
+                    iconClass = "bx bx-trending-down";
+                    iconColor = "#EF4444";
+                }
+                // If it's an earning
+                else {
+                    bg = "rgba(30, 215, 96, 0.10)";
+                    iconClass = "bx bx-trending-up";
+                    iconColor = "#1ED760";
+                }
+
+                icon_div.style.backgroundColor = bg;
 
                 const icon = document.createElement("i");
-                icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
-                icon.style.color = isLoss ? "#EF4444" : "#1ED760";
-                icon.style.fontSize = "32px";
+                icon.className = "bx " + iconClass;
+                icon.style.color = iconColor;
+                icon.style.fontSize = "28px";
                 icon_div.appendChild(icon);
 
                 // middle: reason + date stacked

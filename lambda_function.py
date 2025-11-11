@@ -11,6 +11,16 @@ import unicodedata
 import requests
 import math
 
+
+import smtplib
+from email.message import EmailMessage
+
+# import random
+
+emailBody =""#will be filled with information from the api
+TARGET_EMAIL = "cambro7192@gmail.com"
+#APP_MAIL_PASSWORD = os.getenv("APP-MAIL-PASSWORD")
+
 #from dotenv import load_dotenv
 import os
 
@@ -128,6 +138,22 @@ def _get_catalog_rules(org):
         
     return rules
 
+def _update_order_totals(order_id):
+    # internal use function
+    # recalculates and updates the total points and USD for the specified order
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                SUM(itm_pointcost) AS total_points,
+                SUM(itm_usdcost) AS total_usd
+            FROM Order_Items
+            WHERE itm_orderid = %s
+            AND itm_isdeleted = 0
+        """, order_id)
+        totals = cur.fetchone()
+        total_points = totals.get("total_points") or 0
+        total_usd = totals.get("total_usd") or 0.0
+       
 def emailSend(to, body, subject):
     send= EmailMessage()
     send.set_content(body)
@@ -153,7 +179,38 @@ def sendIt(newMessage):
     
     return
 
+        cur.execute("""
+            UPDATE Orders
+            SET ord_totalpoints = %s,
+                ord_totalusd = %s
+            WHERE ord_id = %s
+        """, (total_points, total_usd, order_id))
+        conn.commit()
 
+def emailSend(to, body, subject):
+    send= EmailMessage()
+    send.set_content(body)
+    send["subject"] = subject
+    send["to"] = to
+
+    #login variables
+    user = "revvyrewards@gmail.com"
+    send['from'] = user
+    password = "psimxzagzdgsetpi" #is a specific app password seperate from gmail password
+
+    #code below will login to email send message and then quit 
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(user, password)
+    server.send_message(send)
+    server.quit()
+
+
+def sendIt(newMessage):
+    tempTarget = "cambro7192@gmail.com"
+    emailSend(tempTarget, newMessage, "Daily Affirmation")#phone number or email can be substituted
+    print("Report sent")#confirms function has been run
+    return
 # ==== POST =============================================================================
 
 def post_query(query):
@@ -447,6 +504,43 @@ def post_signup(body):
     return build_response(200, {
         "message": "Account created successfully. You can now sign in and apply to sponsors.",
         "usr_id": driver_id
+    })
+
+def post_create_organization(body):
+    body = json.loads(body) or {}
+    org_name = body.get("org_name")
+    org_conversion_rate = body.get("org_conversion_rate")
+
+    if org_name is None or org_conversion_rate is None:
+        return build_response(400, { "message": "Missing required field(s): org_name, org_conversion_rate" })
+
+    # Verify conversion rate is a valid float
+    try:
+        org_conversion_rate = float(org_conversion_rate)
+    except ValueError:
+        return build_response(400, { "message": "Invalid org_conversion_rate: must be a number" })
+
+    # Verify org does not already exist
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT org_id
+            FROM Organizations
+            WHERE org_name = %s
+                AND org_isdeleted = 0
+        """, (org_name,))
+        if cur.fetchone():
+            return build_response(400, { "message": "Organization with that name already exists" })
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO Organizations (
+                org_name,
+                org_conversionrate
+            ) VALUES (%s, %s)
+        """, (org_name, org_conversion_rate))
+        conn.commit()
+    return build_response(200, {
+        "message": f"Organization '{org_name}' created with conversion rate {org_conversion_rate}"
     })
 
 def post_application(body):
@@ -775,6 +869,8 @@ def post_point_adjustment(body):
             """, (driver, delta, new_balance, reason, sponsor_user, org_id))
 
             conn.commit()
+            notifMessage = "Points adjusted by " + str(delta) + ". New Balance is " + str(new_balance) + "."
+            post_notifications(driver, "Points", notifMessage)
             return build_response(200, {
                 "message": (
                     f"Sponsorship (org {org_id}) balance adjusted by {delta} for user {driver}: "
@@ -829,7 +925,6 @@ def post_catalog_rules(body):
     })
 
 def post_orders(body):
-    print(body)
     body = json.loads(body) or {}
     user_id = body.get("user_id")
     org_id  = body.get("org_id")
@@ -897,14 +992,25 @@ def post_orders(body):
             if user_points < total_points:
                 raise Exception(f"Insufficient points for this order, {user_points} < {total_points}")
 
-            # 5) Deduct points
+            new_balance = user_points - total_points
+            
+            # 5) Deduct points by setting new balance
             cur.execute("""
                 UPDATE Sponsorships
-                SET spo_pointbalance = spo_pointbalance - %s
+                SET spo_pointbalance = %s
                 WHERE spo_user = %s AND spo_org = %s
-            """, (total_points, user_id, org_id))
+            """, (new_balance, user_id, org_id))
+            
+            # 6) Log point transaction, sponsor id is null for orders placed by user themselves
+            cur.execute("""
+                INSERT INTO Point_Transactions (
+                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
+                ) VALUES (
+                    %s, %s, %s, %s, NOW()
+                )
+            """, (user_id, org_id, -total_points, "Order placed"))
 
-            # 6) Insert order
+            # 7) Insert order
             cur.execute("""
                 INSERT INTO Orders (
                     ord_userid, ord_orgid, ord_placedby,
@@ -920,7 +1026,7 @@ def post_orders(body):
             if not order_id:
                 raise Exception("Failed to create order")
 
-            # 7) Insert order items
+            # 8) Insert order items
             for i in items_data:
                 cur.execute("""
                     INSERT INTO Order_Items (
@@ -944,6 +1050,337 @@ def post_orders(body):
         except Exception as e:
             conn.rollback()
             raise e
+        
+def post_add_to_cart(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    items   = body.get("items")  # list[int]
+
+    if user_id is None or org_id is None or items is None:
+        raise Exception("Missing required field(s): user_id, org_id, items")
+    if not isinstance(items, list) or not all(isinstance(i, int) for i in items):
+        raise Exception("Field 'items' must be a list of item IDs (integers)")
+
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) Fetch products (normalize price to float)
+            items_data = []
+            for item_id in items:
+                url = f"https://fakestoreapi.com/products/{item_id}"
+                headers = {
+                    "User-Agent": "Mozilla/5.0",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Connection": "close",
+                }
+                r = requests.get(url, headers=headers, timeout=5)
+                if r.status_code != 200:
+                    raise Exception(f"Failed to fetch item {item_id} from FakeStore API. Please check the item ID and try again.")
+                item = r.json()
+                item["price_f"] = float(item["price"])
+                items_data.append(item)
+
+            total_usd = round(sum(i["price_f"] for i in items_data), 2)
+
+            # 2) Org conversion rate (float)
+            cur.execute("""
+                SELECT org_conversionrate
+                FROM Organizations
+                WHERE org_id = %s
+                AND org_isdeleted = 0
+            """, (org_id,))
+            row = cur.fetchone()
+            if not row:
+                raise Exception("Organization not found")
+            conversion_rate = float(row["org_conversionrate"])
+            if conversion_rate <= 0:
+                raise Exception("Invalid org conversion rate")
+
+            # 3) Compute points per item (ceil(price / rate))
+            for i in items_data:
+                i["points_int"] = int(math.ceil(i["price_f"] / conversion_rate))
+
+            total_points = sum(i["points_int"] for i in items_data)
+
+            # 4) check for existing cart and create if absent
+            cur.execute("""
+                SELECT ord_id
+                FROM Orders
+                WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
+                AND ord_isdeleted = 0
+            """, (user_id, org_id))
+            cart_row = cur.fetchone()
+            if cart_row:
+                order_id = cart_row["ord_id"]
+            else:
+                # Create a new cart order
+                cur.execute("""
+                    INSERT INTO Orders (
+                        ord_userid, ord_orgid,
+                        ord_status,
+                        ord_totalpoints, ord_totalusd
+                    ) VALUES (
+                        %s, %s,
+                        'cart',
+                        0, 0
+                    )
+                """, (user_id, org_id))
+                order_id = cur.lastrowid
+
+            # 5) Insert items into cart
+            for i in items_data:
+                cur.execute("""
+                    INSERT INTO Order_Items (
+                        itm_orderid, itm_productid, itm_name,
+                        itm_desc, itm_image,
+                        itm_usdcost, itm_pointcost
+                    ) VALUES (
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s
+                    )
+                """, (
+                    order_id, i["id"], i["title"],
+                    i["description"], i["image"],
+                    i["price_f"], i["points_int"]
+                ))
+            
+            # 6) Update order totals
+            _update_order_totals(order_id)
+
+            conn.commit()
+            return build_response(200, {"message": f"User {user_id} cart in org {org_id} updated successfully.", "order_id": order_id})
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+    
+from collections import Counter
+
+def post_remove_from_cart(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    items   = body.get("items")  # list[int], may contain duplicates
+
+    if user_id is None or org_id is None or items is None:
+        raise Exception("Missing required field(s): user_id, org_id, items")
+    if not isinstance(items, list) or not all(isinstance(i, int) for i in items):
+        raise Exception("Field 'items' must be a list of item IDs (integers)")
+
+    if not items:
+        return build_response(200, {"message": "Nothing to remove.", "removed": [], "not_found": []})
+
+    # Count requested quantities per product id
+    req_counts = Counter(items)
+
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) find existing cart
+            cur.execute("""
+                SELECT ord_id
+                FROM Orders
+                WHERE ord_userid = %s AND ord_orgid = %s
+                  AND ord_status = 'cart' AND ord_isdeleted = 0
+                LIMIT 1
+            """, (user_id, org_id))
+            row = cur.fetchone()
+            if not row:
+                conn.rollback()
+                return build_response(404, f"No existing cart found for user {user_id} and organization {org_id}")
+
+            order_id = row["ord_id"]
+
+            # 2) for each product, select as many rows as requested (no duplicates)
+            ids_to_delete = []
+            removed_summary = {}   # product_id -> removed_count
+            not_found = {}         # product_id -> shortfall
+
+            for product_id, needed in req_counts.items():
+                # lock the candidate rows so concurrent updates can't race us
+                cur.execute("""
+                    SELECT itm_id
+                    FROM Order_Items
+                    WHERE itm_orderid = %s
+                      AND itm_productid = %s
+                      AND itm_isdeleted = 0
+                    ORDER BY itm_id
+                    LIMIT %s
+                    FOR UPDATE
+                """, (order_id, product_id, needed))
+                rows = cur.fetchall()
+                found = len(rows)
+                if found:
+                    ids_to_delete.extend(r["itm_id"] for r in rows)
+                    removed_summary[product_id] = found
+                if found < needed:
+                    not_found[product_id] = needed - found
+
+            if not ids_to_delete:
+                # nothing matched, but cart exists
+                conn.commit()
+                return build_response(200, {
+                    "message": "No matching items found in the cart to remove.",
+                    "removed": [],
+                    "not_found": sorted(list(req_counts.keys())),  # all requested were missing
+                    "order_id": order_id
+                })
+
+            # 3) soft-delete selected rows by primary key (avoids the MySQL subquery limitation)
+            placeholders = ",".join(["%s"] * len(ids_to_delete))
+            print("Placeholders: ", placeholders)
+            cur.execute(f"""
+                UPDATE Order_Items
+                SET itm_isdeleted = 1
+                WHERE itm_id IN ({placeholders})
+            """, ids_to_delete)
+
+            # 4) recompute order totals from remaining items
+            _update_order_totals(order_id)
+
+            # format response
+            removed_products = sorted(removed_summary.keys())
+            not_found_products = sorted([p for p, short in not_found.items() if short > 0])
+
+            conn.commit()
+            return build_response(200, {
+                "message": f"Removed {len(ids_to_delete)} item row(s) from cart.",
+                "removed_product_counts": removed_summary,   # {product_id: removed_rows}
+                "not_fulfilled_counts": not_found,          # {product_id: shortfall}
+                "removed_product_ids": removed_products,
+                "not_found": not_found_products,
+                "order_id": order_id
+            })
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+        
+def post_checkout(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    org_id  = body.get("org_id")
+    # note: checkout fails if no cart exists or if insufficient points
+    
+    if user_id is None or org_id is None:
+        raise Exception("Missing required field(s): user_id, org_id")
+    
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) check for existing, non-empty cart
+            cur.execute("""
+                SELECT ord_id
+                FROM Orders
+                WHERE ord_userid = %s AND ord_orgid = %s AND ord_status = 'cart'
+                AND ord_isdeleted = 0
+                AND (SELECT COUNT(*) FROM Order_Items WHERE itm_orderid = Orders.ord_id AND itm_isdeleted = 0) > 0
+            """, (user_id, org_id))
+            cart_row = cur.fetchone()
+            if cart_row:
+                order_id = cart_row["ord_id"]
+            else:
+                return build_response(404, f"No existing cart found for user {user_id} and organization {org_id}")
+
+            # 2) Get user's current point balance (lock row)
+            cur.execute("""
+                SELECT spo_pointbalance
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_org = %s
+                AND spo_isdeleted = 0
+                FOR UPDATE
+            """, (user_id, org_id))
+            bal_row = cur.fetchone()
+            if not bal_row:
+                raise Exception("User sponsorship not found")
+            user_points = int(bal_row["spo_pointbalance"] or 0)
+
+            # 3) get cart totals
+            cur.execute("""
+                SELECT ord_totalpoints, ord_totalusd
+                FROM Orders
+                WHERE ord_id = %s
+            """, (order_id,))
+            order_row = cur.fetchone()
+            if not order_row:
+                raise Exception("Cart not found")
+            
+            total_points = int(order_row["ord_totalpoints"] or 0)
+            total_usd = float(order_row["ord_totalusd"] or 0.0)
+            
+            if user_points < total_points:
+                raise Exception(f"Insufficient points for this order, {user_points} < {total_points}")
+
+            new_balance = user_points - total_points
+            
+            # 4) Deduct points by setting new balance
+            cur.execute("""
+                UPDATE Sponsorships
+                SET spo_pointbalance = %s
+                WHERE spo_user = %s AND spo_org = %s
+            """, (new_balance, user_id, org_id))
+            
+            # 5) Log point transaction, sponsor id is null for orders placed by user themselves
+            cur.execute("""
+                INSERT INTO Point_Transactions (
+                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
+                ) VALUES (
+                    %s, %s, %s, %s, NOW()
+                )
+            """, (user_id, org_id, -total_points, "Order placed"))
+
+            # 6) confirm order
+            cur.execute("""
+                UPDATE Orders 
+                SET ord_placedby = %s,
+                    ord_confirmeddate = NOW(), ord_status = %s,
+                    ord_totalpoints = %s, ord_totalusd = %s
+                WHERE ord_id = %s
+            """, (user_id, "confirmed", total_points, total_usd, order_id))
+
+            conn.commit()
+            return build_response(200, {"message": "Cart checked out successfully", "order_id": order_id})
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+def post_notifications(reciever, subject, message):
+    # body = json.loads(body) or {}
+    # user_id = body.get("recieve_id")
+
+    # if driver_id is None or org_id is None:
+    #     raise Exception("Missing required field(s): driver_id, org_id")
+
+    with conn.cursor() as cur:
+
+        
+        cur.execute("""
+            INSERT INTO Notifications (
+                    not_message,
+                    not_userid,
+                    not_date,
+                    not_isread,
+                    not_subject,
+                    not_isdeleted
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+            """, (message, reciever, "TestDate", 0, subject,0))
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"Sent Notification."
+        })
+    else:
+        return build_response(404, f"Could Not send Notification.")      
 
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
@@ -1327,6 +1764,7 @@ def get_orders(queryParams):
                 )
                 FROM Order_Items i
                 WHERE i.itm_orderid = Orders.ord_id
+                AND i.itm_isdeleted = 0
             ), JSON_ARRAY()) AS items
 
         FROM Orders
@@ -1338,7 +1776,7 @@ def get_orders(queryParams):
         cur.execute(sql, values)
         rows = cur.fetchall()
         
-        # turn organizations list from JSON string to list
+        # turn items list from JSON string to list
         for row in rows:
             items_json = row.get("items")
             row["items"] = json.loads(items_json) if items_json else []
@@ -1356,7 +1794,8 @@ def get_notifications(queryParams):
             SELECT
                 not_id AS "IdNum", 
                 not_message AS "Message",
-                not_date AS "Date"
+                not_date AS "Date",
+                not_subject AS "Subject"
             FROM Notifications
             WHERE not_userid = %s
             AND not_isdeleted = 0
@@ -1364,6 +1803,57 @@ def get_notifications(queryParams):
         transactions = cur.fetchall()
         
     return build_response(200, transactions)
+
+def get_cart(queryParams):
+    queryParams = queryParams or {}
+    user_id  = queryParams.get("id")
+    org_id   = queryParams.get("org")
+
+    if user_id is None or org_id is None:
+        raise Exception("Missing required query parameter: id, org")
+
+    # qualify columns to avoid ambiguity
+    conditions = ["Users.usr_id = %s", "Orders.ord_orgid = %s", "Orders.ord_status = 'cart'"]
+    values = [user_id, org_id]
+
+    sql = f"""
+        SELECT
+            Orders.*,
+
+            COALESCE((
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'itm_id',           i.itm_id,
+                        'itm_productid',    i.itm_productid,
+                        'itm_name',         i.itm_name,
+                        'itm_desc',         i.itm_desc,
+                        'itm_image',        i.itm_image,
+                        'itm_pointcost',    i.itm_pointcost,
+                        'itm_usdcost',      i.itm_usdcost
+                    )
+                )
+                FROM Order_Items i
+                WHERE i.itm_orderid = Orders.ord_id
+                AND i.itm_isdeleted = 0
+            ), JSON_ARRAY()) AS items
+
+        FROM Orders
+        JOIN Users ON Users.usr_id = Orders.ord_userid
+        WHERE { " AND ".join(conditions) }
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(sql, values)
+        rows = cur.fetchall()
+        
+        # turn items list from JSON string to list
+        for row in rows:
+            items_json = row.get("items")
+            row["items"] = json.loads(items_json) if items_json else []
+
+    if not rows:
+        return build_response(404, f"No cart items found for user {user_id} in org {org_id}.")
+    return build_response(200, rows)
 
 # ==== DELETE ===========================================================================
 def delete_user(queryParams):
@@ -1485,6 +1975,8 @@ def lambda_handler(event, context):
             response = get_orders(queryParams)
         elif (method == "GET" and path == "/notifications"):
             response = get_notifications(queryParams)
+        elif (method == "GET" and path == "/cart"):
+            response = get_cart(queryParams)
 
         # DELETE
         elif (method == "DELETE" and path == "/user"):
@@ -1501,6 +1993,8 @@ def lambda_handler(event, context):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
             response = post_application(body)
+        elif (method == "POST" and path == "/organizations"):
+            response = post_create_organization(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
         elif (method == "POST" and path == "/change_point_rule"):
@@ -1521,6 +2015,10 @@ def lambda_handler(event, context):
             response = post_leave_organization(body)
         elif (method == "POST" and path == "/orders"):
             response = post_orders(body)
+        elif (method == "POST" and path == "/add_to_cart"):
+            response = post_add_to_cart(body)
+        elif (method == "POST" and path == "/remove_from_cart"):
+            response = post_remove_from_cart(body)
         elif (method == "POST" and path == "/checkout"):
             response = post_checkout(body)
 
