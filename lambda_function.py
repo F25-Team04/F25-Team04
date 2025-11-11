@@ -434,6 +434,43 @@ def post_signup(body):
         "usr_id": driver_id
     })
 
+def post_create_organization(body):
+    body = json.loads(body) or {}
+    org_name = body.get("org_name")
+    org_conversion_rate = body.get("org_conversion_rate")
+
+    if org_name is None or org_conversion_rate is None:
+        raise Exception("Missing required field(s): org_name, org_conversion_rate")
+
+    # Verify conversion rate is a valid float
+    try:
+        org_conversion_rate = float(org_conversion_rate)
+    except ValueError:
+        raise Exception("Invalid org_conversion_rate: must be a number")
+
+    # Verify org does not already exist
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT org_id
+            FROM Organizations
+            WHERE org_name = %s
+                AND org_isdeleted = 0
+        """, (org_name,))
+        if cur.fetchone():
+            raise Exception("Organization already exists")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO Organizations (
+                org_name,
+                org_conversionrate
+            ) VALUES (%s, %s)
+        """, (org_name, org_conversion_rate))
+        conn.commit()
+    return build_response(200, {
+        "message": f"Organization '{org_name}' created with conversion rate {org_conversion_rate}"
+    })
+
 def post_application(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -1826,6 +1863,8 @@ def lambda_handler(event, context):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
             response = post_application(body)
+        elif (method == "POST" and path == "/create_organization"):
+            response = post_create_organization(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
         elif (method == "POST" and path == "/user_update"):
