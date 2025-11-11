@@ -60,6 +60,9 @@ async function loadOrders() {
       return idb - ida;
     });
 
+    const countEl = document.getElementById("order_count");
+    if (countEl) countEl.textContent = Array.isArray(orders) ? orders.length : 0;
+
     renderOrders(orders);
   } catch (e) {
     console.error("Orders load error:", e);
@@ -95,70 +98,172 @@ function renderOrders(orders) {
 
   if (!orders.length) {
     const p = document.createElement("p");
-    p.textContent = "No orders yet.";
+    p.textContent = "You have not placed any orders yet.";
     container.appendChild(p);
     return;
   }
 
-  orders.forEach((order) => {
-    const card = document.createElement("div");
-    card.className = "order-card";
-
-    const header = document.createElement("div");
-    header.className = "order-header";
-
-    const title = document.createElement("h3");
+  orders.forEach((order, i) => {
+    // derive fields
     const ordId = order.ord_id ?? order.id ?? "";
-    title.textContent = `Order #${ordId}`;
-
-    const meta = document.createElement("div");
-    meta.className = "order-meta";
-    const status = String(order.ord_status);
+    const status = String(order.ord_status ?? order.status ?? "unknown");
     const d = orderDate(order);
-    const dateStr = d ? d.toLocaleString() : "";
-    meta.textContent = `${status}${dateStr ? " • " + dateStr : ""}`;
-
-    header.appendChild(title);
-    header.appendChild(meta);
-
-    const list = document.createElement("ul");
-    list.className = "order-items";
+    const dateStr = d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
 
     const items = parseItems(order.items);
-    let totalPts = 0;
-    let totalUsd = 0;
+    const itemCount = items.length;
 
+    // allow multiple key shapes
+    const num = (v) => Number(v ?? 0) || 0;    let totalPts = 0;
+    let totalUsd = 0;
     items.forEach((it) => {
-      const li = document.createElement("li");
-      li.className = "order-item";
-      const name = it.itm_name;
-      const pts = Number(it.itm_pointcost);
-      const usd = Number(it.itm_usdcost);
-      totalPts += pts;
-      totalUsd += usd;
-      li.textContent = `${name} — ${pts ? pts + " pts" : ""}${
-        pts && usd ? " / " : ""
-      }${usd ? "$" + usd.toFixed(2) : ""}`;
-      list.appendChild(li);
+      totalPts += num(it.itm_pointcost ?? it.point_cost);
+      totalUsd += num(it.itm_usdcost ?? it.usd_cost);
     });
 
-    const footer = document.createElement("div");
-    footer.className = "order-footer";
-    const totals = document.createElement("div");
-    totals.className = "order-totals";
-    const totalsParts = [];
-    if (totalPts) totalsParts.push(`${totalPts} pts`);
-    if (totalUsd) totalsParts.push(`$${totalUsd.toFixed(2)}`);
-    totals.textContent = totalsParts.length
-      ? `Total: ${totalsParts.join(" / ")}`
-      : "";
+    // row container
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "16px";
+    row.style.padding = "16px";
+    if (i < orders.length - 1) row.style.borderBottom = "1px solid #ddd";
 
-    footer.appendChild(totals);
+    // left: icon
+    const icon_div = document.createElement("span");
+    icon_div.style.display = "inline-flex";
+    icon_div.style.alignItems = "center";
+    icon_div.style.justifyContent = "center";
+    icon_div.style.width = "40px";
+    icon_div.style.height = "40px";
+    icon_div.style.borderRadius = "50%";
+    icon_div.style.backgroundColor = "rgba(59, 130, 246, 0.10)";
 
-    card.appendChild(header);
-    card.appendChild(list);
-    card.appendChild(footer);
+    const icon = document.createElement("i");
+    icon.className = "bx bx-shopping-bag-alt";
+    icon.style.color = "#3B82F6";
+    icon.style.fontSize = "28px";
+    icon_div.appendChild(icon);
 
-    container.appendChild(card);
+    // middle: title + order summary
+    const middle = document.createElement("div");
+    middle.style.display = "flex";
+    middle.style.flexDirection = "column";
+    middle.style.gap = "6px";
+    const content = document.createElement("div");
+    content.className = "reason-date";
+
+    const pTitle = document.createElement("p");
+    pTitle.textContent = `Order #${ordId} • ${status}`;
+    pTitle.style.fontWeight = "500";
+    pTitle.style.color = "black";
+    content.appendChild(pTitle);
+
+    const pSub = document.createElement("p");
+    const parts = [];
+    if (dateStr) parts.push(dateStr);
+    if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+    if (totalPts) parts.push(`${totalPts} pts`);
+    if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
+    pSub.textContent = parts.join(" • ");
+    pSub.style.color = "#6b7280";
+    content.appendChild(pSub);
+
+    middle.appendChild(content);
+
+    // items list
+    if (itemCount) {
+      // wrap to add a label + divider without changing your UL
+      const section = document.createElement("div");
+      section.style.marginTop = "6px";
+      section.style.paddingTop = "6px";
+      section.style.borderTop = "1px solid #eee";              // thin divider
+      section.style.borderLeft = "3px solid rgba(59,130,246,0.25)"; // subtle blue accent (optional)
+      section.style.paddingLeft = "10px";
+
+      // label row
+      const label = document.createElement("div");
+      label.style.display = "flex";
+      label.style.alignItems = "center";
+      label.style.gap = "6px";
+      label.style.marginBottom = "6px";
+
+      const labelIcon = document.createElement("i");
+      labelIcon.className = "bx bx-shopping-bag";
+      labelIcon.style.fontSize = "16px";
+      labelIcon.style.color = "#3B82F6";
+
+      const labelText = document.createElement("span");
+      labelText.textContent = "Items";
+      labelText.style.fontSize = "12px";
+      labelText.style.fontWeight = "600";
+      labelText.style.letterSpacing = "0.02em";
+      labelText.style.textTransform = "uppercase";
+      labelText.style.color = "#3B82F6";
+
+      label.appendChild(labelIcon);
+      label.appendChild(labelText);
+      section.appendChild(label);
+
+      const ul = document.createElement("ul");
+      ul.style.listStyle = "none";
+      ul.style.margin = "0";
+      ul.style.padding = "0";
+      ul.style.color = "#6b7280";
+      ul.style.fontSize = "14px";
+
+      items.forEach((it) => {
+        const name = String(it.itm_name ?? it.name ?? "").trim();
+        const pts = num(it.itm_pointcost ?? it.point_cost);
+        const usd = num(it.itm_usdcost ?? it.usd_cost);
+
+        const li = document.createElement("li");
+        li.style.display = "flex";
+        li.style.gap = "8px";
+        li.style.alignItems = "baseline";
+
+        // left: item name
+        const left = document.createElement("span");
+        left.textContent = name || "Item";
+        left.style.whiteSpace = "nowrap";
+        left.style.overflow = "hidden";
+        left.style.textOverflow = "ellipsis";
+        left.style.maxWidth = "420px";
+        li.appendChild(left);
+
+        // right: item cost
+        const right = document.createElement("span");
+        const parts = [];
+        if (pts) parts.push(`${pts} pts`);
+        if (usd) parts.push(`$${usd.toFixed(2)}`);
+        right.textContent = parts.join(" / ");
+        li.appendChild(right);
+
+        ul.appendChild(li);
+      });
+
+      section.appendChild(ul);
+      middle.appendChild(section);
+    }
+
+    // right: amount
+    const pAmount = document.createElement("h3");
+    pAmount.className = "points-value";
+    if (totalPts) {
+      pAmount.textContent = `-${totalPts}`;
+    } else if (totalUsd) {
+      // fallback
+      pAmount.textContent = `-$${totalUsd.toFixed(2)}`;
+    } else {
+      pAmount.textContent = "";
+    }
+    pAmount.style.color = "#3B82F6";
+    pAmount.style.fontSize = "22px";
+
+    // assemble
+    row.appendChild(icon_div);
+    row.appendChild(middle);
+    row.appendChild(pAmount);
+    container.appendChild(row);
   });
 }

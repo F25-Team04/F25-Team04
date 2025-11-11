@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Store</title>
+    <title>Order History</title>
     <link rel="stylesheet" href="../../../css/global.css">
     <link rel="stylesheet" href="driver-orders.css">
     <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
@@ -25,7 +25,22 @@
       </nav>
     </header>
 
-    <h1>Order History</h1>
-    <div id="orders"></div>
+    <div class="orders-header">
+      <div class="title-div">
+        <i class='bx  bx-package title-icon'  style='color:#3B82F6'></i>
+        <h1 class="orders-title">My Orders</h1>
+      </div>
+      <div class="orders-card">
+        <i class="bx bx-basket orders-card-icon"></i>
+        <div class="orders-section">
+          <span>Orders Placed</span>
+          <h2 id="order_count" class="orders-num"></h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="orders-content">
+      <div id="orders"></div>
+    </div>
   </body>
 </html>
