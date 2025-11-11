@@ -155,6 +155,7 @@ window.onload = function () {
       const t = rows[i];
       const div = document.createElement("div");
       const isLoss = Number(t.Amount) < 0;
+      const isOrder = t.Giver == null;
 
       // left: icon
       const icon_div = document.createElement("span");
@@ -164,14 +165,34 @@ window.onload = function () {
       icon_div.style.width = "36px";
       icon_div.style.height = "36px";
       icon_div.style.borderRadius = "50%";
-      icon_div.style.backgroundColor = isLoss
-        ? "rgba(239, 68, 68, 0.10)"
-        : "rgba(30, 215, 96, 0.10)";
 
+      let bg, iconClass, iconColor;
+
+      // If it's an order
+      if (isOrder) {
+          bg = "rgba(59, 130, 246, 0.10)";
+          iconClass = "bx bx-shopping-bag-alt";
+          iconColor = "#3B82F6";
+      }
+      // If it's a deduction
+      else if (isLoss) {
+          bg = "rgba(239, 68, 68, 0.10)";
+          iconClass = "bx bx-trending-down";
+          iconColor = "#EF4444";
+      }
+      // If it's an earning
+      else {
+          bg = "rgba(30, 215, 96, 0.10)";
+          iconClass = "bx bx-trending-up";
+          iconColor = "#1ED760";
+      }
+
+      icon_div.style.backgroundColor = bg;
+      
       const icon = document.createElement("i");
-      icon.className = "bx " + (isLoss ? "bx-trending-down" : "bx-trending-up");
-      icon.style.color = isLoss ? "#EF4444" : "#1ED760";
-      icon.style.fontSize = "24px";
+      icon.className = "bx " + iconClass;
+      icon.style.color = iconColor;
+      icon.style.fontSize = "28px";
       icon_div.appendChild(icon);
 
       // middle: reason + date stacked
@@ -198,6 +219,7 @@ window.onload = function () {
       pAmount.className = "points-value";
       pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
       pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
+      pAmount.style.fontSize = "22px";
 
       // assemble
       div.appendChild(icon_div);
@@ -283,19 +305,12 @@ window.onload = function () {
         return;
       }
 
-      top3.forEach((order) => {
-        const row = document.createElement("div");
-        row.className = "recent-order-row";
-
-        const left = document.createElement("div");
+      top3.forEach((order, i) => {
+        // compute date, totals, status
         const d = orderDate(order);
-        const dateStr = d ? d.toLocaleDateString() : "";
-        const status = String(order.ord_status ?? order.status ?? "unknown");
-        left.textContent = `#${order.ord_id ?? order.id ?? ""} • ${status}${
-          dateStr ? " • " + dateStr : ""
-        }`;
+        const dateStr = d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
 
-        const right = document.createElement("div");
+        const status = String(order.ord_status ?? order.status ?? "unknown");
         const items = parseItems(order.items);
         const itemCount = items.length;
         const totalPts = items.reduce(
@@ -306,21 +321,73 @@ window.onload = function () {
           (s, it) => s + Number(it.itm_usdcost ?? it.usd_cost ?? 0),
           0
         );
+
+        // row container
+        const row = document.createElement("div");
+        row.style.display = "flex";
+        row.style.alignItems = "center";
+        row.style.gap = "16px";
+        row.style.padding = "16px";
+        if (i < top3.length - 1) row.style.borderBottom = "1px solid #ddd";
+
+        // left: icon
+        const icon_div = document.createElement("span");
+        icon_div.style.display = "inline-flex";
+        icon_div.style.alignItems = "center";
+        icon_div.style.justifyContent = "center";
+        icon_div.style.width = "36px";
+        icon_div.style.height = "36px";
+        icon_div.style.borderRadius = "50%";
+        icon_div.style.backgroundColor = "rgba(59, 130, 246, 0.10)";
+
+        const icon = document.createElement("i");
+        icon.className = "bx bx-shopping-bag-alt";
+        icon.style.color = "#3B82F6";
+        icon.style.fontSize = "28px";
+        icon_div.appendChild(icon);
+
+        // middle: title + date + order summary
+        const content = document.createElement("div");
+        content.className = "reason-date";
+
+        const pTitle = document.createElement("p");
+        pTitle.textContent = `Order #${order.ord_id ?? order.id ?? ""} • ${status}`;
+        pTitle.style.color = "black";
+        pTitle.style.fontWeight = "500";
+        content.appendChild(pTitle);
+
+        const pDate = document.createElement("p");
         const parts = [];
-        if (itemCount)
-          parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+
+        if (dateStr) parts.push(dateStr);
+        if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
         if (totalPts) parts.push(`${totalPts} pts`);
         if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
-        right.textContent = parts.join(" • ");
 
-        row.style.display = "flex";
-        row.style.justifyContent = "space-between";
-        row.style.padding = "6px 0";
+        pDate.textContent = parts.join(" • ");
+        pDate.style.color = "#6b7280";
+        content.appendChild(pDate);
 
-        row.appendChild(left);
-        row.appendChild(right);
+        // right: amount
+        const pAmount = document.createElement("h3");
+        pAmount.className = "points-value";
+        if (totalPts && Number.isFinite(totalPts)) {
+          pAmount.textContent = `-${totalPts}`;
+        } else if (totalUsd) {
+          pAmount.textContent = `-$${totalUsd.toFixed(2)}`; // fallback if no pts
+        } else {
+          pAmount.textContent = ""; // no amount available
+        }
+        pAmount.style.color = "#3B82F6";
+        pAmount.style.fontSize = "22px";
+
+        // assemble
+        row.appendChild(icon_div);
+        row.appendChild(content);
+        row.appendChild(pAmount);
         container.appendChild(row);
       });
+
     } catch (e) {
       console.error("Recent orders error:", e);
       container.textContent = "Failed to load recent orders.";
