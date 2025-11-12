@@ -142,6 +142,47 @@ window.onload = function () {
     }!`;
   }
 
+  async function GetRules() {
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules?org=" +
+          ORG_ID,
+        {
+          method: "GET",
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (response.success == false) {
+          alert(result.message);
+        } else if (response.status == 200) {
+          CreateRuleList(result);
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+
+  function CreateRuleList(rules) {
+    const list = document.getElementById("list-rule");
+    list.innerHTML = "";
+    rules.forEach((rule) => {
+      let item = document.createElement("div");
+      let text = document.createElement("p");
+      let point = document.createElement("p");
+      item.id = "rule-row";
+      point.id = "pointnum";
+      text.id = "rule-descript";
+      text.textContent = rule["Rule"];
+      point.textContent = rule["Points"];
+      item.textContent = rule.text;
+      item.appendChild(text);
+      item.appendChild(point);
+      list.appendChild(item);
+    });
+  }
   function fillTransactions(transactionInfo) {
     const data = transactionInfo;
     data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
@@ -170,25 +211,25 @@ window.onload = function () {
 
       // If it's an order
       if (isOrder) {
-          bg = "rgba(59, 130, 246, 0.10)";
-          iconClass = "bx bx-shopping-bag-alt";
-          iconColor = "#3B82F6";
+        bg = "rgba(59, 130, 246, 0.10)";
+        iconClass = "bx bx-shopping-bag-alt";
+        iconColor = "#3B82F6";
       }
       // If it's a deduction
       else if (isLoss) {
-          bg = "rgba(239, 68, 68, 0.10)";
-          iconClass = "bx bx-trending-down";
-          iconColor = "#EF4444";
+        bg = "rgba(239, 68, 68, 0.10)";
+        iconClass = "bx bx-trending-down";
+        iconColor = "#EF4444";
       }
       // If it's an earning
       else {
-          bg = "rgba(30, 215, 96, 0.10)";
-          iconClass = "bx bx-trending-up";
-          iconColor = "#1ED760";
+        bg = "rgba(30, 215, 96, 0.10)";
+        iconClass = "bx bx-trending-up";
+        iconColor = "#1ED760";
       }
 
       icon_div.style.backgroundColor = bg;
-      
+
       const icon = document.createElement("i");
       icon.className = "bx " + iconClass;
       icon.style.color = iconColor;
@@ -265,7 +306,7 @@ window.onload = function () {
     }
     return [];
   }
-
+  GetRules();
   async function loadRecentOrders() {
     const container = document.getElementById("recentOrders");
     if (!container) return;
@@ -308,7 +349,13 @@ window.onload = function () {
       top3.forEach((order, i) => {
         // compute date, totals, status
         const d = orderDate(order);
-        const dateStr = d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+        const dateStr = d
+          ? d.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "";
 
         const status = String(order.ord_status ?? order.status ?? "unknown");
         const items = parseItems(order.items);
@@ -351,7 +398,9 @@ window.onload = function () {
         content.className = "reason-date";
 
         const pTitle = document.createElement("p");
-        pTitle.textContent = `Order #${order.ord_id ?? order.id ?? ""} • ${status}`;
+        pTitle.textContent = `Order #${
+          order.ord_id ?? order.id ?? ""
+        } • ${status}`;
         pTitle.style.color = "black";
         pTitle.style.fontWeight = "500";
         content.appendChild(pTitle);
@@ -360,7 +409,8 @@ window.onload = function () {
         const parts = [];
 
         if (dateStr) parts.push(dateStr);
-        if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+        if (itemCount)
+          parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
         if (totalPts) parts.push(`${totalPts} pts`);
         if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
 
@@ -387,7 +437,6 @@ window.onload = function () {
         row.appendChild(pAmount);
         container.appendChild(row);
       });
-
     } catch (e) {
       console.error("Recent orders error:", e);
       container.textContent = "Failed to load recent orders.";
