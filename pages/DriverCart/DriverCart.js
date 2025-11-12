@@ -61,18 +61,28 @@ window.onload = function () {
       );
       if (response.ok) {
         result = await response.json();
-        result = result[0];
+        if (result[0] != null) {
+          result = result[0];
+        }
+        console.log(result);
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
           storeItems = Array.isArray(result["items"]) ? result["items"] : [];
-          document.getElementById("cart-total").innerText =
-            "Cart Total: " + result["ord_totalpoints"];
+          if (result["ord_totalpoints"] == null) {
+            document.getElementById("cart-total").innerText = "Cart Total: 0";
+          } else {
+            document.getElementById("cart-total").innerText =
+              "Cart Total: " + result["ord_totalpoints"];
+          }
+
           if (storeItems.length == 0) {
             EmptyCart();
           } else {
             GenerateStore(storeItems);
           }
+        } else if (response.status == 404) {
+          EmptyCart();
         }
       }
     } catch (error) {
@@ -157,7 +167,7 @@ window.onload = function () {
             "&org=" +
             ORG_ID +
             "&prod=" +
-            product["id"];
+            product["itm_productid"];
         }
       });
 

@@ -1995,7 +1995,7 @@ def get_cart(queryParams):
             row["items"] = json.loads(items_json) if items_json else []
 
     if not rows:
-        return build_response(404, f"No cart items found for user {user_id} in org {org_id}.")
+        return build_response(200, rows)
     return build_response(200, rows)
 
 # ==== DELETE ===========================================================================
