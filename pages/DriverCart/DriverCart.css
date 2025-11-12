@@ -136,3 +136,24 @@
   color: black;
   font-weight: 400;
 }
+
+.btn {
+  display: block;
+  width: 360px;
+  height: 45px;
+  border: none;
+  outline: none;
+  border-radius: 45px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--revvy-black);
+  font-weight: 600;
+  background-color: var(--revvy-green);
+  margin: 32px auto 16px;
+}
+
+#cart-total {
+  text-align: center;
+  padding-top: 10px;
+}

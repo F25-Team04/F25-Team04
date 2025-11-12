@@ -66,7 +66,8 @@ window.onload = function () {
           alert(result.message);
         } else if (response.status == 200) {
           storeItems = Array.isArray(result["items"]) ? result["items"] : [];
-          console.log(storeItems.length);
+          document.getElementById("cart-total").innerText =
+            "Cart Total: " + result["ord_totalpoints"];
           if (storeItems.length == 0) {
             EmptyCart();
           } else {
@@ -166,7 +167,6 @@ window.onload = function () {
         RemoveItem(product["itm_productid"]);
       });
 
-      metaRow.appendChild(productRating);
       metaRow.appendChild(productCost);
       metaRow.appendChild(orderButton);
       metaRow.appendChild(addCart);
@@ -233,7 +233,42 @@ window.onload = function () {
     point.innerText = points;
     CurrDriverPoints = parseInt(points);
   }
+  async function ConfirmOrder() {
+    const data = {
+      user_id: USER_ID,
+      org_id: ORG_ID,
+    };
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/checkout",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // IMPORTANT
+          },
+          body: JSON.stringify(data),
+        }
+      );
 
+      if (response.ok) {
+        const result = await response.json();
+        console.log(result);
+        if (response.status != 200) {
+          alert(result.message);
+        } else if (response.status == 200) {
+          GetShop();
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+  this.document
+    .getElementById("order-cart")
+    .addEventListener("click", function () {
+      ConfirmOrder();
+    });
   async function RemoveItem(id) {
     console.log(id);
     const data = {
