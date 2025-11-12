@@ -1273,6 +1273,257 @@ def post_notifications(reciever, subject, message):
         })
     else:
         return build_response(404, f"Could Not send Notification.")      
+    
+def post_cancel_order(body):
+    body = json.loads(body) or {}
+    order_id = body.get("order_id")
+
+    if order_id is None:
+        raise Exception("Missing required field(s): order_id")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Orders
+            SET ord_status = %s
+            WHERE ord_id = %s
+                AND ord_isdeleted = 0
+                AND ord_status = 'confirmed'
+        """, ("canceled", order_id))
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"Order {order_id} has been canceled."
+        })
+    else:
+        return build_response(404, f"No confirmed order found with ID {order_id}.")
+
+def post_bulk_load(body):
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    commands = body.get("commands")  # command block
+    
+    if user_id is None or commands is None:
+        raise Exception("Missing required field(s): user_id, commands")
+    
+    # check user for admin or sponsor, get org
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT u.usr_role, s.spo_org
+            FROM Users u
+            LEFT JOIN Sponsorships s ON s.spo_user = u.usr_id AND s.spo_isdeleted = 0
+            WHERE u.usr_id = %s AND u.usr_isdeleted = 0
+        """, (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return build_response(404, "User not found")
+        
+        role = row.get("usr_role")
+        org_id = row.get("spo_org")
+        if role not in ("admin", "sponsor"):
+            return build_response(403, "User is not authorized to perform bulk load!")
+    
+    successes = []  # each item: {"line": n, "type": "O|D|S", "detail": "..."}
+    errors    = []  # each item: {"line": n, "error": "message"}
+
+    # Cache org name -> id during the run to minimize queries
+    org_cache = {}
+
+    def _get_org_id_by_name(org_name: str):
+        # returns org_id or None; uses cache if possible
+        if org_name in org_cache:
+            return org_cache[org_name]
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT org_id FROM Organizations
+                WHERE org_name = %s AND org_isdeleted = 0
+            """, (org_name,))
+            r = cur.fetchone()
+        if r:
+            org_cache[org_name] = r["org_id"]
+            return r["org_id"]
+        return None
+
+    def _create_org(org_name: str):
+        # creates and returns new org_id, storing in cache
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Organizations (org_name)
+                VALUES (%s)
+            """, (org_name,))
+            new_id = cur.lastrowid
+        org_cache[org_name] = new_id
+        return new_id
+
+    def _ensure_sponsorship(user_id: int, org_id: int):
+        # Ensure a sponsorship exists for the user and org
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Sponsorships (spo_user, spo_org)
+                VALUES (%s, %s)
+            """, (user_id, org_id))
+
+    def _create_user(role: str, org_id: int, first: str, last: str, email: str):
+        # returns (user_id, created_new: bool)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT usr_id, usr_role FROM Users
+                WHERE usr_email = %s AND usr_isdeleted = 0
+            """, (email,))
+            u = cur.fetchone()
+            if u:
+                return u.get("usr_id"), False  # already exists
+
+            # Create a temp password and minimal profile fields
+            temp_password = secrets.token_urlsafe(12)
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                hash_secret(temp_password),
+                role,
+                "Your answer is: 'RevvyIs#1'",
+                "RevvyIs#1",
+                first or "",
+                last or ""
+            ))
+            user_id = cur.lastrowid
+            _ensure_sponsorship(user_id, org_id)
+            return user_id, True
+
+    lines = [ln.strip() for ln in (commands or "").splitlines()]
+    for idx, raw in enumerate(lines, start=1):
+        if not raw:
+            continue  # skip blank line
+        try:
+            parts = raw.split("|")
+            rec_type = (parts[0] or "").strip().upper()
+
+            # validate command type
+            if rec_type not in ("O", "D", "S"):
+                errors.append({"line": idx, "error": f"Invalid record type '{parts[0]}'. Expected O, D, or S."})
+                continue
+
+            # Enforce sponsor org inference
+            if role == "sponsor":
+                if rec_type == "O":
+                    errors.append({"line": idx, "error": "Sponsors cannot create organizations (type 'O')."})
+                    continue
+
+                # Expected 5 tokens where parts[1] == "" (empty org per spec)
+                if len(parts) != 5:
+                    errors.append({"line": idx, "error": f"Expected 5 tokens for sponsor upload; got {len(parts)}."})
+                    continue
+                _, org_token, first, last, email = parts
+                if (org_token or "").strip():
+                    errors.append({"line": idx, "error": "Sponsors must omit the organization name (leave it empty, using ||)."})
+                    continue
+
+                # Process S/D against inferred org
+                role_for_user = "sponsor" if rec_type == "S" else "driver"
+
+                try:
+                    conn.begin()
+                    uid, created = _create_user(role_for_user, org_id, first.strip(), last.strip(), email.strip())
+                    conn.commit()
+                    if created:
+                        successes.append({"line": idx, "type": rec_type, "detail": f"Created user {uid} {role_for_user} {email.strip()} and attached to org {org_id}."})
+                    else:
+                        errors.append({"line": idx, "error": f"User {email.strip()} already exists!"})
+                except Exception as e:
+                    conn.rollback()
+                    errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
+                continue
+
+            # Admin rules
+            if role == "admin":
+                if rec_type == "O":
+                    # Format: O|<org name>  (must be exactly 2 tokens)
+                    if len(parts) != 2:
+                        errors.append({"line": idx, "error": f"Organization line must be 'O|<name>'. Got {len(parts)} tokens."})
+                        continue
+                    _, org_name = parts
+                    org_name = org_name.strip()
+                    if not org_name:
+                        errors.append({"line": idx, "error": "Organization name cannot be blank."})
+                        continue
+
+                    try:
+                        conn.begin()
+                        # If org already exists, do not duplicate; treat as success and cache id
+                        existing_id = _get_org_id_by_name(org_name)
+                        if existing_id:
+                            conn.commit()
+                            successes.append({"line": idx, "type": "O", "detail": f"Organization '{org_name}' already exists (id={existing_id})."})
+                        else:
+                            new_id = _create_org(org_name)
+                            conn.commit()
+                            successes.append({"line": idx, "type": "O", "detail": f"Created organization '{org_name}' (id={new_id})."})
+                    except Exception as e:
+                        conn.rollback()
+                        errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
+                    continue
+
+                # Admin D/S line: must have 5 tokens: type|org|first|last|email
+                if len(parts) != 5:
+                    errors.append({"line": idx, "error": f"User line must be '<D|S>|<org>|<first>|<last>|<email>'. Got {len(parts)} tokens."})
+                    continue
+                _, org_name, first, last, email = parts
+                org_name = (org_name or "").strip()
+                first = (first or "").strip()
+                last  = (last or "").strip()
+                email = (email or "").strip()
+
+                if not org_name:
+                    # if an admin sent empty org_name, allow fallback to provided default_org_id
+                    errors.append({"line": idx, "error": "Organization name is required as an argument for admin 'O' commands."})
+                    continue
+                else:
+                    org_id_found = _get_org_id_by_name(org_name)
+                    if not org_id_found:
+                        errors.append({"line": idx, "error": f"Organization '{org_name}' not found and no prior 'O' record created it."})
+                        continue
+                    org_id_to_use = org_id_found
+
+                role_for_user = "sponsor" if rec_type == "S" else "driver"
+
+                try:
+                    conn.begin()
+                    uid, created = _create_user(role_for_user, org_id_to_use, first, last, email)
+                    conn.commit()
+                    if created:
+                        successes.append({"line": idx, "type": rec_type, "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."})
+                except Exception as e:
+                    conn.rollback()
+                    errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
+                continue
+
+            # Any other uploader role is disallowed for bulk load
+            errors.append({"line": idx, "error": f"Role '{role}' is not permitted to bulk load."})
+
+        except Exception as e:
+            # Protect the loop: never break on a single bad line
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
+
+    return build_response(200, {
+        "message": "Bulk load completed.",
+        "successes": successes,
+        "errors": errors
+    })
+
 
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
@@ -1882,6 +2133,10 @@ def lambda_handler(event, context):
             response = post_remove_from_cart(body)
         elif (method == "POST" and path == "/checkout"):
             response = post_checkout(body)
+        elif (method == "POST" and path == "/cancel_order"):
+            response = post_cancel_order(body)
+        elif (method == "POST" and path == "/bulk_load"):
+            response = post_bulk_load(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
