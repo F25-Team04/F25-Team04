@@ -1541,9 +1541,9 @@ def post_change_conversion_rate(body):
                 UPDATE Organizations
                 SET org_conversionrate = %s
                 WHERE org_id = %s AND ord_isdeleted = 0
-            """, (org_id, ))
+            """, (org_id, convert))
         except:
-            pr
+            raise Exception("Nope")
     
     
 
