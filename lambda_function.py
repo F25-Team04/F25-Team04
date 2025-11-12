@@ -1524,6 +1524,32 @@ def post_bulk_load(body):
         "errors": errors
     })
 
+def post_change_conversion_rate(body):
+    body = json.loads(body) or {}
+    org_id = body.get("org_id")
+    convert = body.get("convert")
+
+    if org_id is None or convert is None:
+        raise Exception("Missing required field(s): org_id, convert")
+    
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+
+            # 1) find existing cart
+            cur.execute("""
+                UPDATE Organizations
+                SET org_conversionrate = %s
+                WHERE org_id = %s AND ord_isdeleted = 0
+            """, (org_id, ))
+        except:
+            pr
+    
+    
+
+
+
+
 
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
@@ -2137,6 +2163,8 @@ def lambda_handler(event, context):
             response = post_cancel_order(body)
         elif (method == "POST" and path == "/bulk_load"):
             response = post_bulk_load(body)
+        elif (method == "POST" and path == "/change_conversion"):
+            response = post_change_conversion_rate(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")
