@@ -1339,6 +1339,8 @@ def post_cancel_order(body):
             return build_response(404, f"No confirmed order found with ID {order_id}.")
 
 def post_bulk_load(body):
+    import traceback  # for better error logging
+
     body = json.loads(body) or {}
     user_id = body.get("user_id")
     commands = body.get("commands")  # command block
@@ -1373,126 +1375,124 @@ def post_bulk_load(body):
         # returns org_id or None; uses cache if possible
         if org_name in org_cache:
             return org_cache[org_name]
-        try:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT org_id FROM Organizations
-                    WHERE org_name = %s AND org_isdeleted = 0
-                """, (org_name,))
-                r = cur.fetchone()
-        except Exception as e:
-            raise e
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT org_id FROM Organizations
+                WHERE org_name = %s AND org_isdeleted = 0
+            """, (org_name,))
+            r = cur.fetchone()
         if r:
             org_cache[org_name] = r["org_id"]
             return r["org_id"]
         return None
 
     def _create_org(org_name: str):
-        try:
-            # creates and returns new org_id, storing in cache
-            with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO Organizations (org_name)
-                    VALUES (%s)
-                """, (org_name,))
-                new_id = cur.lastrowid
-            org_cache[org_name] = new_id
-            return new_id
-        except Exception as e:
-            raise e
+        # creates and returns new org_id, storing in cache
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Organizations (org_name)
+                VALUES (%s)
+            """, (org_name,))
+            new_id = cur.lastrowid
+        org_cache[org_name] = new_id
+        return new_id
 
-    def _create_sponsorship(user_id: int, org_id: int):
-        try:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT 1
-                    FROM Sponsorships
-                    WHERE spo_user = %s AND spo_org = %s AND spo_isdeleted = 0
-                    LIMIT 1
-                """, (user_id, org_id))
-                if cur.fetchone():
-                    return
+    def _create_sponsorship(user_id_local: int, org_id_local: int):
+        # idempotent: if already exists and not deleted, do nothing
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 1
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_org = %s AND spo_isdeleted = 0
+                LIMIT 1
+            """, (user_id_local, org_id_local))
+            if cur.fetchone():
+                return
 
-                cur.execute("""
-                    INSERT INTO Sponsorships (spo_user, spo_org)
-                    VALUES (%s, %s)
-                """, (user_id, org_id))
-        except Exception as e:
-            raise e
+            cur.execute("""
+                INSERT INTO Sponsorships (spo_user, spo_org)
+                VALUES (%s, %s)
+            """, (user_id_local, org_id_local))
 
-    def _create_user(role: str, org_id: int, first: str, last: str, email: str):
-        try:
-            # returns (user_id, created_new: bool)
-            with conn.cursor() as cur:
-                cur.execute("""
-                    SELECT usr_id, usr_role FROM Users
-                    WHERE usr_email = %s AND usr_isdeleted = 0
-                """, (email,))
-                u = cur.fetchone()
-                if u:
-                    return u.get("usr_id"), False  # already exists
+    def _create_user(role_local: str, org_id_local: int, first: str, last: str, email: str):
+        # returns (user_id, created_new: bool)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT usr_id, usr_role FROM Users
+                WHERE usr_email = %s AND usr_isdeleted = 0
+            """, (email,))
+            u = cur.fetchone()
+            if u:
+                # Attach existing user to org (drivers should also have sponsorships)
+                existing_id = u.get("usr_id")
+                _create_sponsorship(existing_id, org_id_local)
+                return existing_id, False  # already exists
 
-                # Create a temp password and minimal profile fields
-                temp_password = secrets.token_urlsafe(12)
-                cur.execute("""
-                    INSERT INTO Users (
-                        usr_email,
-                        usr_passwordhash,
-                        usr_role,
-                        usr_securityquestion,
-                        usr_securityanswer,
-                        usr_firstname,
-                        usr_lastname
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    email,
-                    hash_secret(temp_password),
-                    role,
-                    "Your answer is: 'RevvyIs#1'",
-                    "RevvyIs#1",
-                    first or "",
-                    last or ""
-                ))
-                user_id = cur.lastrowid
-                _create_sponsorship(user_id, org_id)
-                return user_id, True
-        except Exception as e:
-            raise e
+            # Create a temp password and minimal profile fields
+            temp_password = secrets.token_urlsafe(12)
+
+            # IMPORTANT: use fewer iterations for bulk-loaded temp passwords
+            # so multiple users don't cause Lambda timeout.
+            BULK_ITERATIONS = 10_000  # much faster than 260k; still uses PBKDF2
+            pw_hash = hash_secret(temp_password, iterations=BULK_ITERATIONS)
+
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                pw_hash,
+                role_local,
+                "Your answer is: 'RevvyIs#1'",
+                "RevvyIs#1",
+                first or "",
+                last or ""
+            ))
+            new_user_id = cur.lastrowid
+            _create_sponsorship(new_user_id, org_id_local)
+            return new_user_id, True
 
     lines = [ln.strip() for ln in (commands or "").splitlines()]
-    print(f"Processing {len(lines)} lines for bulk load: {lines}")
+    print(f"[BL] Processing {len(lines)} lines for bulk load: {lines}")
     
     for idx, raw in enumerate(lines, start=1):
-        print(f"Processing line {idx}: {raw}")
+        print(f"[BL] Processing line {idx}: {raw}")
         if not raw:
             continue  # skip blank line
         try:
             parts = raw.split("|")
-            print(f"Split parts: {parts}")
+            print(f"[BL] Split parts: {parts}")
             rec_type = (parts[0] or "").strip().upper()
 
             # validate command type
             if rec_type not in ("O", "D", "S"):
                 errors.append({"line": idx, "error": f"Invalid record type '{parts[0]}'. Expected O, D, or S."})
-                print(f"Error: Invalid record type: line={idx}, raw={raw}")
+                print(f"[BL] Error: Invalid record type: line={idx}, raw={raw}")
                 continue
 
             # Enforce sponsor org inference
             if role == "sponsor":
                 if rec_type == "O":
                     errors.append({"line": idx, "error": "Sponsors cannot create organizations (type 'O')."})
-                    print(f"Error: Sponsor cannot create orgs: line={idx}, raw={raw}")
+                    print(f"[BL] Error: Sponsor cannot create orgs: line={idx}, raw={raw}")
                     continue
 
                 # Expected 5 tokens where parts[1] == "" (empty org per spec)
                 if len(parts) != 5:
                     errors.append({"line": idx, "error": f"Expected 5 tokens for sponsor upload; got {len(parts)}."})
-                    print(f"Error: Wrong number of tokens for sponsor upload: line={idx}, raw={raw}")
+                    print(f"[BL] Error: Wrong number of tokens for sponsor upload: line={idx}, raw={raw}")
                     continue
                 _, org_token, first, last, email = parts
                 if (org_token or "").strip():
                     errors.append({"line": idx, "error": "Sponsors must omit the organization name (leave it empty, using ||)."})
-                    print(f"Error: Sponsor must omit org name: line={idx}, raw={raw}")
+                    print(f"[BL] Error: Sponsor must omit org name: line={idx}, raw={raw}")
                     continue
 
                 # Process S/D against inferred org
@@ -1503,55 +1503,79 @@ def post_bulk_load(body):
                     uid, created = _create_user(role_for_user, org_id, first.strip(), last.strip(), email.strip())
                     conn.commit()
                     if created:
-                        successes.append({"line": idx, "type": rec_type, "detail": f"Created user {uid} {role_for_user} {email.strip()} and attached to org {org_id}."})
-                        print(f"Created user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Created user {uid} {role_for_user} {email.strip()} and attached to org {org_id}."
+                        })
+                        print(f"[BL] Created user: line={idx}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
                     else:
-                        errors.append({"line": idx, "error": f"User {email.strip()} already exists!"})
-                        print(f"Error: User {email.strip()} already exists: line={idx}, raw={raw}")
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Attached existing user {email.strip()} to org {org_id} (user_id={uid})."
+                        })
+                        print(f"[BL] Attached existing user: line={idx}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
                 except Exception as e:
                     conn.rollback()
-                    errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
-                    print(f"Error creating user: line={idx}", e)
+                    errors.append({
+                        "line": idx,
+                        "error": f"{type(e).__name__}: {e}",
+                        "trace": traceback.format_exc()
+                    })
+                    print(f"[BL] Error creating user on line {idx}: {e}")
                 continue
 
             # Admin rules
             if role == "admin":
-                print (f"Admin processing line {idx}: {raw}")
+                print(f"[BL] Admin processing line {idx}: {raw}")
                 if rec_type == "O":
                     # Format: O|<org name>  (must be exactly 2 tokens)
                     if len(parts) != 2:
                         errors.append({"line": idx, "error": f"Organization line must be 'O|<name>'. Got {len(parts)} tokens."})
-                        print (f"Error creating org, wrong number of tokens: line={idx}, raw={raw}")
+                        print(f"[BL] Error creating org, wrong number of tokens: line={idx}, raw={raw}")
                         continue
                     _, org_name = parts
                     org_name = org_name.strip()
                     if not org_name:
                         errors.append({"line": idx, "error": "Organization name cannot be blank."})
-                        print (f"Error creating org, blank name: line={idx}, raw={raw}")
+                        print(f"[BL] Error creating org, blank name: line={idx}, raw={raw}")
                         continue
 
                     try:
                         conn.begin()
-                        # If org already exists, do not duplicate
                         existing_id = _get_org_id_by_name(org_name)
                         if existing_id:
-                            conn.commit()
-                            errors.append({"line": idx, "error": f"Organization '{org_name}' already exists (id={existing_id})."})
-                            print (f"Org already exists: line={idx}, raw={raw}, id={existing_id}")
+                            # Treat as an error per your requirement
+                            conn.rollback()
+                            errors.append({
+                                "line": idx,
+                                "error": f"Organization '{org_name}' already exists (id={existing_id}); O command failed."
+                            })
+                            print(f"[BL] Org already exists: line={idx}, raw={raw}, id={existing_id}")
                         else:
                             new_id = _create_org(org_name)
                             conn.commit()
-                            successes.append({"line": idx, "type": "O", "detail": f"Created organization '{org_name}' (id={new_id})."})
-                            print (f"Created org: line={idx}, raw={raw}, id={new_id}")
+                            successes.append({
+                                "line": idx,
+                                "type": "O",
+                                "detail": f"Created organization '{org_name}' (id={new_id})."
+                            })
+                            print(f"[BL] Created org: line={idx}, raw={raw}, id={new_id}")
                     except Exception as e:
                         conn.rollback()
-                        errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
+                        errors.append({
+                            "line": idx,
+                            "error": f"{type(e).__name__}: {e}",
+                            "trace": traceback.format_exc()
+                        })
+                        print(f"[BL] Error creating org on line {idx}: {e}")
                     continue
 
                 # Admin D/S line: must have 5 tokens: type|org|first|last|email
                 if len(parts) != 5:
                     errors.append({"line": idx, "error": f"User line must be '<D|S>|<org>|<first>|<last>|<email>'. Got {len(parts)} tokens."})
-                    print (f"Error creating user, wrong number of tokens: line={idx}, raw={raw}")
+                    print(f"[BL] Error creating user, wrong number of tokens: line={idx}, raw={raw}")
                     continue
                 _, org_name, first, last, email = parts
                 org_name = (org_name or "").strip()
@@ -1560,16 +1584,15 @@ def post_bulk_load(body):
                 email = (email or "").strip()
 
                 if not org_name:
-                    # if an admin sent empty org_name
                     errors.append({"line": idx, "error": "Organization name is required as an argument for admin 'O' commands."})
-                    print (f"Error creating user, missing org name: line={idx}, raw={raw}")
+                    print(f"[BL] Error creating user, missing org name: line={idx}, raw={raw}")
                     continue
                 else:
                     org_id_found = _get_org_id_by_name(org_name)
-                    print(f"Lookup org '{org_name}' found id: {org_id_found}")
+                    print(f"[BL] Lookup org '{org_name}' found id: {org_id_found}")
                     if not org_id_found:
                         errors.append({"line": idx, "error": f"Organization '{org_name}' not found and no prior 'O' record created it."})
-                        print(f"Error creating user, org not found: line={idx}, raw={raw}")
+                        print(f"[BL] Error creating user, org not found: line={idx}, raw={raw}")
                         continue
                     org_id_to_use = org_id_found
 
@@ -1580,12 +1603,27 @@ def post_bulk_load(body):
                     uid, created = _create_user(role_for_user, org_id_to_use, first, last, email)
                     conn.commit()
                     if created:
-                        successes.append({"line": idx, "type": rec_type, "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."})
-                        print(f"Created user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."
+                        })
+                        print(f"[BL] Created user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
+                    else:
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Attached existing user {email} to org {org_id_to_use} (user_id={uid})."
+                        })
+                        print(f"[BL] Attached existing user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
                 except Exception as e:
                     conn.rollback()
-                    errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
-                    print(f"Error creating user: line={idx}", e)
+                    errors.append({
+                        "line": idx,
+                        "error": f"{type(e).__name__}: {e}",
+                        "trace": traceback.format_exc()
+                    })
+                    print(f"[BL] Error creating user: line={idx} {e}")
                 continue
 
             # Any other uploader role is disallowed for bulk load
@@ -1597,13 +1635,19 @@ def post_bulk_load(body):
                 conn.rollback()
             except Exception:
                 pass
-            errors.append({"line": idx, "error": f"{type(e).__name__}: {e}"})
+            errors.append({
+                "line": idx,
+                "error": f"{type(e).__name__}: {e}",
+                "trace": traceback.format_exc()
+            })
+            print(f"[BL] Unexpected error on line {idx}: {e}")
 
     return build_response(200, {
         "message": "Bulk load completed.",
         "successes": successes,
         "errors": errors
     })
+
 
 def post_change_conversion_rate(body):
     body = json.loads(body) or {}
