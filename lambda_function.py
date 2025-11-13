@@ -1433,7 +1433,7 @@ def post_bulk_load(body):
 
             # IMPORTANT: use fewer iterations for bulk-loaded temp passwords
             # so multiple users don't cause Lambda timeout.
-            BULK_ITERATIONS = 10_000  # much faster than 260k; still uses PBKDF2
+            BULK_ITERATIONS = 1_000  # much faster than 260k; still uses PBKDF2
             pw_hash = hash_secret(temp_password, iterations=BULK_ITERATIONS)
 
             cur.execute("""
