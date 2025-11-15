@@ -1660,15 +1660,22 @@ def post_change_conversion_rate(body):
     with conn.cursor() as cur:
         try:
             conn.begin()
-
-            # 1) find existing cart
             cur.execute("""
                 UPDATE Organizations
                 SET org_conversionrate = %s
-                WHERE org_id = %s AND ord_isdeleted = 0
-            """, (org_id, convert))
+                WHERE org_id = %s AND org_isdeleted = 0
+            """, (convert, org_id))
         except:
             raise Exception("Nope")
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"Conversion Rate Successfully changed"
+        })
+    else:
+        return build_response(404, f"Conversion Rate was not changed")
         
 
 # ==== GET ==============================================================================

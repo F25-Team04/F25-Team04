@@ -5,6 +5,8 @@ const ORG_ID = params.get("org");
 window.onload = function () {
   // Navigation bar links
   var list = this.document.getElementById("links");
+  var about = this.document.getElementById("about-page");
+  about.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
   const li = document.createElement("li");
   const link = document.createElement("a");
   link.href =
@@ -28,6 +30,14 @@ window.onload = function () {
     ORG_ID;
   app.textContent = "Applications";
   li.appendChild(app);
+  const change = document.createElement("a");
+  change.href =
+    "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  change.textContent = "Change Point Conversion Rate";
+  li.appendChild(change);
   list.appendChild(li);
 
   function MakeRulesList(rules) {
@@ -86,9 +96,11 @@ window.onload = function () {
         if (response.success == false) {
           alert(result.message);
         } else if (response.status == 200) {
-          console.log(result);
+          console.log(result["Organizations"][0]["org_name"]);
           message = document.getElementById("welcome_message");
           message.textContent = "Welcome " + result["First Name"] + "!";
+          document.getElementById("org-name").innerText =
+            result["Organizations"][0]["org_name"];
         }
       }
     } catch (error) {

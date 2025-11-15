@@ -40,34 +40,33 @@ window.onload = function () {
   list.appendChild(li);
 
   document
-    .getElementById("create")
+    .getElementById("conversionForm")
     .addEventListener("submit", async function (event) {
       event.preventDefault(); // stop normal form submission
 
       // Gather form data
-      document.getElementById("org_id").value = ORG_ID;
       const form = event.target;
       const formData = new FormData(form);
+      console.log(form);
+      const data = {
+        org_id: ORG_ID,
+        convert: formData.get("rate"),
+      };
       try {
         // Send POST request
         const response = await fetch(
-          "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/sponsor",
+          "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/change_conversion",
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json", // IMPORTANT
             },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(data),
           }
         );
         if (response.ok) {
           const result = await response.json();
-
-          if (result.success == false) {
-            alert(result.message);
-          } else if (result.success == true) {
-            GetUser(result.message);
-          }
+          console.log(result);
         }
       } catch (error) {
         console.error("Error:", error);
