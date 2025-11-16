@@ -153,3 +153,7 @@ body {
   align-items: center;
   gap: 36px;
 }
+
+#cancel-button {
+  position: absolute;
+}
