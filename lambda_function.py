@@ -2059,6 +2059,36 @@ def get_sponsors(queryParams):
     else:
         return build_response(404, { "message": f"No sponsors found for organization: {org}" })
 
+def get_drivers(queryParams):
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                u.usr_id         AS "User ID",
+                u.usr_email      AS "Email",
+                u.usr_firstname  AS "First Name",
+                u.usr_lastname   AS "Last Name",
+                u.usr_employeeid AS "Employee ID",
+                u.usr_phone      AS "Phone",
+                u.usr_address    AS "Address"
+            FROM Users u
+            JOIN Sponsorships s ON s.spo_user = u.usr_id
+            WHERE s.spo_org = %s
+            AND s.spo_isdeleted = 0
+            AND u.usr_role = 'driver'
+            AND u.usr_isdeleted = 0
+        """, org)
+        drivers = cur.fetchall()
+        
+    if drivers:
+        return build_response(200, drivers)
+    else:
+        return build_response(404, {"message": f"No drivers found for organization: {org}"})
+
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
     queryParams = queryParams or {}
@@ -2484,8 +2514,10 @@ def lambda_handler(event, context):
             response = get_organizations(queryParams)
         elif (method == "GET" and path == "/user"):
             response = get_user(queryParams)
-        elif (method == "GET" and path == "/sponsors"):
+        elif (method == "GET" and path == "/sponsor"):
             response = get_sponsors(queryParams)
+        elif (method == "GET" and path == "/driver"):
+            response = get_drivers(queryParams)
         elif (method == "GET" and path == "/point_rules"):
             response = get_point_rules(queryParams)
         elif (method == "GET" and path == "/security_questions"):
