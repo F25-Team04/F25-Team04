@@ -67,6 +67,7 @@ window.onload = function () {
         if (response.ok) {
           const result = await response.json();
           console.log(result);
+          alert("Conversion Rate Change Successful");
         }
       } catch (error) {
         console.error("Error:", error);
