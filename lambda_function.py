@@ -2089,6 +2089,28 @@ def get_drivers(queryParams):
     else:
         return build_response(404, {"message": f"No drivers found for organization: {org}"})
 
+def get_admins():
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                u.usr_id         AS "User ID",
+                u.usr_email      AS "Email",
+                u.usr_firstname  AS "First Name",
+                u.usr_lastname   AS "Last Name",
+                u.usr_employeeid AS "Employee ID",
+                u.usr_phone      AS "Phone",
+                u.usr_address    AS "Address"
+            FROM Users u
+            WHERE u.usr_role = 'admin'
+            AND u.usr_isdeleted = 0
+        """)
+        admins = cur.fetchall()
+        
+    if admins:
+        return build_response(200, admins)
+    else:
+        return build_response(404, {"message": "No admins found."})
+
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
     queryParams = queryParams or {}
@@ -2518,6 +2540,8 @@ def lambda_handler(event, context):
             response = get_sponsors(queryParams)
         elif (method == "GET" and path == "/driver"):
             response = get_drivers(queryParams)
+        elif (method == "GET" and path == "/admin"):
+            response = get_admins()
         elif (method == "GET" and path == "/point_rules"):
             response = get_point_rules(queryParams)
         elif (method == "GET" and path == "/security_questions"):
