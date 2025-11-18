@@ -24,6 +24,7 @@ body {
     height: 1.5px;
     background: var(--revvy-green);
     margin-top: 8px;
+    margin-bottom: 16px;
     width: 100%;
 }
 
@@ -36,9 +37,64 @@ body {
 }
 
 .applications-container h1 {
-    padding-bottom: .5em;
+    padding: 24px;
 }
 
 .applications-container h3 {
-    padding-bottom: .5em;
+    padding: .5em;
+}
+
+#application-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.pending-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 16px;
+}
+
+.pending-row:not(:last-child) {
+    border-bottom: 1px solid #ddd;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    width: 100px;
+    height: 35px;
+    border: none;
+    outline: none;
+    border-radius: 45px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.approve-btn {
+    color: var(--revvy-black);
+    background-color: var(--revvy-green);
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.approve-btn:hover {
+    background-color: #1bbf75;
+}
+
+.reject-btn {
+    color: var(--revvy-black);
+    background-color: #ddd;
+    transition: background-color 0.2s ease;
+}
+
+.reject-btn:hover {
+    background-color: #ff3b30;
+    color: white;
 }

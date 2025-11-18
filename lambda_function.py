@@ -342,6 +342,86 @@ def post_user_update(body):
         return build_response(200, {"success": True, "message": "User updated", "affected": affected})
     return build_response(404, f"No active user found with id={usr_id}")
 
+def post_admin_signup(body):
+    # Parse and validate input
+    body = json.loads(body or "{}")
+    email = body.get("email")
+    password = body.get("password")
+    fName = body.get("fname")
+    lName = body.get("lname")
+    phone = body.get("phone")
+    ques = body.get("security")
+    ans = body.get("answer")
+
+    # Required fields for account creation
+    required_fields = {
+        "email": email,
+        "password": password,
+        "fname": fName,
+        "lname": lName,
+        "phone": phone,
+        "security": ques,
+        "answer": ans
+    }
+
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    with conn.cursor() as cur:
+        # Check for existing account
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_email = %s
+                AND usr_isdeleted = 0
+        """, (email,))
+        if cur.fetchone():
+            return build_response(400, "Email already associated with an existing account")    
+
+        try:
+            conn.begin()
+
+            # Insert the new user
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_loginattempts,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                    usr_phone
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                hash_secret(password), # password hash
+                "admin",        # Default role
+                0,               # login attempts
+                ques,
+                ans,
+                fName,
+                lName,
+                phone
+            ))
+
+            admin_id = cur.lastrowid
+            if not admin_id:
+                raise Exception("Failed to create user account")
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+    return build_response(200, {
+        "message": "Admin account created successfully.",
+        "usr_id": admin_id
+    })
+
 def post_signup(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -1698,6 +1778,42 @@ def get_driver_transactions(queryParams):
         
     return build_response(200, transactions)
 
+def get_driver_transactions_by_org(queryParams):
+    orgID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_org = %s
+            AND ptr_isdeleted = 0
+        """, orgID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
+def get_all_driver_transactions():
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_isdeleted = 0
+        """)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
@@ -2258,6 +2374,8 @@ def lambda_handler(event, context):
         # POST
         elif (method == "POST" and path == "/signup"):
             response = post_signup(body)
+        elif (method == "POST" and path == "/admin"):
+            response = post_admin_signup(body)
         elif (method == "POST" and path == "/login"):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
