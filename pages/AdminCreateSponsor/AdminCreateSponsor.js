@@ -14,6 +14,10 @@ window.onload = function () {
   const create_org = document.createElement("a");
   create_org.href = "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
   create_org.textContent = "Create Organization";
+  const create_admin = document.createElement("a");
+  create_admin.href = "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
+  create_admin.textContent = "Create Admin";
+  li.appendChild(create_admin);
   li.appendChild(create);
   li.appendChild(create_org);
   list.appendChild(li);

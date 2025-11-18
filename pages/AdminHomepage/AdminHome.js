@@ -14,6 +14,10 @@ window.onload = function () {
   const create_org = document.createElement("a");
   create_org.href = "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
   create_org.textContent = "Create Organization";
+  const create_admin = document.createElement("a");
+  create_admin.href = "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
+  create_admin.textContent = "Create Admin";
+  li.appendChild(create_admin);
   li.appendChild(create);
   li.appendChild(create_org);
   list.appendChild(li);
@@ -28,5 +32,23 @@ window.onload = function () {
   createSponsorButton.addEventListener("click", function () {
     window.location.href =
       "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
+  });
+
+  const manageSponsorsButton = document.getElementById("manage_sponsor_btn");
+  manageSponsorsButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminAccManager/manage-sponsors/manage-sponsors.html?id=" + USER_ID;
+  });
+
+  const manageDriversButton = document.getElementById("manage_driver_btn");
+  manageDriversButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminAccManager/manage-drivers/manage-drivers.html?id=" + USER_ID;
+  });
+
+  const manageAdminsButton = document.getElementById("manage_admin_btn");
+  manageAdminsButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminAccManager/manage-admins/manage-admins.html?id=" + USER_ID;
   });
 };

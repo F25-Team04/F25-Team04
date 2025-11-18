@@ -21,15 +21,6 @@ emailBody =""#will be filled with information from the api
 TARGET_EMAIL = "cambro7192@gmail.com"
 #APP_MAIL_PASSWORD = os.getenv("APP-MAIL-PASSWORD")
 
-#from dotenv import load_dotenv
-import os
-
-#load_dotenv()
-
-import time
-import smtplib
-from email.message import EmailMessage
-
 # ==== response builder =================================================================
 def build_response(status: int, payload):
     return {
@@ -153,31 +144,6 @@ def _update_order_totals(order_id):
         totals = cur.fetchone()
         total_points = totals.get("total_points") or 0
         total_usd = totals.get("total_usd") or 0.0
-       
-def emailSend(to, body, subject):
-    send= EmailMessage()
-    send.set_content(body)
-    send["subject"] = subject
-    send["to"] = to
-
-    #login variables
-    user = "revvyrewards@gmail.com"
-    send['from'] = user
-    password = "psimxzagzdgsetpi" #is a specific app password seperate from gmail password
-
-    #code below will login to email send message and then quit 
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login(user, password)
-    server.send_message(send)
-    server.quit()
-
-
-def sendIt(newMessage):
-    tempTarget = "cambro7192@gmail.com"
-    emailSend(tempTarget, newMessage, "New Application")#phone number or email can be substituted
-    
-    return
 
         cur.execute("""
             UPDATE Orders
@@ -329,44 +295,6 @@ def post_change_password(body):
         "message": "User does not exist"
     })
 
-def post_change_point_rule(body):
-    body = json.loads(body) or {}
-    reason = body.get("reason")
-    amount = body.get("amount")
-    rule_id = body.get("ruleId")
-    if reason is None or amount is None:
-        raise Exception("Missing required field(s): reason, amount")
-        
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT * 
-            FROM Point_Rules
-            WHERE rul_id = %s
-            AND rul_isdeleted = 0
-        """, rule_id)
-        user = cur.fetchone()
-
-    if user:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE Point_Rules 
-                    SET rul_reason = %s, 
-                    rul_pointdelta = %s
-                    WHERE rul_id = %s
-                    AND rul_isdeleted = 0
-                """, (reason, amount, rule_id))
-            conn.commit()
-
-            return build_response(200, {
-                "success": True, 
-                "message": "Point_Rule successfully updated."
-            })
-
-    return build_response(200, {
-        "success": False, 
-        "message": "Rule does not exist"
-    })
-
 def post_user_update(body):
     data = json.loads(body) or {}
     usr_id = data.get("id")
@@ -413,6 +341,282 @@ def post_user_update(body):
     if affected:
         return build_response(200, {"success": True, "message": "User updated", "affected": affected})
     return build_response(404, f"No active user found with id={usr_id}")
+
+def post_create_driver(body):
+    body = json.loads(body or "{}")
+    email = body.get("email")
+    fName = body.get("first_name")
+    lName = body.get("last_name")
+    phoneNum = body.get("phone_number")
+    securityQ = body.get("security")
+    securityA = body.get("answer")
+    org = body.get("org")
+
+    required_fields = {
+        "email": email,
+        "first_name": fName,
+        "last_name": lName,
+        "phone_number": phoneNum,
+        "security": securityQ,
+        "answer": securityA,
+        "org": org
+    }
+
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    try:
+        org_id = int(org)
+    except (TypeError, ValueError):
+        raise Exception("Invalid 'org' value; must be an integer")
+
+    temp_password = "driver"
+    pwd_hash = hash_secret(temp_password)
+
+    with conn.cursor() as cur:
+        # Check for existing account
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_email = %s
+              AND usr_isdeleted = 0
+        """, (email,))
+        if cur.fetchone():
+            return build_response(400, "Email already associated with an existing account")
+        
+        try:
+            conn.begin()
+
+            # Insert the new driver user
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_loginattempts,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                    usr_phone
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                pwd_hash,
+                "driver",
+                0,
+                securityQ,
+                securityA,
+                fName,
+                lName,
+                phoneNum
+            ))
+
+            driver_id = cur.lastrowid
+            if not driver_id:
+                raise Exception("Failed to create driver user account")
+
+            # Create Sponsorship association
+            cur.execute("""
+                INSERT INTO Sponsorships (
+                    spo_user, 
+                    spo_org, 
+                    spo_pointbalance, 
+                    spo_isdeleted
+                ) VALUES (%s, %s, %s, 0)
+            """, (driver_id, org_id, 0))
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+    return build_response(200, {
+        "success": True,
+        "message": "Driver account created and associated with organization.",
+        "usr_id": driver_id,
+        "org": org_id
+    })
+
+def post_create_sponsor(body):
+    body = json.loads(body or "{}")
+    email = body.get("email")
+    fName = body.get("first_name")
+    lName = body.get("last_name")
+    phoneNum = body.get("phone_number")
+    securityQ = body.get("security")
+    securityA = body.get("answer")
+    org = body.get("org")
+
+    required_fields = {
+        "email": email,
+        "first_name": fName,
+        "last_name": lName,
+        "phone_number": phoneNum,
+        "security": securityQ,
+        "answer": securityA,
+        "org": org
+    }
+
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    try:
+        org_id = int(org)
+    except (TypeError, ValueError):
+        raise Exception("Invalid 'org' value; must be an integer")
+
+    temp_password = "sponsor"
+    pwd_hash = hash_secret(temp_password)
+
+    with conn.cursor() as cur:
+        # Check for existing account
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_email = %s
+              AND usr_isdeleted = 0
+        """, (email,))
+        if cur.fetchone():
+            return build_response(400, "Email already associated with an existing account")
+        
+        try:
+            conn.begin()
+
+            # Insert the new sponsor user
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_loginattempts,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                    usr_phone
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                pwd_hash,
+                "sponsor",
+                0,
+                securityQ,
+                securityA,
+                fName,
+                lName,
+                phoneNum
+            ))
+
+            sponsor_id = cur.lastrowid
+            if not sponsor_id:
+                raise Exception("Failed to create sponsor user account")
+
+            # Create Sponsorship association
+            cur.execute("""
+                INSERT INTO Sponsorships (
+                    spo_user, 
+                    spo_org, 
+                    spo_pointbalance, 
+                    spo_isdeleted
+                ) VALUES (%s, %s, %s, 0)
+            """, (sponsor_id, org_id, 0))
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+    return build_response(200, {
+        "success": True,
+        "message": "Sponsor account created and associated with organization.",
+        "usr_id": sponsor_id,
+        "org": org_id
+    })
+
+def post_admin_signup(body):
+    # Parse and validate input
+    body = json.loads(body or "{}")
+    email = body.get("email")
+    password = body.get("password")
+    fName = body.get("fname")
+    lName = body.get("lname")
+    phone = body.get("phone")
+    ques = body.get("security")
+    ans = body.get("answer")
+
+    # Required fields for account creation
+    required_fields = {
+        "email": email,
+        "password": password,
+        "fname": fName,
+        "lname": lName,
+        "phone": phone,
+        "security": ques,
+        "answer": ans
+    }
+
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    with conn.cursor() as cur:
+        # Check for existing account
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_email = %s
+                AND usr_isdeleted = 0
+        """, (email,))
+        if cur.fetchone():
+            return build_response(400, "Email already associated with an existing account")    
+
+        try:
+            conn.begin()
+
+            # Insert the new user
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_loginattempts,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                    usr_phone
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                hash_secret(password), # password hash
+                "admin",        # Default role
+                0,               # login attempts
+                ques,
+                ans,
+                fName,
+                lName,
+                phone
+            ))
+
+            admin_id = cur.lastrowid
+            if not admin_id:
+                raise Exception("Failed to create user account")
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+    return build_response(200, {
+        "message": "Admin account created successfully.",
+        "usr_id": admin_id
+    })
 
 def post_signup(body):
     # Parse and validate input
@@ -506,43 +710,6 @@ def post_signup(body):
         "usr_id": driver_id
     })
 
-def post_create_organization(body):
-    body = json.loads(body) or {}
-    org_name = body.get("org_name")
-    org_conversion_rate = body.get("org_conversion_rate")
-
-    if org_name is None or org_conversion_rate is None:
-        return build_response(400, { "message": "Missing required field(s): org_name, org_conversion_rate" })
-
-    # Verify conversion rate is a valid float
-    try:
-        org_conversion_rate = float(org_conversion_rate)
-    except ValueError:
-        return build_response(400, { "message": "Invalid org_conversion_rate: must be a number" })
-
-    # Verify org does not already exist
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT org_id
-            FROM Organizations
-            WHERE org_name = %s
-                AND org_isdeleted = 0
-        """, (org_name,))
-        if cur.fetchone():
-            return build_response(400, { "message": "Organization with that name already exists" })
-
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO Organizations (
-                org_name,
-                org_conversionrate
-            ) VALUES (%s, %s)
-        """, (org_name, org_conversion_rate))
-        conn.commit()
-    return build_response(200, {
-        "message": f"Organization '{org_name}' created with conversion rate {org_conversion_rate}"
-    })
-
 def post_application(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -621,7 +788,8 @@ def post_application(body):
         except Exception as e:
             conn.rollback()
             raise e
-    sendIt("New User Sent Application")
+
+    sendIt("New User Applied to Your Org")
     return build_response(200, {
         "message": "Application submitted"
     })
@@ -1071,11 +1239,10 @@ def post_add_to_cart(body):
             for item_id in items:
                 url = f"https://fakestoreapi.com/products/{item_id}"
                 headers = {
-                    "User-Agent": "Mozilla/5.0",
-                    "Accept": "application/json, text/plain, */*",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Connection": "close",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Accept": "application/json",
                 }
+
                 r = requests.get(url, headers=headers, timeout=5)
                 if r.status_code != 200:
                     raise Exception(f"Failed to fetch item {item_id} from FakeStore API. Please check the item ID and try again.")
@@ -1381,6 +1548,410 @@ def post_notifications(reciever, subject, message):
         })
     else:
         return build_response(404, f"Could Not send Notification.")      
+    
+def post_cancel_order(body):
+    body = json.loads(body) or {}
+    order_id = body.get("order_id")
+
+    if order_id is None:
+        raise Exception("Missing required field(s): order_id")
+
+    with conn.cursor() as cur:
+        # get order details
+        cur.execute("""
+            SELECT ord_totalpoints, ord_userid, ord_orgid
+            FROM Orders
+            WHERE ord_id = %s AND ord_isdeleted = 0
+        """, (order_id,))
+        order_row = cur.fetchone()
+        if not order_row:
+            return build_response(404, f"Order {order_id} not found")
+
+        order_points = int(order_row["ord_totalpoints"] or 0)
+        user_id = order_row["ord_userid"]
+        org_id = order_row["ord_orgid"]
+
+        cur.execute("""
+            UPDATE Orders
+            SET ord_status = %s
+            WHERE ord_id = %s
+                AND ord_isdeleted = 0
+                AND ord_status = 'confirmed'
+        """, ("canceled", order_id))
+        affected = cur.rowcount
+        
+        if affected:
+            # return points to user
+            cur.execute("""
+                UPDATE Sponsorships
+                SET spo_pointbalance = spo_pointbalance + %s
+                WHERE spo_user = %s AND spo_org = %s
+                AND spo_isdeleted = 0
+            """, (order_points, user_id, org_id))
+            
+            # get new balance
+            cur.execute("""
+                SELECT spo_pointbalance
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_org = %s 
+                AND spo_isdeleted = 0
+            """, (user_id, org_id))
+            new_balance_row = cur.fetchone()
+            new_balance = new_balance_row["spo_pointbalance"] if new_balance_row else 0
+
+            # log point transaction
+            cur.execute("""
+                INSERT INTO Point_Transactions (ptr_driverid, ptr_org, ptr_pointdelta, ptr_newbalance, ptr_reason, ptr_date)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+            """, (user_id, org_id, order_points, new_balance, "Order cancellation"))
+
+            conn.commit()
+            return build_response(200, {
+                "message": f"Order {order_id} has been canceled."
+            })
+        else:
+            conn.rollback()
+            return build_response(404, f"No confirmed order found with ID {order_id}.")
+
+def post_bulk_load(body):
+    import traceback  # for better error logging
+
+    body = json.loads(body) or {}
+    user_id = body.get("user_id")
+    commands = body.get("commands")  # command block
+    
+    if user_id is None or commands is None:
+        raise Exception("Missing required field(s): user_id, commands")
+    
+    # check user for admin or sponsor, get org
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT u.usr_role, s.spo_org
+            FROM Users u
+            LEFT JOIN Sponsorships s ON s.spo_user = u.usr_id AND s.spo_isdeleted = 0
+            WHERE u.usr_id = %s AND u.usr_isdeleted = 0
+        """, (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return build_response(404, "User not found")
+        
+        role = row.get("usr_role")
+        org_id = row.get("spo_org")
+        if role not in ("admin", "sponsor"):
+            return build_response(403, "User is not authorized to perform bulk load!")
+    
+    successes = []  # each item: {"line": n, "type": "O|D|S", "detail": "..."}
+    errors    = []  # each item: {"line": n, "error": "message"}
+
+    # Cache org name -> id during the run to minimize queries
+    org_cache = {}
+    
+    def _get_org_id_by_name(org_name: str):
+        # returns org_id or None; uses cache if possible
+        if org_name in org_cache:
+            return org_cache[org_name]
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT org_id FROM Organizations
+                WHERE org_name = %s AND org_isdeleted = 0
+            """, (org_name,))
+            r = cur.fetchone()
+        if r:
+            org_cache[org_name] = r["org_id"]
+            return r["org_id"]
+        return None
+
+    def _create_org(org_name: str):
+        # creates and returns new org_id, storing in cache
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Organizations (org_name)
+                VALUES (%s)
+            """, (org_name,))
+            new_id = cur.lastrowid
+        org_cache[org_name] = new_id
+        return new_id
+
+    def _create_sponsorship(user_id_local: int, org_id_local: int):
+        # idempotent: if already exists and not deleted, do nothing
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 1
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_org = %s AND spo_isdeleted = 0
+                LIMIT 1
+            """, (user_id_local, org_id_local))
+            if cur.fetchone():
+                return
+
+            cur.execute("""
+                INSERT INTO Sponsorships (spo_user, spo_org)
+                VALUES (%s, %s)
+            """, (user_id_local, org_id_local))
+
+    def _create_user(role_local: str, org_id_local: int, first: str, last: str, email: str):
+        # returns (user_id, created_new: bool)
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT usr_id, usr_role FROM Users
+                WHERE usr_email = %s AND usr_isdeleted = 0
+            """, (email,))
+            u = cur.fetchone()
+            if u:
+                # Attach existing user to org (drivers should also have sponsorships)
+                existing_id = u.get("usr_id")
+                _create_sponsorship(existing_id, org_id_local)
+                return existing_id, False  # already exists
+
+            # Create a temp password and minimal profile fields
+            temp_password = secrets.token_urlsafe(12)
+
+            # IMPORTANT: use fewer iterations for bulk-loaded temp passwords
+            # so multiple users don't cause Lambda timeout.
+            BULK_ITERATIONS = 1_000  # much faster than 260k; still uses PBKDF2
+            pw_hash = hash_secret(temp_password, iterations=BULK_ITERATIONS)
+
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                pw_hash,
+                role_local,
+                "Your answer is: 'RevvyIs#1'",
+                "RevvyIs#1",
+                first or "",
+                last or ""
+            ))
+            new_user_id = cur.lastrowid
+            _create_sponsorship(new_user_id, org_id_local)
+            return new_user_id, True
+
+    lines = [ln.strip() for ln in (commands or "").splitlines()]
+    print(f"[BL] Processing {len(lines)} lines for bulk load: {lines}")
+    
+    for idx, raw in enumerate(lines, start=1):
+        print(f"[BL] Processing line {idx}: {raw}")
+        if not raw:
+            continue  # skip blank line
+        try:
+            parts = raw.split("|")
+            print(f"[BL] Split parts: {parts}")
+            rec_type = (parts[0] or "").strip().upper()
+
+            # validate command type
+            if rec_type not in ("O", "D", "S"):
+                errors.append({"line": idx, "error": f"Invalid record type '{parts[0]}'. Expected O, D, or S."})
+                print(f"[BL] Error: Invalid record type: line={idx}, raw={raw}")
+                continue
+
+            # Enforce sponsor org inference
+            if role == "sponsor":
+                if rec_type == "O":
+                    errors.append({"line": idx, "error": "Sponsors cannot create organizations (type 'O')."})
+                    print(f"[BL] Error: Sponsor cannot create orgs: line={idx}, raw={raw}")
+                    continue
+
+                # Expected 5 tokens where parts[1] == "" (empty org per spec)
+                if len(parts) != 5:
+                    errors.append({"line": idx, "error": f"Expected 5 tokens for sponsor upload; got {len(parts)}."})
+                    print(f"[BL] Error: Wrong number of tokens for sponsor upload: line={idx}, raw={raw}")
+                    continue
+                _, org_token, first, last, email = parts
+                if (org_token or "").strip():
+                    errors.append({"line": idx, "error": "Sponsors must omit the organization name (leave it empty, using ||)."})
+                    print(f"[BL] Error: Sponsor must omit org name: line={idx}, raw={raw}")
+                    continue
+
+                # Process S/D against inferred org
+                role_for_user = "sponsor" if rec_type == "S" else "driver"
+
+                try:
+                    conn.begin()
+                    uid, created = _create_user(role_for_user, org_id, first.strip(), last.strip(), email.strip())
+                    conn.commit()
+                    if created:
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Created user {uid} {role_for_user} {email.strip()} and attached to org {org_id}."
+                        })
+                        print(f"[BL] Created user: line={idx}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
+                    else:
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Attached existing user {email.strip()} to org {org_id} (user_id={uid})."
+                        })
+                        print(f"[BL] Attached existing user: line={idx}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
+                except Exception as e:
+                    conn.rollback()
+                    errors.append({
+                        "line": idx,
+                        "error": f"{type(e).__name__}: {e}",
+                        "trace": traceback.format_exc()
+                    })
+                    print(f"[BL] Error creating user on line {idx}: {e}")
+                continue
+
+            # Admin rules
+            if role == "admin":
+                print(f"[BL] Admin processing line {idx}: {raw}")
+                if rec_type == "O":
+                    # Format: O|<org name>  (must be exactly 2 tokens)
+                    if len(parts) != 2:
+                        errors.append({"line": idx, "error": f"Organization line must be 'O|<name>'. Got {len(parts)} tokens."})
+                        print(f"[BL] Error creating org, wrong number of tokens: line={idx}, raw={raw}")
+                        continue
+                    _, org_name = parts
+                    org_name = org_name.strip()
+                    if not org_name:
+                        errors.append({"line": idx, "error": "Organization name cannot be blank."})
+                        print(f"[BL] Error creating org, blank name: line={idx}, raw={raw}")
+                        continue
+
+                    try:
+                        conn.begin()
+                        existing_id = _get_org_id_by_name(org_name)
+                        if existing_id:
+                            # Treat as an error per your requirement
+                            conn.rollback()
+                            errors.append({
+                                "line": idx,
+                                "error": f"Organization '{org_name}' already exists (id={existing_id}); O command failed."
+                            })
+                            print(f"[BL] Org already exists: line={idx}, raw={raw}, id={existing_id}")
+                        else:
+                            new_id = _create_org(org_name)
+                            conn.commit()
+                            successes.append({
+                                "line": idx,
+                                "type": "O",
+                                "detail": f"Created organization '{org_name}' (id={new_id})."
+                            })
+                            print(f"[BL] Created org: line={idx}, raw={raw}, id={new_id}")
+                    except Exception as e:
+                        conn.rollback()
+                        errors.append({
+                            "line": idx,
+                            "error": f"{type(e).__name__}: {e}",
+                            "trace": traceback.format_exc()
+                        })
+                        print(f"[BL] Error creating org on line {idx}: {e}")
+                    continue
+
+                # Admin D/S line: must have 5 tokens: type|org|first|last|email
+                if len(parts) != 5:
+                    errors.append({"line": idx, "error": f"User line must be '<D|S>|<org>|<first>|<last>|<email>'. Got {len(parts)} tokens."})
+                    print(f"[BL] Error creating user, wrong number of tokens: line={idx}, raw={raw}")
+                    continue
+                _, org_name, first, last, email = parts
+                org_name = (org_name or "").strip()
+                first = (first or "").strip()
+                last  = (last or "").strip()
+                email = (email or "").strip()
+
+                if not org_name:
+                    errors.append({"line": idx, "error": "Organization name is required as an argument for admin 'O' commands."})
+                    print(f"[BL] Error creating user, missing org name: line={idx}, raw={raw}")
+                    continue
+                else:
+                    org_id_found = _get_org_id_by_name(org_name)
+                    print(f"[BL] Lookup org '{org_name}' found id: {org_id_found}")
+                    if not org_id_found:
+                        errors.append({"line": idx, "error": f"Organization '{org_name}' not found and no prior 'O' record created it."})
+                        print(f"[BL] Error creating user, org not found: line={idx}, raw={raw}")
+                        continue
+                    org_id_to_use = org_id_found
+
+                role_for_user = "sponsor" if rec_type == "S" else "driver"
+
+                try:
+                    conn.begin()
+                    uid, created = _create_user(role_for_user, org_id_to_use, first, last, email)
+                    conn.commit()
+                    if created:
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."
+                        })
+                        print(f"[BL] Created user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
+                    else:
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Attached existing user {email} to org {org_id_to_use} (user_id={uid})."
+                        })
+                        print(f"[BL] Attached existing user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
+                except Exception as e:
+                    conn.rollback()
+                    errors.append({
+                        "line": idx,
+                        "error": f"{type(e).__name__}: {e}",
+                        "trace": traceback.format_exc()
+                    })
+                    print(f"[BL] Error creating user: line={idx} {e}")
+                continue
+
+            # Any other uploader role is disallowed for bulk load
+            errors.append({"line": idx, "error": f"Role '{role}' is not permitted to bulk load."})
+
+        except Exception as e:
+            # Protect the loop: never break on a single bad line
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            errors.append({
+                "line": idx,
+                "error": f"{type(e).__name__}: {e}",
+                "trace": traceback.format_exc()
+            })
+            print(f"[BL] Unexpected error on line {idx}: {e}")
+
+    return build_response(200, {
+        "message": "Bulk load completed.",
+        "successes": successes,
+        "errors": errors
+    })
+
+
+def post_change_conversion_rate(body):
+    body = json.loads(body) or {}
+    org_id = body.get("org_id")
+    convert = body.get("convert")
+
+    if org_id is None or convert is None:
+        raise Exception("Missing required field(s): org_id, convert")
+    
+    with conn.cursor() as cur:
+        try:
+            conn.begin()
+            cur.execute("""
+                UPDATE Organizations
+                SET org_conversionrate = %s
+                WHERE org_id = %s AND org_isdeleted = 0
+            """, (convert, org_id))
+        except:
+            raise Exception("Nope")
+        affected = cur.rowcount
+        conn.commit()
+
+    if affected:
+        return build_response(200, {
+            "message": f"Conversion Rate Successfully changed"
+        })
+    else:
+        return build_response(404, f"Conversion Rate was not changed")
+        
 
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
@@ -1402,6 +1973,42 @@ def get_driver_transactions(queryParams):
         
     return build_response(200, transactions)
 
+def get_driver_transactions_by_org(queryParams):
+    orgID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_org = %s
+            AND ptr_isdeleted = 0
+        """, orgID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
+def get_all_driver_transactions():
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_isdeleted = 0
+        """)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
@@ -1418,19 +2025,31 @@ def get_about():
         recent = cur.fetchone()
         return build_response(200, recent)
 
-def get_organizations():
+def get_organizations(queryParams=None):
+    queryParams = queryParams or {}
+    include_ids = queryParams.get("include_ids")
+
     # returns list of organization names
     with conn.cursor() as cur:
-        cur.execute("""
-            SELECT org_name 
-            FROM Organizations
-            WHERE org_isdeleted = 0
-            ORDER BY org_name
-        """)
-        result = cur.fetchall()
-        
-        org_names = [item["org_name"] for item in result]
-        return build_response(200, org_names)
+        if include_ids:
+            cur.execute(f"""
+                SELECT org_name, org_id 
+                FROM Organizations
+                WHERE org_isdeleted = 0
+                ORDER BY org_name
+            """)
+            rows = cur.fetchall()
+            return build_response(200, rows)
+        else:
+            cur.execute("""
+                SELECT org_name 
+                FROM Organizations
+                WHERE org_isdeleted = 0
+                ORDER BY org_name
+            """)
+            result = cur.fetchall()
+            org_names = [item["org_name"] for item in result]
+            return build_response(200, org_names)
 
 def get_user(queryParams):
     queryParams = queryParams or {}
@@ -1506,6 +2125,88 @@ def get_user(queryParams):
         return build_response(200, users)
     else:
         return build_response(404, "No users match the given parameters.")
+
+def get_sponsors(queryParams):
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                u.usr_id         AS "User ID",
+                u.usr_email      AS "Email",
+                u.usr_firstname  AS "First Name",
+                u.usr_lastname   AS "Last Name",
+                u.usr_employeeid AS "Employee ID",
+                u.usr_phone      AS "Phone",
+                u.usr_address    AS "Address"
+            FROM Users u
+            JOIN Sponsorships s ON s.spo_user = u.usr_id
+            WHERE s.spo_org = %s
+            AND s.spo_isdeleted = 0
+            AND u.usr_role = 'sponsor'
+            AND u.usr_isdeleted = 0
+        """, org)
+        sponsors = cur.fetchall()
+        
+    if sponsors:
+        return build_response(200, sponsors)
+    else:
+        return build_response(404, { "message": f"No sponsors found for organization: {org}" })
+
+def get_drivers(queryParams):
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                u.usr_id         AS "User ID",
+                u.usr_email      AS "Email",
+                u.usr_firstname  AS "First Name",
+                u.usr_lastname   AS "Last Name",
+                u.usr_employeeid AS "Employee ID",
+                u.usr_phone      AS "Phone",
+                u.usr_address    AS "Address"
+            FROM Users u
+            JOIN Sponsorships s ON s.spo_user = u.usr_id
+            WHERE s.spo_org = %s
+            AND s.spo_isdeleted = 0
+            AND u.usr_role = 'driver'
+            AND u.usr_isdeleted = 0
+        """, org)
+        drivers = cur.fetchall()
+        
+    if drivers:
+        return build_response(200, drivers)
+    else:
+        return build_response(404, {"message": f"No drivers found for organization: {org}"})
+
+def get_admins():
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                u.usr_id         AS "User ID",
+                u.usr_email      AS "Email",
+                u.usr_firstname  AS "First Name",
+                u.usr_lastname   AS "Last Name",
+                u.usr_employeeid AS "Employee ID",
+                u.usr_phone      AS "Phone",
+                u.usr_address    AS "Address"
+            FROM Users u
+            WHERE u.usr_role = 'admin'
+            AND u.usr_isdeleted = 0
+        """)
+        admins = cur.fetchall()
+        
+    if admins:
+        return build_response(200, admins)
+    else:
+        return build_response(404, {"message": "No admins found."})
 
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
@@ -1852,7 +2553,7 @@ def get_cart(queryParams):
             row["items"] = json.loads(items_json) if items_json else []
 
     if not rows:
-        return build_response(404, f"No cart items found for user {user_id} in org {org_id}.")
+        return build_response(200, rows)
     return build_response(200, rows)
 
 # ==== DELETE ===========================================================================
@@ -1906,31 +2607,6 @@ def delete_notification(queryParams):
     
     return build_response(404, f"No user found with id={usr_id}")
 
-def delete_change_point_rule(queryParams):
-    # marks user as deleted in the database
-    queryParams = queryParams or {}
-    rule_id = queryParams.get("id")
-    if rule_id is None:
-        raise Exception(f"Missing required query parameter: id")
-    
-    with conn.cursor() as cur:
-        cur.execute("""
-            UPDATE Point_Rules
-            SET rul_isdeleted = 1
-            WHERE rul_id = %s
-            AND rul_isdeleted = 0
-        """, rule_id)
-        result = cur.fetchall()
-        affected = cur.rowcount
-        conn.commit()
-    if affected:
-        return build_response(200, {
-            "success": True,
-            "message": f"Rule {rule_id} deleted"
-        })
-    
-    return build_response(404, f"No Rule found with id={rule_id}")
-
 # ==== handler (main) ===================================================================
 # overall handler for requests
 def lambda_handler(event, context):
@@ -1954,9 +2630,15 @@ def lambda_handler(event, context):
         elif (method == "GET" and path == "/about"):
             response = get_about()
         elif (method == "GET" and path == "/organizations"):
-            response = get_organizations()
+            response = get_organizations(queryParams)
         elif (method == "GET" and path == "/user"):
             response = get_user(queryParams)
+        elif (method == "GET" and path == "/sponsor"):
+            response = get_sponsors(queryParams)
+        elif (method == "GET" and path == "/driver"):
+            response = get_drivers(queryParams)
+        elif (method == "GET" and path == "/admin"):
+            response = get_admins()
         elif (method == "GET" and path == "/point_rules"):
             response = get_point_rules(queryParams)
         elif (method == "GET" and path == "/security_questions"):
@@ -1971,6 +2653,10 @@ def lambda_handler(event, context):
             response = get_application(queryParams)
         elif (method == "GET" and path == "/driver_transactions"):
             response = get_driver_transactions(queryParams)
+        elif (method == "GET" and path == "/all_driver_transactions"):
+            response = get_all_driver_transactions()
+        elif (method == "GET" and path == "/driver_transactions_by_org"):
+            response = get_driver_transactions_by_org(queryParams)
         elif (method == "GET" and path == "/orders"):
             response = get_orders(queryParams)
         elif (method == "GET" and path == "/notifications"):
@@ -1983,22 +2669,22 @@ def lambda_handler(event, context):
             response = delete_user(queryParams)
         elif (method == "DELETE" and path == "/notifications"):
             response = delete_notification(queryParams)
-        elif (method == "DELETE" and path == "/change_point_rule"):
-            response = delete_change_point_rule(queryParams)
         
         # POST
         elif (method == "POST" and path == "/signup"):
             response = post_signup(body)
+        elif (method == "POST" and path == "/driver"):
+            response = post_create_driver(body)
+        elif (method == "POST" and path == "/sponsor"):
+            response = post_create_sponsor(body)
+        elif (method == "POST" and path == "/admin"):
+            response = post_admin_signup(body)
         elif (method == "POST" and path == "/login"):
             response = post_login(body)
         elif (method == "POST" and path == "/application"):
             response = post_application(body)
-        elif (method == "POST" and path == "/organizations"):
-            response = post_create_organization(body)
         elif (method == "POST" and path == "/change_password"):
             response = post_change_password(body)
-        elif (method == "POST" and path == "/change_point_rule"):
-            response = post_change_point_rule(body)
         elif (method == "POST" and path == "/user_update"):
             response = post_user_update(body)
         elif (method == "POST" and path == "/query"):
@@ -2021,6 +2707,15 @@ def lambda_handler(event, context):
             response = post_remove_from_cart(body)
         elif (method == "POST" and path == "/checkout"):
             response = post_checkout(body)
+        elif (method == "POST" and path == "/cancel_order"):
+            response = post_cancel_order(body)
+        elif (method == "POST" and path == "/bulk_load"):
+            try:
+                response = post_bulk_load(body)
+            except Exception as e:
+                raise e
+        elif (method == "POST" and path == "/change_conversion"):
+            response = post_change_conversion_rate(body)
 
         else:
             return build_response(status=404, payload=f"Resource {path} not found for method {method}.")

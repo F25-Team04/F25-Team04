@@ -7,7 +7,6 @@ let ORDERS_CACHE = [];
 let ORDERS_CURRENT_PAGE = 1;
 const ORDERS_PER_PAGE = 10;
 
-
 window.onload = function () {
   // build nav
   const list = document.getElementById("links");
@@ -138,7 +137,7 @@ async function loadOrders({ sort = "date_desc" } = {}) {
     withTotals.sort(comparators[sort] || comparators.date_desc);
 
     // Cache raw orders in sorted order
-    ORDERS_CACHE = withTotals.map(x => x.raw);
+    ORDERS_CACHE = withTotals.map((x) => x.raw);
 
     // Update header count
     const countEl = document.getElementById("order_count");
@@ -151,7 +150,6 @@ async function loadOrders({ sort = "date_desc" } = {}) {
     // Render current page + pagination
     renderOrdersPage();
     renderOrdersPagination();
-        
   } catch (e) {
     console.error("Orders load error:", e);
     container.textContent = "Failed to load orders.";
@@ -202,7 +200,11 @@ function renderOrdersPagination() {
 
   // Prev
   pag.appendChild(
-    makeButton("Previous", Math.max(1, ORDERS_CURRENT_PAGE - 1), ORDERS_CURRENT_PAGE === 1)
+    makeButton(
+      "Previous",
+      Math.max(1, ORDERS_CURRENT_PAGE - 1),
+      ORDERS_CURRENT_PAGE === 1
+    )
   );
 
   // Numbered pages
@@ -212,7 +214,11 @@ function renderOrdersPagination() {
 
   // Next
   pag.appendChild(
-    makeButton("Next", Math.min(totalPages, ORDERS_CURRENT_PAGE + 1), ORDERS_CURRENT_PAGE === totalPages)
+    makeButton(
+      "Next",
+      Math.min(totalPages, ORDERS_CURRENT_PAGE + 1),
+      ORDERS_CURRENT_PAGE === totalPages
+    )
   );
 }
 
@@ -253,13 +259,20 @@ function renderOrders(orders) {
     const ordId = order.ord_id ?? order.id ?? "";
     const status = String(order.ord_status ?? order.status ?? "unknown");
     const d = orderDate(order);
-    const dateStr = d ? d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+    const dateStr = d
+      ? d.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "";
 
     const items = parseItems(order.items);
     const itemCount = items.length;
 
     // allow multiple key shapes
-    const num = (v) => Number(v ?? 0) || 0;    let totalPts = 0;
+    const num = (v) => Number(v ?? 0) || 0;
+    let totalPts = 0;
     let totalUsd = 0;
     items.forEach((it) => {
       totalPts += num(it.itm_pointcost ?? it.point_cost);
@@ -390,7 +403,14 @@ function renderOrders(orders) {
       section.appendChild(ul);
       middle.appendChild(section);
     }
-
+    if (status == "confirmed") {
+      var cancel = document.createElement("button");
+      cancel.textContent = "Cancel Order";
+      cancel.id = "cancel-button";
+      cancel.addEventListener("click", function () {
+        CancelOrder(order);
+      });
+    }
     // right: amount
     const pAmount = document.createElement("h3");
     pAmount.className = "points-value";
@@ -407,8 +427,40 @@ function renderOrders(orders) {
 
     // assemble
     row.appendChild(icon_div);
+
     row.appendChild(middle);
+
     row.appendChild(pAmount);
+    if (cancel) {
+      row.appendChild(cancel);
+    }
     container.appendChild(row);
   });
+
+  async function CancelOrder(order) {
+    console.log(order);
+    try {
+      const data = {
+        order_id: order.ord_id,
+      };
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/cancel_order",
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        location.reload();
+      } else {
+        const text = await response.text();
+        alert(text);
+      }
+    } catch (error) {
+      alert("EROR " + error);
+    }
+  }
 }
