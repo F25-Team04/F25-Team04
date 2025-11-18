@@ -33,4 +33,22 @@ window.onload = function () {
     window.location.href =
       "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
   });
+
+  const manageSponsorsButton = document.getElementById("manage_sponsor_btn");
+  manageSponsorsButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminAccManager/manage-sponsors/manage-sponsors.html?id=" + USER_ID;
+  });
+
+  const manageDriversButton = document.getElementById("manage_driver_btn");
+  manageDriversButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminAccManager/manage-drivers/manage-drivers.html?id=" + USER_ID;
+  });
+
+  const manageAdminsButton = document.getElementById("manage_admin_btn");
+  manageAdminsButton.addEventListener("click", function () {
+    window.location.href =
+      "../AdminAccManager/manage-admins/manage-admins.html?id=" + USER_ID;
+  });
 };
