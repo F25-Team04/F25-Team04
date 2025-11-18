@@ -1778,8 +1778,6 @@ def get_driver_transactions(queryParams):
         
     return build_response(200, transactions)
 
-<<<<<<< Updated upstream
-=======
 def get_driver_transactions_by_org(queryParams):
     orgID = queryParams.get("id")
     # internal use function
@@ -1816,7 +1814,6 @@ def get_all_driver_transactions():
         
     return build_response(200, transactions)
 
->>>>>>> Stashed changes
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
