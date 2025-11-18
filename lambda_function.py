@@ -1928,19 +1928,31 @@ def get_about():
         recent = cur.fetchone()
         return build_response(200, recent)
 
-def get_organizations():
+def get_organizations(queryParams=None):
+    queryParams = queryParams or {}
+    include_ids = queryParams.get("include_ids")
+
     # returns list of organization names
     with conn.cursor() as cur:
-        cur.execute("""
-            SELECT org_name 
-            FROM Organizations
-            WHERE org_isdeleted = 0
-            ORDER BY org_name
-        """)
-        result = cur.fetchall()
-        
-        org_names = [item["org_name"] for item in result]
-        return build_response(200, org_names)
+        if include_ids:
+            cur.execute(f"""
+                SELECT org_name, org_id 
+                FROM Organizations
+                WHERE org_isdeleted = 0
+                ORDER BY org_name
+            """)
+            rows = cur.fetchall()
+            return build_response(200, rows)
+        else:
+            cur.execute("""
+                SELECT org_name 
+                FROM Organizations
+                WHERE org_isdeleted = 0
+                ORDER BY org_name
+            """)
+            result = cur.fetchall()
+            org_names = [item["org_name"] for item in result]
+            return build_response(200, org_names)
 
 def get_user(queryParams):
     queryParams = queryParams or {}
@@ -2016,6 +2028,36 @@ def get_user(queryParams):
         return build_response(200, users)
     else:
         return build_response(404, "No users match the given parameters.")
+
+def get_sponsors(queryParams):
+    queryParams = queryParams or {}
+    org = queryParams.get("org")
+    if org is None:
+        raise Exception(f"Missing required query parameter: org")
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                u.usr_id         AS "User ID",
+                u.usr_email      AS "Email",
+                u.usr_firstname  AS "First Name",
+                u.usr_lastname   AS "Last Name",
+                u.usr_employeeid AS "Employee ID",
+                u.usr_phone      AS "Phone",
+                u.usr_address    AS "Address"
+            FROM Users u
+            JOIN Sponsorships s ON s.spo_user = u.usr_id
+            WHERE s.spo_org = %s
+            AND s.spo_isdeleted = 0
+            AND u.usr_role = 'sponsor'
+            AND u.usr_isdeleted = 0
+        """, org)
+        sponsors = cur.fetchall()
+        
+    if sponsors:
+        return build_response(200, sponsors)
+    else:
+        return build_response(404, { "message": f"No sponsors found for organization: {org}" })
 
 def get_point_rules(queryParams):
     # returns point rules for the specified organization
@@ -2439,9 +2481,11 @@ def lambda_handler(event, context):
         elif (method == "GET" and path == "/about"):
             response = get_about()
         elif (method == "GET" and path == "/organizations"):
-            response = get_organizations()
+            response = get_organizations(queryParams)
         elif (method == "GET" and path == "/user"):
             response = get_user(queryParams)
+        elif (method == "GET" and path == "/sponsors"):
+            response = get_sponsors(queryParams)
         elif (method == "GET" and path == "/point_rules"):
             response = get_point_rules(queryParams)
         elif (method == "GET" and path == "/security_questions"):
