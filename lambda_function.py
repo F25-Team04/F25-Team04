@@ -1698,6 +1698,45 @@ def get_driver_transactions(queryParams):
         
     return build_response(200, transactions)
 
+<<<<<<< Updated upstream
+=======
+def get_driver_transactions_by_org(queryParams):
+    orgID = queryParams.get("id")
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_org = %s
+            AND ptr_isdeleted = 0
+        """, orgID)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
+def get_all_driver_transactions():
+    # internal use function
+    # returns active catalog rules for the specified organization
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 
+                ptr_pointdelta AS "Amount",
+                ptr_reason AS "Reason",
+                ptr_sponsorid AS "Giver",
+                ptr_date as "Date"
+            FROM Point_Transactions
+            WHERE ptr_isdeleted = 0
+        """)
+        transactions = cur.fetchall()
+        
+    return build_response(200, transactions)
+
+>>>>>>> Stashed changes
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
