@@ -1239,11 +1239,10 @@ def post_add_to_cart(body):
             for item_id in items:
                 url = f"https://fakestoreapi.com/products/{item_id}"
                 headers = {
-                    "User-Agent": "Mozilla/5.0",
-                    "Accept": "application/json, text/plain, */*",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Connection": "close",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Accept": "application/json",
                 }
+
                 r = requests.get(url, headers=headers, timeout=5)
                 if r.status_code != 200:
                     raise Exception(f"Failed to fetch item {item_id} from FakeStore API. Please check the item ID and try again.")
