@@ -49,15 +49,27 @@ window.onload = function () {
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
   link.textContent = "Home";
   li.appendChild(link);
-  const create = document.createElement("a");
-  create.href =
+
+  const createDriver = document.createElement("a");
+  createDriver.href =
+    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  createDriver.textContent = "Create Driver";
+  li.appendChild(createDriver);
+  list.appendChild(li);
+
+  const createSponsor = document.createElement("a");
+  createSponsor.href =
     "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  create.textContent = "Create Sponsor";
-  li.appendChild(create);
+  createSponsor.textContent = "Create Sponsor";
+  li.appendChild(createSponsor);
   list.appendChild(li);
+
   const app = document.createElement("a");
   app.href =
     "../SponsorApplicationPage/sponsor-applications.html?id=" +
@@ -66,6 +78,7 @@ window.onload = function () {
     ORG_ID;
   app.textContent = "Applications";
   li.appendChild(app);
+
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
@@ -94,25 +107,35 @@ window.onload = function () {
         } else if (response.status == 200) {
           const list = document.getElementById("application-list");
           list.innerHTML = "";
+          
           result.forEach((driver) => {
-            let item = document.createElement("div");
-            let name = document.createElement("p");
-            let approve = document.createElement("button");
-            let reject = document.createElement("button");
-            item.id = "pending-row";
-            name.id = "driver-name";
-            approve.id = "approve-button";
-            reject.id = "reject-button";
+            // Row wrapper
+            const item = document.createElement("div");
+            item.classList.add("pending-row");
+
+            // Left: name
+            const name = document.createElement("p");
+            name.classList.add("driver-name");
             name.textContent = driver["First Name"] + " " + driver["Last Name"];
+
+            // Right: buttons container
+            const actions = document.createElement("div");
+            actions.classList.add("pending-actions");
+
+            const approve = document.createElement("button");
+            approve.classList.add("btn", "approve-btn");
             approve.textContent = "Approve";
+
+            const reject = document.createElement("button");
+            reject.classList.add("btn", "reject-btn");
             reject.textContent = "Reject";
 
-            // Append child elements to the item
-            item.appendChild(name);
-            item.appendChild(approve);
-            item.appendChild(reject);
+            actions.appendChild(approve);
+            actions.appendChild(reject);
 
-            // Append the item to the list
+            // Build row
+            item.appendChild(name);
+            item.appendChild(actions);
             list.appendChild(item);
 
             // Event listener for approve button

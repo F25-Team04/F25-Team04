@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Drivers</title>
+    <link
+      rel="stylesheet"
+      href="manage-drivers.css"
+    />
+    <link rel="stylesheet" href="../../../css/global.css" />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <script type="text/javascript" src="manage-drivers.js"></script>
+  </head>
+  <header>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-brand">
+          <a href="../../../index.html"
+            ><img class="brand-logo" src="../../../assets/car-logo-flipped.png"
+          /></a>
+          <a href="../../index.html"
+            ><img class="brand-name" src="../../../assets/revvy.png"
+          /></a>
+        </div>
+        <ul id="links">
+          <li><a href="../../about/about.html">About</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+  <body>
+    <div id="wrapper">
+        <h1>Manage Drivers</h1>
+        <p>Choose a sponsor organization from the dropdown:</p>
+        <select id="driver-dropdown">
+            <option value="" disabled selected>Select an Organization</option>
+            <!-- Options will be dynamically populated here -->
+        </select>
+        <div id="driver-cards">
+            <!-- Driver entries will be dynamically added here -->
+        </div>
+    </div>
+  </body>
+</html>

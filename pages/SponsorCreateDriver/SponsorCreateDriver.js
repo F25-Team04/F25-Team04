@@ -97,7 +97,7 @@ window.onload = function () {
 
     try {
       const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/sponsor",
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/driver",
         {
           method: "POST",
           // headers: {
@@ -109,16 +109,16 @@ window.onload = function () {
 
       if (!response.ok) {
         console.error("Request failed with status:", response.status);
-        alert("Failed to create sponsor user. Please try again.");
+        alert("Failed to create driver user. Please try again.");
         return;
       }
 
       const ans = await response.json();
 
       if (ans.success === false) {
-        alert(ans.message || "Failed to create sponsor user.");
+        alert(ans.message || "Failed to create driver user.");
       } else {
-        alert(ans.message || "Sponsor user created successfully.");
+        alert(ans.message || "Driver user created successfully.");
         window.location.href =
           "../SponsorHomepage/SponsorHome.html?id=" +
           USER_ID +
@@ -127,7 +127,7 @@ window.onload = function () {
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred while creating the sponsor user.");
+      alert("An error occurred while creating the driver user.");
     }
   });
 };
