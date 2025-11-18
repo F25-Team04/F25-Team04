@@ -15,3 +15,9 @@ body {
     flex-direction: column;
     align-items: center;
 }
+
+#txn-modal { position: fixed; inset: 0; display: none; z-index: 1000; }
+#txn-modal .txn-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
+#txn-modal .txn-dialog { position: relative; max-width: 640px; margin: 10vh auto; background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,.2); }
+#txn-modal .txn-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+#txn-modal .txn-close { background: transparent; border: none; font-size: 20px; cursor: pointer; }
