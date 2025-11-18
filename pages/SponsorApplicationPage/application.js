@@ -49,15 +49,27 @@ window.onload = function () {
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
   link.textContent = "Home";
   li.appendChild(link);
-  const create = document.createElement("a");
-  create.href =
+
+  const createDriver = document.createElement("a");
+  createDriver.href =
+    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  createDriver.textContent = "Create Driver";
+  li.appendChild(createDriver);
+  list.appendChild(li);
+
+  const createSponsor = document.createElement("a");
+  createSponsor.href =
     "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  create.textContent = "Create Sponsor";
-  li.appendChild(create);
+  createSponsor.textContent = "Create Sponsor";
+  li.appendChild(createSponsor);
   list.appendChild(li);
+
   const app = document.createElement("a");
   app.href =
     "../SponsorApplicationPage/sponsor-applications.html?id=" +
@@ -66,6 +78,7 @@ window.onload = function () {
     ORG_ID;
   app.textContent = "Applications";
   li.appendChild(app);
+
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
