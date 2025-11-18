@@ -1698,8 +1698,6 @@ def get_driver_transactions(queryParams):
         
     return build_response(200, transactions)
 
-<<<<<<< Updated upstream
-=======
 def get_driver_transactions_by_org(queryParams):
     orgID = queryParams.get("id")
     # internal use function
@@ -1736,7 +1734,6 @@ def get_all_driver_transactions():
         
     return build_response(200, transactions)
 
->>>>>>> Stashed changes
 def get_about():
     # returns most recent about data by abt_releasedate
     with conn.cursor() as cur:
@@ -2281,6 +2278,10 @@ def lambda_handler(event, context):
             response = get_application(queryParams)
         elif (method == "GET" and path == "/driver_transactions"):
             response = get_driver_transactions(queryParams)
+        elif (method == "GET" and path == "/all_driver_transactions"):
+            response = get_all_driver_transactions()
+        elif (method == "GET" and path == "/driver_transactions_by_org"):
+            response = get_driver_transactions_by_org(queryParams)
         elif (method == "GET" and path == "/orders"):
             response = get_orders(queryParams)
         elif (method == "GET" and path == "/notifications"):
