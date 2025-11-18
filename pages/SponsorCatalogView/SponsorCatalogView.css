@@ -1,0 +1,131 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#store-catalog {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 36px;
+  background-color: var(--muted-background);
+  padding: 36px 0px;
+  border-top: 2px solid #ccc;
+  border-bottom: 2px solid #ccc;
+}
+
+#pagination {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 24px;
+}
+
+#pagination button {
+  padding: 4px;
+  border-radius: 5px;
+  border-width: 1px;
+}
+
+.store-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.points-card {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  justify-self: center;
+  background-color: var(--revvy-green);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  margin: 24px;
+  padding: 16px;
+  border-bottom: 4px solid var(--revvy-black);
+  border-right: 4px solid var(--revvy-black);
+}
+
+.store-header h1 {
+  margin-left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 56px;
+}
+
+.points-card span {
+  font-weight: 500;
+}
+
+.points-num {
+  font-size: 32px;
+}
+
+.rewards-icon {
+  font-size: 32px;
+}
+
+.points-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.product_image {
+  width: 320px;
+  height: 320px;
+  object-fit: contain;
+  display: block;
+  margin-top: 24px;
+  margin-bottom: 36px;
+}
+
+.product_wrapper {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  height: 600px;
+  background-color: white;
+}
+
+.product_content {
+  display: flex;
+  flex-direction: column;
+  margin-left: 16px;
+  gap: 8px;
+}
+
+.product_name {
+  max-width: 280px;
+}
+
+.product_meta {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.product_rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.product_rating .stars {
+  display: inline-flex;
+  align-items: center;
+  color: var(--revvy-green);
+}
+
+.product_cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 20px;
+  font-weight: 750;
+  color: var(--revvy-green);
+}
