@@ -342,6 +342,104 @@ def post_user_update(body):
         return build_response(200, {"success": True, "message": "User updated", "affected": affected})
     return build_response(404, f"No active user found with id={usr_id}")
 
+def post_create_sponsor(body):
+    body = json.loads(body or "{}")
+    email = body.get("email")
+    fName = body.get("first_name")
+    lName = body.get("last_name")
+    phoneNum = body.get("phone_number")
+    securityQ = body.get("security")
+    securityA = body.get("answer")
+    org = body.get("org")
+
+    required_fields = {
+        "email": email,
+        "first_name": fName,
+        "last_name": lName,
+        "phone_number": phoneNum,
+        "security": securityQ,
+        "answer": securityA,
+        "org": org
+    }
+
+    missing = [name for name, value in required_fields.items() if value is None]
+    if missing:
+        raise Exception(f"Missing required field(s): {', '.join(missing)}")
+
+    try:
+        org_id = int(org)
+    except (TypeError, ValueError):
+        raise Exception("Invalid 'org' value; must be an integer")
+
+    temp_password = "sponsor"
+    pwd_hash = hash_secret(temp_password)
+
+    with conn.cursor() as cur:
+        # Check for existing account
+        cur.execute("""
+            SELECT usr_id
+            FROM Users
+            WHERE usr_email = %s
+              AND usr_isdeleted = 0
+        """, (email,))
+        if cur.fetchone():
+            return build_response(400, "Email already associated with an existing account")
+        
+        try:
+            conn.begin()
+
+            # Insert the new sponsor user
+            cur.execute("""
+                INSERT INTO Users (
+                    usr_email,
+                    usr_passwordhash,
+                    usr_role,
+                    usr_loginattempts,
+                    usr_securityquestion,
+                    usr_securityanswer,
+                    usr_firstname,
+                    usr_lastname,
+                    usr_phone
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                email,
+                pwd_hash,
+                "sponsor",
+                0,
+                securityQ,
+                securityA,
+                fName,
+                lName,
+                phoneNum
+            ))
+
+            sponsor_id = cur.lastrowid
+            if not sponsor_id:
+                raise Exception("Failed to create sponsor user account")
+
+            # Create Sponsorship association
+            cur.execute("""
+                INSERT INTO Sponsorships (
+                    spo_user, 
+                    spo_org, 
+                    spo_pointbalance, 
+                    spo_isdeleted
+                ) VALUES (%s, %s, %s, 0)
+            """, (sponsor_id, org_id, 0))
+
+            conn.commit()
+
+        except Exception as e:
+            conn.rollback()
+            raise e
+
+    return build_response(200, {
+        "success": True,
+        "message": "Sponsor account created and associated with organization.",
+        "usr_id": sponsor_id,
+        "org": org_id
+    })
+
 def post_admin_signup(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -2374,6 +2472,8 @@ def lambda_handler(event, context):
         # POST
         elif (method == "POST" and path == "/signup"):
             response = post_signup(body)
+        elif (method == "POST" and path == "/sponsor"):
+            response = post_create_sponsor(body)
         elif (method == "POST" and path == "/admin"):
             response = post_admin_signup(body)
         elif (method == "POST" and path == "/login"):

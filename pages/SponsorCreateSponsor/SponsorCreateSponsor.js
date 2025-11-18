@@ -2,7 +2,20 @@ const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
+function generateQuestions(questions) {
+  const dropdown = document.getElementById("questions");
+  if (!dropdown) return;
+
+  questions.forEach((question) => {
+    const option = document.createElement("option");
+    option.value = question;
+    option.textContent = question;
+    dropdown.appendChild(option);
+  });
+}
+
 window.onload = function () {
+  // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
@@ -39,38 +52,69 @@ window.onload = function () {
   li.appendChild(change);
   list.appendChild(li);
 
-  document
-    .getElementById("create")
-    .addEventListener("submit", async function (event) {
-      event.preventDefault(); // stop normal form submission
-
-      // Gather form data
-      document.getElementById("org_id").value = ORG_ID;
-      const form = event.target;
-      const formData = new FormData(form);
-      try {
-        // Send POST request
-        const response = await fetch(
-          "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/sponsor",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json", // IMPORTANT
-            },
-            body: JSON.stringify(formData),
-          }
-        );
-        if (response.ok) {
-          const result = await response.json();
-
-          if (result.success == false) {
-            alert(result.message);
-          } else if (result.success == true) {
-            GetUser(result.message);
-          }
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
+  // Fetch security questions
+  fetch(
+    "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/security_questions"
+  )
+    .then((response) => response.json())
+    .then((questions) => {
+      generateQuestions(questions);
+    })
+    .catch((error) => {
+      console.error(
+        "There was a problem with the fetch operation (security questions):",
+        error
+      );
     });
+
+  // Form submit
+ const form = document.getElementById("create");
+  if (!form) return;
+
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault(); // stop page reload
+
+    const formData = new FormData(form);
+
+    // Add org from query string as `org` so it matches Lambda
+    formData.set("org", ORG_ID);
+
+    // Convert FormData -> plain object
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/sponsor",
+        {
+          method: "POST",
+          // headers: {
+          //   "Content-Type": "application/json",
+          // },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Request failed with status:", response.status);
+        alert("Failed to create sponsor user. Please try again.");
+        return;
+      }
+
+      const ans = await response.json();
+
+      if (ans.success === false) {
+        alert(ans.message || "Failed to create sponsor user.");
+      } else {
+        alert(ans.message || "Sponsor user created successfully.");
+        window.location.href =
+          "../SponsorHomepage/SponsorHome.html?id=" +
+          USER_ID +
+          "&org=" +
+          ORG_ID;
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while creating the sponsor user.");
+    }
+  });
 };
