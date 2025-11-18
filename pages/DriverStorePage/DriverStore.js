@@ -296,6 +296,7 @@ window.onload = function () {
   }
 
   async function AddItemCart(id) {
+    console.log(id);
     const data = {
       user_id: USER_ID,
       org_id: ORG_ID,
