@@ -94,25 +94,35 @@ window.onload = function () {
         } else if (response.status == 200) {
           const list = document.getElementById("application-list");
           list.innerHTML = "";
+          
           result.forEach((driver) => {
-            let item = document.createElement("div");
-            let name = document.createElement("p");
-            let approve = document.createElement("button");
-            let reject = document.createElement("button");
-            item.id = "pending-row";
-            name.id = "driver-name";
-            approve.id = "approve-button";
-            reject.id = "reject-button";
+            // Row wrapper
+            const item = document.createElement("div");
+            item.classList.add("pending-row");
+
+            // Left: name
+            const name = document.createElement("p");
+            name.classList.add("driver-name");
             name.textContent = driver["First Name"] + " " + driver["Last Name"];
+
+            // Right: buttons container
+            const actions = document.createElement("div");
+            actions.classList.add("pending-actions");
+
+            const approve = document.createElement("button");
+            approve.classList.add("btn", "approve-btn");
             approve.textContent = "Approve";
+
+            const reject = document.createElement("button");
+            reject.classList.add("btn", "reject-btn");
             reject.textContent = "Reject";
 
-            // Append child elements to the item
-            item.appendChild(name);
-            item.appendChild(approve);
-            item.appendChild(reject);
+            actions.appendChild(approve);
+            actions.appendChild(reject);
 
-            // Append the item to the list
+            // Build row
+            item.appendChild(name);
+            item.appendChild(actions);
             list.appendChild(item);
 
             // Event listener for approve button
