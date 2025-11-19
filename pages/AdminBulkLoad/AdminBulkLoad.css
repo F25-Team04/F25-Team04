@@ -1,0 +1,150 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Full-page background like other admin pages */
+html,
+body {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--muted-background);
+}
+
+/* Main layout wrapper */
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Header title (mirrors AdminCreateAdmin style) */
+.app-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 0px;
+}
+
+.app-header h1 {
+    color: var(--revvy-black);
+}
+
+/* 3-pane layout */
+#bulk-container {
+    width: 100%;
+    max-width: 1400px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* LEFT / CENTER / RIGHT */
+    gap: 24px;
+    padding: 0 16px 40px;
+}
+
+/* Pane styling matching Revvy cards */
+.pane {
+    background-color: #ffffff;
+    padding: 20px 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0; /* important so content doesn't force grid wider */
+}
+
+.pane h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--revvy-black);
+}
+
+/* File input and button */
+input[type="file"] {
+    background-color: #f8f8f8;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #dadada;
+    width: 100%;
+}
+
+.btn {
+    width: 100%;
+    height: 45px;
+    border-radius: 45px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.approve-btn {
+    background-color: var(--revvy-green);
+    color: var(--revvy-black);
+}
+
+/* Errors / Successes styling */
+.error-pane {
+    background-color: #ffe5e5;
+    border-left: 6px solid #ff4d4d;
+}
+
+.success-pane {
+    background-color: #e7ffe7;
+    border-left: 6px solid #27c66f;
+}
+
+/* Scrollable results area */
+.scroll-panel {
+    max-height: 70vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Individual result cards */
+.card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Collapsible guide */
+.collapsible {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.collapsible-content {
+    display: none;
+    width: 100%;
+    max-width: 100%;
+}
+
+.collapsible.open .collapsible-content {
+    display: block;
+}
+
+/* Outline-style toggle button for the guide header */
+.outline-btn {
+    background-color: transparent;
+    border: 1px solid var(--muted-foreground);
+    color: var(--revvy-black);
+}
+
+/* Guide text formatting (prevent width expansion) */
+.guide {
+    background-color: #f4f4f4;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+    max-width: 100%;
+}

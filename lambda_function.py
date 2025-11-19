@@ -1672,8 +1672,11 @@ def post_bulk_load(body):
         org_cache[org_name] = new_id
         return new_id
 
-    def _create_sponsorship(user_id_local: int, org_id_local: int):
-        # idempotent: if already exists and not deleted, do nothing
+    def _create_sponsorship(user_id_local: int, org_id_local: int) -> bool:
+        """
+        Ensure the user is sponsored into org.
+        Returns True, if a new Sponsorships row was created, False
+        """
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT 1
@@ -1682,15 +1685,19 @@ def post_bulk_load(body):
                 LIMIT 1
             """, (user_id_local, org_id_local))
             if cur.fetchone():
-                return
+                return False  # already attached
 
             cur.execute("""
                 INSERT INTO Sponsorships (spo_user, spo_org)
                 VALUES (%s, %s)
             """, (user_id_local, org_id_local))
+            return True
+
 
     def _create_user(role_local: str, org_id_local: int, first: str, last: str, email: str):
-        # returns (user_id, created_new: bool)
+        """
+        Returns: (user_id, created_user: bool, attached_new_sponsorship: bool)
+        """
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT usr_id, usr_role FROM Users
@@ -1698,17 +1705,15 @@ def post_bulk_load(body):
             """, (email,))
             u = cur.fetchone()
             if u:
-                # Attach existing user to org (drivers should also have sponsorships)
                 existing_id = u.get("usr_id")
-                _create_sponsorship(existing_id, org_id_local)
-                return existing_id, False  # already exists
+                attached = _create_sponsorship(existing_id, org_id_local)
+                # attached == True  -> new Sponsorships row created
+                # attached == False -> user was already in org
+                return existing_id, False, attached
 
-            # Create a temp password and minimal profile fields
+            # create new user as before...
             temp_password = secrets.token_urlsafe(12)
-
-            # IMPORTANT: use fewer iterations for bulk-loaded temp passwords
-            # so multiple users don't cause Lambda timeout.
-            BULK_ITERATIONS = 1_000  # much faster than 260k; still uses PBKDF2
+            BULK_ITERATIONS = 1_000
             pw_hash = hash_secret(temp_password, iterations=BULK_ITERATIONS)
 
             cur.execute("""
@@ -1732,7 +1737,8 @@ def post_bulk_load(body):
             ))
             new_user_id = cur.lastrowid
             _create_sponsorship(new_user_id, org_id_local)
-            return new_user_id, True
+            return new_user_id, True, True
+
 
     lines = [ln.strip() for ln in (commands or "").splitlines()]
     print(f"[BL] Processing {len(lines)} lines for bulk load: {lines}")
@@ -1775,22 +1781,28 @@ def post_bulk_load(body):
 
                 try:
                     conn.begin()
-                    uid, created = _create_user(role_for_user, org_id, first.strip(), last.strip(), email.strip())
+                    uid, created_user, attached_new = _create_user(role_for_user, org_id_to_use, first, last, email)
+
                     conn.commit()
-                    if created:
+                    if created_user:
                         successes.append({
                             "line": idx,
                             "type": rec_type,
-                            "detail": f"Created user {uid} {role_for_user} {email.strip()} and attached to org {org_id}."
+                            "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."
                         })
-                        print(f"[BL] Created user: line={idx}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
+                    elif attached_new:
+                        successes.append({
+                            "line": idx,
+                            "type": rec_type,
+                            "detail": f"Attached existing user {email} to org {org_id_to_use} (user_id={uid})."
+                        })
                     else:
                         successes.append({
                             "line": idx,
                             "type": rec_type,
-                            "detail": f"Attached existing user {email.strip()} to org {org_id} (user_id={uid})."
+                            "detail": f"User {email} is already attached to org {org_id_to_use}; no changes made."
                         })
-                        print(f"[BL] Attached existing user: line={idx}, id={uid}, role={role_for_user}, email={email.strip()}, org={org_id}")
+
                 except Exception as e:
                     conn.rollback()
                     errors.append({

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Admin Bulk Loader</title>
+
+        <link rel="stylesheet" href="../../css/global.css" />
+        <link rel="stylesheet" href="AdminBulkLoad.css" />
+        <link
+            href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+            rel="stylesheet"
+        />
+        <script defer src="AdminBulkLoad.js"></script>
+    </head>
+
+    <body>
+        <!-- NAVBAR (copied structure from AdminCreateAdmin) -->
+        <header>
+            <nav class="navbar">
+                <div class="nav-container">
+                    <div class="nav-brand">
+                        <a href="../../index.html"
+                            ><img
+                                class="brand-logo"
+                                src="../../assets/car-logo-flipped.png"
+                        /></a>
+                        <a href="../../index.html"
+                            ><img class="brand-name" src="../../assets/revvy.png"
+                        /></a>
+                    </div>
+                    <ul id="links">
+                        <li><a href="../about/about.html" id="about-page">About</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+
+        <div class="main">
+            <div class="app-header">
+                <h1>Admin Bulk User & Organization Loader</h1>
+            </div>
+
+            <div id="bulk-container">
+                <!-- LEFT: Upload Panel -->
+                <section class="pane upload-pane">
+                    <h2>Upload Bulk File</h2>
+
+                    <input type="file" id="commandFile" accept=".txt" />
+
+                    <button id="submitFile" class="btn approve-btn">
+                        Submit Bulk File
+                    </button>
+
+                    <!-- Collapsible Format Guide -->
+                    <div id="formatGuide" class="collapsible format-guides">
+                        <button
+                            type="button"
+                            class="btn outline-btn"
+                            id="toggleGuideBtn"
+                        >
+                            Text Document Format Guide ▼
+                        </button>
+
+                        <div class="collapsible-content" id="guideContent">
+                            <pre class="guide">
+Your uploaded .txt file should contain ONE command per line. The system will read each line from top to bottom and execute the commands in the exact order they appear.
+
+Each line begins with a COMMAND TYPE:
+
+O = Create Organization
+D = Add Driver to Organization
+S = Add Sponsor to Organization
+
+All fields are separated with the "|" character.
+
+────────────────────────────────
+COMMAND: CREATE ORGANIZATION (O)
+────────────────────────────────
+Format:
+O|OrgName
+
+Description:
+Creates a new organization with the specified name. If an organization with this name already exists, the system will return an error for this line.
+
+Example:
+O|NewOrg
+
+────────────────────────────────
+COMMAND: ADD DRIVER (D)
+────────────────────────────────
+Format:
+D|OrgName|FirstName|LastName|Email
+
+Description:
+Attempts to create a driver user and attach them to the specified organization. If the user already exists, If the user already exists in that organization, an error is returned.
+
+Example:
+D|NewOrg|John|Smith|jsmith@example.com
+
+────────────────────────────────
+COMMAND: ADD SPONSOR (S)
+────────────────────────────────
+Format:
+S|OrgName|FirstName|LastName|Email
+
+Description:
+Attaches a sponsor user to an organization. Works the same as the D command, but assigns the user a Sponsor role instead of Driver.
+
+Example:
+S|NewOrg|Emily|Brown|ebrown@example.com
+
+────────────────────────────────
+PROCESSING RULES
+────────────────────────────────
+• Commands run in order from top → bottom.
+• If any line has incorrect formatting, it will appear in the Errors panel.
+• Valid commands appear in the Successes panel.
+• Organization names must match EXACTLY.
+• Email addresses must be unique.
+• The process continues even if earlier lines fail.
+
+────────────────────────────────
+FULL EXAMPLE FILE
+────────────────────────────────
+O|BulkOrg
+D|BulkOrg|Sarah|Connor|sconnor@example.com
+S|BulkOrg|Kyle|Reese|kreese@example.com
+D|BulkOrg|Ellen|Ripley|eripley@example.com
+
+This example would:
+1. Create BulkOrg.
+2. Add Sarah Connor (Driver).
+3. Add Kyle Reese (Sponsor).
+4. Add Ellen Ripley (Driver).
+
+If any already exist, the result will be shown in the Errors or Successes panel.
+                            </pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CENTER: Errors -->
+                <section class="pane error-pane">
+                    <h2>Errors</h2>
+                    <div id="errorsList" class="scroll-panel"></div>
+                </section>
+
+                <!-- RIGHT: Success -->
+                <section class="pane success-pane">
+                    <h2>Successes</h2>
+                    <div id="successList" class="scroll-panel"></div>
+                </section>
+            </div>
+        </div>
+    </body>
+</html>
