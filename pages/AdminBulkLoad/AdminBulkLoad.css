@@ -51,7 +51,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 18px;
-    min-width: 0; /* important so content doesn't force grid wider */
+    min-width: 0;
 }
 
 .pane h2 {
@@ -136,7 +136,7 @@ input[type="file"] {
     color: var(--revvy-black);
 }
 
-/* Guide text formatting (prevent width expansion) */
+/* Guide text formatting */
 .guide {
     background-color: #f4f4f4;
     padding: 12px;
@@ -148,3 +148,4 @@ input[type="file"] {
     width: 100%;
     max-width: 100%;
 }
+

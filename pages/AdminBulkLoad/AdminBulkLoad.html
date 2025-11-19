@@ -16,7 +16,7 @@
     </head>
 
     <body>
-        <!-- NAVBAR (copied structure from AdminCreateAdmin) -->
+        <!-- NAVBAR (copied from AdminCreateAdmin) -->
         <header>
             <nav class="navbar">
                 <div class="nav-container">
@@ -65,77 +65,52 @@
 
                         <div class="collapsible-content" id="guideContent">
                             <pre class="guide">
-Your uploaded .txt file should contain ONE command per line. The system will read each line from top to bottom and execute the commands in the exact order they appear.
-
-Each line begins with a COMMAND TYPE:
-
-O = Create Organization
-D = Add Driver to Organization
-S = Add Sponsor to Organization
-
-All fields are separated with the "|" character.
-
+BULK LOADER REFERENCE
 ────────────────────────────────
-COMMAND: CREATE ORGANIZATION (O)
+• Upload a .txt file containing ONE command per line.
+• Fields in each command are separated by "|".
+• Commands are processed in order, top to bottom.
+• Results appear live in the Successes and Errors panels.
+
+COMMAND TYPES
 ────────────────────────────────
-Format:
 O|OrgName
+    → Creates a new organization.
+    → Errors if the organization already exists.
 
-Description:
-Creates a new organization with the specified name. If an organization with this name already exists, the system will return an error for this line.
+D|OrgName|First|Last|Email
+    → Adds a Driver to the specified organization.
+    → Creates the user if they do not exist.
+    → If user exists, attaches them to the org.
+    → If already attached, marked as success.
 
-Example:
-O|NewOrg
+S|OrgName|First|Last|Email
+    → Same as D, but adds a Sponsor instead.
 
-────────────────────────────────
-COMMAND: ADD DRIVER (D)
-────────────────────────────────
-Format:
-D|OrgName|FirstName|LastName|Email
-
-Description:
-Attempts to create a driver user and attach them to the specified organization. If the user already exists, If the user already exists in that organization, an error is returned.
-
-Example:
-D|NewOrg|John|Smith|jsmith@example.com
-
-────────────────────────────────
-COMMAND: ADD SPONSOR (S)
-────────────────────────────────
-Format:
-S|OrgName|FirstName|LastName|Email
-
-Description:
-Attaches a sponsor user to an organization. Works the same as the D command, but assigns the user a Sponsor role instead of Driver.
-
-Example:
-S|NewOrg|Emily|Brown|ebrown@example.com
-
-────────────────────────────────
 PROCESSING RULES
 ────────────────────────────────
-• Commands run in order from top → bottom.
-• If any line has incorrect formatting, it will appear in the Errors panel.
-• Valid commands appear in the Successes panel.
-• Organization names must match EXACTLY.
-• Email addresses must be unique.
-• The process continues even if earlier lines fail.
+• Organization names must match exactly.
+• Email addresses uniquely identify users.
+• Driver/Sponsor lines require existing or previously-created organizations.
+• Blank lines are ignored.
+• Invalid lines appear in Errors but do NOT stop processing.
+• Large files are automatically broken into batches.
 
-────────────────────────────────
-FULL EXAMPLE FILE
+EXAMPLE
 ────────────────────────────────
 O|BulkOrg
-D|BulkOrg|Sarah|Connor|sconnor@example.com
-S|BulkOrg|Kyle|Reese|kreese@example.com
-D|BulkOrg|Ellen|Ripley|eripley@example.com
+D|BulkOrg|Sarah|Connor|sconnor@mail.com
+S|BulkOrg|Kyle|Reese|kreese@mail.com
+O|OtherOrg
+D|OtherOrg|Ellen|Ripley|eripley@mail.com
 
-This example would:
+SUMMARY OF EXAMPLE
+────────────────────────────────
 1. Create BulkOrg.
-2. Add Sarah Connor (Driver).
-3. Add Kyle Reese (Sponsor).
-4. Add Ellen Ripley (Driver).
-
-If any already exist, the result will be shown in the Errors or Successes panel.
+2. Add Sarah Connor as a Driver.
+3. Add Kyle Reese as a Sponsor.
+4. Create OtherOrg.
+5. Add Ellen Ripley as a Driver in OtherOrg.
                             </pre>
                         </div>
                     </div>
@@ -154,5 +129,12 @@ If any already exist, the result will be shown in the Errors or Successes panel.
                 </section>
             </div>
         </div>
+
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p id="loadingMessage">Processing...</p>
+            <p id="loadingProgress" class="loading-progress">
+        </div>
+
     </body>
 </html>

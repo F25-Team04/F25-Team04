@@ -1619,10 +1619,18 @@ def post_bulk_load(body):
     body = json.loads(body) or {}
     user_id = body.get("user_id")
     commands = body.get("commands")  # command block
-    
+
+    start_line = body.get("start_line", 1)
+    try:
+        start_line = int(start_line)
+        if start_line < 1:
+            start_line = 1
+    except Exception:
+        start_line = 1
+
     if user_id is None or commands is None:
         raise Exception("Missing required field(s): user_id, commands")
-    
+
     # check user for admin or sponsor, get org
     with conn.cursor() as cur:
         cur.execute("""
@@ -1634,18 +1642,18 @@ def post_bulk_load(body):
         row = cur.fetchone()
         if not row:
             return build_response(404, "User not found")
-        
+
         role = row.get("usr_role")
         org_id = row.get("spo_org")
         if role not in ("admin", "sponsor"):
             return build_response(403, "User is not authorized to perform bulk load!")
-    
+
     successes = []  # each item: {"line": n, "type": "O|D|S", "detail": "..."}
     errors    = []  # each item: {"line": n, "error": "message"}
 
     # Cache org name -> id during the run to minimize queries
     org_cache = {}
-    
+
     def _get_org_id_by_name(org_name: str):
         # returns org_id or None; uses cache if possible
         if org_name in org_cache:
@@ -1675,7 +1683,7 @@ def post_bulk_load(body):
     def _create_sponsorship(user_id_local: int, org_id_local: int) -> bool:
         """
         Ensure the user is sponsored into org.
-        Returns True, if a new Sponsorships row was created, False
+        Returns True if a new Sponsorships row was created, False if already attached.
         """
         with conn.cursor() as cur:
             cur.execute("""
@@ -1693,25 +1701,55 @@ def post_bulk_load(body):
             """, (user_id_local, org_id_local))
             return True
 
+    def _get_primary_org_for_user(user_id_local: int):
+        """
+        Returns the first active organization id this user is attached to,
+        or None if they have no active Sponsorships.
+        """
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT spo_org
+                FROM Sponsorships
+                WHERE spo_user = %s AND spo_isdeleted = 0
+                LIMIT 1
+            """, (user_id_local,))
+            r = cur.fetchone()
+        return r["spo_org"] if r else None
 
     def _create_user(role_local: str, org_id_local: int, first: str, last: str, email: str):
         """
         Returns: (user_id, created_user: bool, attached_new_sponsorship: bool)
+
+        For drivers:
+            created_user=True  -> new user + sponsorship
+            created_user=False, attached_new=True  -> existing user, new sponsorship
+            created_user=False, attached_new=False -> existing user, already in org
+
+        For sponsors:
+            created_user=True  -> new user + sponsorship
+            created_user=False -> existing user, NO CHANGE to sponsorship here
+                                  (caller enforces 1-org-per-sponsor rule)
         """
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT usr_id, usr_role FROM Users
+                SELECT usr_id, usr_role
+                FROM Users
                 WHERE usr_email = %s AND usr_isdeleted = 0
             """, (email,))
             u = cur.fetchone()
             if u:
                 existing_id = u.get("usr_id")
-                attached = _create_sponsorship(existing_id, org_id_local)
-                # attached == True  -> new Sponsorships row created
-                # attached == False -> user was already in org
-                return existing_id, False, attached
+                if role_local == "driver":
+                    attached = _create_sponsorship(existing_id, org_id_local)
+                    # attached == True  -> new Sponsorship row created
+                    # attached == False -> user was already in this org
+                    return existing_id, False, attached
 
-            # create new user as before...
+                # Existing sponsor: don't change org automatically here.
+                # Caller will enforce the "1 org per sponsor" rule.
+                return existing_id, False, False
+
+            # No existing user -> create one
             temp_password = secrets.token_urlsafe(12)
             BULK_ITERATIONS = 1_000
             pw_hash = hash_secret(temp_password, iterations=BULK_ITERATIONS)
@@ -1739,11 +1777,10 @@ def post_bulk_load(body):
             _create_sponsorship(new_user_id, org_id_local)
             return new_user_id, True, True
 
-
     lines = [ln.strip() for ln in (commands or "").splitlines()]
-    print(f"[BL] Processing {len(lines)} lines for bulk load: {lines}")
-    
-    for idx, raw in enumerate(lines, start=1):
+    print(f"[BL] Processing {len(lines)} lines for bulk load (start_line={start_line})")
+
+    for idx, raw in enumerate(lines, start=start_line):
         print(f"[BL] Processing line {idx}: {raw}")
         if not raw:
             continue  # skip blank line
@@ -1758,7 +1795,9 @@ def post_bulk_load(body):
                 print(f"[BL] Error: Invalid record type: line={idx}, raw={raw}")
                 continue
 
-            # Enforce sponsor org inference
+            # ==============================
+            # SPONSOR (UPLOADER) RULES
+            # ==============================
             if role == "sponsor":
                 if rec_type == "O":
                     errors.append({"line": idx, "error": "Sponsors cannot create organizations (type 'O')."})
@@ -1776,32 +1815,87 @@ def post_bulk_load(body):
                     print(f"[BL] Error: Sponsor must omit org name: line={idx}, raw={raw}")
                     continue
 
-                # Process S/D against inferred org
+                # Process S/D against inferred org_id
                 role_for_user = "sponsor" if rec_type == "S" else "driver"
 
                 try:
                     conn.begin()
-                    uid, created_user, attached_new = _create_user(role_for_user, org_id_to_use, first, last, email)
 
-                    conn.commit()
-                    if created_user:
-                        successes.append({
-                            "line": idx,
-                            "type": rec_type,
-                            "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."
-                        })
-                    elif attached_new:
-                        successes.append({
-                            "line": idx,
-                            "type": rec_type,
-                            "detail": f"Attached existing user {email} to org {org_id_to_use} (user_id={uid})."
-                        })
+                    if role_for_user == "driver":
+                        # Drivers can be attached to multiple orgs
+                        uid, created_user, attached_new = _create_user(
+                            "driver", org_id, first, last, email
+                        )
+                        conn.commit()
+                        if created_user:
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Created driver {uid} {email} and attached to org {org_id}."
+                            })
+                        elif attached_new:
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Attached existing driver {email} to org {org_id} (user_id={uid})."
+                            })
+                        else:
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Driver {email} is already attached to org {org_id}; no changes made."
+                            })
+
                     else:
-                        successes.append({
-                            "line": idx,
-                            "type": rec_type,
-                            "detail": f"User {email} is already attached to org {org_id_to_use}; no changes made."
-                        })
+                        # role_for_user == "sponsor"
+                        # Enforce 1-org-per-sponsor rule
+                        with conn.cursor() as cur2:
+                            cur2.execute("""
+                                SELECT usr_id
+                                FROM Users
+                                WHERE usr_email = %s AND usr_isdeleted = 0
+                            """, (email,))
+                            u2 = cur2.fetchone()
+
+                        if not u2:
+                            # brand-new sponsor user, allowed
+                            uid, created_user, attached_new = _create_user(
+                                "sponsor", org_id, first, last, email
+                            )
+                            conn.commit()
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Created sponsor {uid} {email} and attached to org {org_id}."
+                            })
+                        else:
+                            uid = u2["usr_id"]
+                            existing_org = _get_primary_org_for_user(uid)
+
+                            if existing_org is None:
+                                # existing user but no Sponsorship; attach now
+                                _create_sponsorship(uid, org_id)
+                                conn.commit()
+                                successes.append({
+                                    "line": idx,
+                                    "type": rec_type,
+                                    "detail": f"Attached existing sponsor {email} to org {org_id} (user_id={uid})."
+                                })
+                            elif existing_org == org_id:
+                                # already sponsor for THIS org -> success (no-op)
+                                conn.rollback()
+                                successes.append({
+                                    "line": idx,
+                                    "type": rec_type,
+                                    "detail": f"Sponsor {email} is already attached to org {org_id}; no changes made."
+                                })
+                            else:
+                                # already sponsor for a DIFFERENT org -> ERROR
+                                conn.rollback()
+                                errors.append({
+                                    "line": idx,
+                                    "error": f"Sponsor {email} is already attached to org {existing_org} and cannot be added to org {org_id}."
+                                })
 
                 except Exception as e:
                     conn.rollback()
@@ -1813,13 +1907,15 @@ def post_bulk_load(body):
                     print(f"[BL] Error creating user on line {idx}: {e}")
                 continue
 
-            # Admin rules
+            # ==============================
+            # ADMIN RULES
+            # ==============================
             if role == "admin":
                 print(f"[BL] Admin processing line {idx}: {raw}")
                 if rec_type == "O":
                     # Format: O|<org name>  (must be exactly 2 tokens)
                     if len(parts) != 2:
-                        errors.append({"line": idx, "error": f"Organization line must be 'O|<name>'. Got {len(parts)} tokens."})
+                        errors.append({"line": idx, "error": f"Organization line must be 'O|name'. Got {len(parts)} tokens."})
                         print(f"[BL] Error creating org, wrong number of tokens: line={idx}, raw={raw}")
                         continue
                     _, org_name = parts
@@ -1833,11 +1929,11 @@ def post_bulk_load(body):
                         conn.begin()
                         existing_id = _get_org_id_by_name(org_name)
                         if existing_id:
-                            # Treat as an error per your requirement
                             conn.rollback()
-                            errors.append({
+                            successes.append({
                                 "line": idx,
-                                "error": f"Organization '{org_name}' already exists (id={existing_id}); O command failed."
+                                "type": "O",
+                                "detail": f"Organization '{org_name}' already exists (id={existing_id})."
                             })
                             print(f"[BL] Org already exists: line={idx}, raw={raw}, id={existing_id}")
                         else:
@@ -1861,7 +1957,7 @@ def post_bulk_load(body):
 
                 # Admin D/S line: must have 5 tokens: type|org|first|last|email
                 if len(parts) != 5:
-                    errors.append({"line": idx, "error": f"User line must be '<D|S>|<org>|<first>|<last>|<email>'. Got {len(parts)} tokens."})
+                    errors.append({"line": idx, "error": f"User line must be 'D/S|org|first|last|email'. Got {len(parts)} tokens."})
                     print(f"[BL] Error creating user, wrong number of tokens: line={idx}, raw={raw}")
                     continue
                 _, org_name, first, last, email = parts
@@ -1871,7 +1967,7 @@ def post_bulk_load(body):
                 email = (email or "").strip()
 
                 if not org_name:
-                    errors.append({"line": idx, "error": "Organization name is required as an argument for admin 'O' commands."})
+                    errors.append({"line": idx, "error": "Organization name is required for admin D/S commands."})
                     print(f"[BL] Error creating user, missing org name: line={idx}, raw={raw}")
                     continue
                 else:
@@ -1887,22 +1983,77 @@ def post_bulk_load(body):
 
                 try:
                     conn.begin()
-                    uid, created = _create_user(role_for_user, org_id_to_use, first, last, email)
-                    conn.commit()
-                    if created:
-                        successes.append({
-                            "line": idx,
-                            "type": rec_type,
-                            "detail": f"Created user {uid} {role_for_user} {email} and attached to org {org_id_to_use}."
-                        })
-                        print(f"[BL] Created user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
+
+                    if role_for_user == "driver":
+                        uid, created_user, attached_new = _create_user(
+                            "driver", org_id_to_use, first, last, email
+                        )
+                        conn.commit()
+                        if created_user:
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Created driver {uid} {email} and attached to org {org_id_to_use}."
+                            })
+                        elif attached_new:
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Attached existing driver {email} to org {org_id_to_use} (user_id={uid})."
+                            })
+                        else:
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Driver {email} is already attached to org {org_id_to_use}; no changes made."
+                            })
+
                     else:
-                        successes.append({
-                            "line": idx,
-                            "type": rec_type,
-                            "detail": f"Attached existing user {email} to org {org_id_to_use} (user_id={uid})."
-                        })
-                        print(f"[BL] Attached existing user: line={idx}, raw={raw}, id={uid}, role={role_for_user}, email={email}, org={org_id_to_use}")
+                        # sponsor S-line, admin upload
+                        with conn.cursor() as cur2:
+                            cur2.execute("""
+                                SELECT usr_id
+                                FROM Users
+                                WHERE usr_email = %s AND usr_isdeleted = 0
+                            """, (email,))
+                            u2 = cur2.fetchone()
+
+                        if not u2:
+                            uid, created_user, attached_new = _create_user(
+                                "sponsor", org_id_to_use, first, last, email
+                            )
+                            conn.commit()
+                            successes.append({
+                                "line": idx,
+                                "type": rec_type,
+                                "detail": f"Created sponsor {uid} {email} and attached to org {org_id_to_use}."
+                            })
+                        else:
+                            uid = u2["usr_id"]
+                            existing_org = _get_primary_org_for_user(uid)
+
+                            if existing_org is None:
+                                _create_sponsorship(uid, org_id_to_use)
+                                conn.commit()
+                                successes.append({
+                                    "line": idx,
+                                    "type": rec_type,
+                                    "detail": f"Attached existing sponsor {email} to org {org_id_to_use} (user_id={uid})."
+                                })
+                            elif existing_org == org_id_to_use:
+                                conn.rollback()
+                                successes.append({
+                                    "line": idx,
+                                    "type": rec_type,
+                                    "detail": f"Sponsor {email} is already attached to org {org_id_to_use}; no changes made."
+                                })
+                            else:
+                                conn.rollback()
+                                errors.append({
+                                    "line": idx,
+                                    "error": f"Sponsor {email} is already attached to org {existing_org} and cannot be added to org {org_id_to_use}."
+                                })
+
                 except Exception as e:
                     conn.rollback()
                     errors.append({
@@ -1934,7 +2085,7 @@ def post_bulk_load(body):
         "successes": successes,
         "errors": errors
     })
-
+    
 
 def post_change_conversion_rate(body):
     body = json.loads(body) or {}
