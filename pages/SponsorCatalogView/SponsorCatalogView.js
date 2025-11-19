@@ -37,11 +37,93 @@ window.onload = function () {
     } else if (dropdown.value === "max_price") {
       var input = this.document.createElement("input");
       input.placeholder = "Input Max Price";
+      input.id = "answer";
+      input.type = "number";
+    } else if (dropdown.value === "min_price") {
+      var input = this.document.createElement("input");
+      input.placeholder = "Input Min Price";
+      input.id = "answer";
       input.type = "number";
     }
     div.appendChild(input);
+
+    input.addEventListener("change", function () {
+      button = document.createElement("button");
+      button.type = "submit";
+      button.textContent = "Add Rule";
+      div.appendChild(button);
+    });
     form.appendChild(div);
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      try {
+        const data = {
+          org: ORG_ID,
+          type: dropdown.value,
+          value: input.value,
+        };
+        const response = await fetch(
+          "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/catalog_rules",
+          {
+            method: "POST",
+            body: JSON.stringify(data),
+          }
+        );
+        if (response.ok) {
+          const result = await response.json();
+          if (response.success == false) {
+            alert(result.message);
+          } else if (response.status == 200) {
+            window.location.reload();
+          }
+        }
+        console.log(data);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    });
   });
+  function CatalogRuleList(rules) {
+    const list = document.getElementById("list-rule");
+    list.innerHTML = "";
+    rules.forEach((rule) => {
+      let item = document.createElement("div");
+      let text = document.createElement("p");
+      let point = document.createElement("p");
+      item.id = "rule-row";
+      point.id = "pointnum";
+      text.id = "rule-descript";
+      text.textContent = rule["Rule Type"];
+      point.textContent = rule["Rule Value"];
+      item.appendChild(text);
+      item.appendChild(point);
+      list.appendChild(item);
+    });
+  }
+
+  async function GetCatalogRules() {
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/catalog_rules?org=" +
+          ORG_ID,
+        {
+          method: "GET",
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (response.success == false) {
+          alert(result.message);
+        } else if (response.status == 200) {
+          console.log(result);
+          CatalogRuleList(result);
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
 
   async function GetShop() {
     try {
@@ -162,7 +244,6 @@ window.onload = function () {
     if (!storeItems || storeItems.length === 0) {
       document.getElementById("store-catalog").innerHTML =
         "<p>No items available in the store.</p>";
-      document.getElementById("pagination").innerHTML = "";
       return;
     }
     const totalPages = Math.max(
@@ -207,5 +288,6 @@ window.onload = function () {
   }
 
   GetUser();
+  GetCatalogRules();
   GetShop();
 };

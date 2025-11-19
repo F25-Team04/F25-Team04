@@ -124,7 +124,7 @@ def _get_catalog_rules(org):
             WHERE cat_org = %s
             AND cat_isdeleted = 0
             ORDER BY cat_id ASC
-        """, org)
+        """, (org,))
         rules = cur.fetchall()
         
     return rules
