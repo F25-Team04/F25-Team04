@@ -17,9 +17,13 @@ window.onload = function () {
     const create_admin = document.createElement("a");
     create_admin.href = "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
     create_admin.textContent = "Create Admin";
+    const bulk_load = document.createElement("a");
+    bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
+    bulk_load.textContent = "Bulk Loader";
     li.appendChild(create_admin);
     li.appendChild(create);
     li.appendChild(create_org);
+    li.appendChild(bulk_load);
     list.appendChild(li);
 
     const capsIndicator = document.querySelector(".caps-indicator");

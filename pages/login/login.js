@@ -94,7 +94,7 @@ window.onload = function () {
               "&org=" +
               result["Organizations"][0]["org_id"];
           } else if (result["Role"] == "admin") {
-            window.location = "../AdminHomepage/AdminHome.html";
+            window.location = "../AdminHomepage/AdminHome.html" + "?id=" + UserID;
           }
         }
       }
