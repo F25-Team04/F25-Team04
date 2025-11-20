@@ -2328,13 +2328,14 @@ def get_drivers(queryParams):
     with conn.cursor() as cur:
         cur.execute("""
             SELECT 
-                u.usr_id         AS "User ID",
-                u.usr_email      AS "Email",
-                u.usr_firstname  AS "First Name",
-                u.usr_lastname   AS "Last Name",
-                u.usr_employeeid AS "Employee ID",
-                u.usr_phone      AS "Phone",
-                u.usr_address    AS "Address"
+                u.usr_id           AS "User ID",
+                u.usr_email        AS "Email",
+                u.usr_firstname    AS "First Name",
+                u.usr_lastname     AS "Last Name",
+                u.usr_employeeid   AS "Employee ID",
+                u.usr_phone        AS "Phone",
+                u.usr_address      AS "Address",
+                s.spo_pointbalance AS "Points"
             FROM Users u
             JOIN Sponsorships s ON s.spo_user = u.usr_id
             WHERE s.spo_org = %s
