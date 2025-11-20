@@ -45,11 +45,12 @@ function setupNavBar() {
         li.appendChild(a);
     }
 
-    add("../AdminHomepage/AdminHome.html", "Dashboard");
-    add("../AdminCreateAdmin/AdminCreateAdmin.html", "Create Admin");
-    add("../AdminCreateSponsor/AdminCreateSponsor.html", "Create Sponsor");
-    add("../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html", "Create Organization");
-    add("../AdminBulkLoad/AdminBulkLoad.html", "Bulk Loader");
+    add("../SponsorHomepage/SponsorHome.html", "Home");
+    add("../SponsorCreateDriver/SponsorCreateDriver.html", "Create Driver");
+    add("../SponsorCreateSponsor/SponsorCreateSponsor.html", "Create Sponsor");
+    add("../SponsorApplicationPage/sponsor-applications.html", "Applications");
+    add("../SponsorChangeConversionRate/ChangeConversionRate.html", "Change Point Conversion Rate");
+    add("../SponsorBulkLoad/SponsorBulkLoad.html", "Bulk Loader");
 
     list.appendChild(li);
 }

@@ -87,6 +87,13 @@ window.onload = function () {
     ORG_ID;
   change.textContent = "Change Point Conversion Rate";
   li.appendChild(change);
+
+  const bulk = document.createElement("a");
+  bulk.href =
+    "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
+  bulk.textContent = "Bulk Loader";
+  li.appendChild(bulk);
+
   list.appendChild(li);
 
   // Pulls pending driver requests for the organization that the user belongs to
