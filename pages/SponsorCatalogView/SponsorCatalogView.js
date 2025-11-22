@@ -27,7 +27,7 @@ window.onload = function () {
       placeholder.disabled = true;
       placeholder.selected = true;
       placeholder.hidden = true;
-      placeholder.textContent = "Select category...";
+      placeholder.textContent = "Select Item category...";
       input.appendChild(placeholder);
       for (let category of categories) {
         var option = this.document.createElement("option");
@@ -86,21 +86,57 @@ window.onload = function () {
   function CatalogRuleList(rules) {
     const list = document.getElementById("list-rule");
     list.innerHTML = "";
+    if (rules.length == 0) {
+      let item = document.createElement("div");
+      let text = document.createElement("p");
+      text.innerText = "Your Organization Does Not Have Catalog Rules";
+      item.appendChild(text);
+      list.appendChild(item);
+    }
     rules.forEach((rule) => {
       let item = document.createElement("div");
       let text = document.createElement("p");
       let point = document.createElement("p");
+      let button = document.createElement("button");
       item.id = "rule-row";
       point.id = "pointnum";
       text.id = "rule-descript";
       text.textContent = rule["Rule Type"];
       point.textContent = rule["Rule Value"];
+      button.innerText = "Delete Rule";
+      button.addEventListener("click", function () {
+        DeleteCatalogRule(rule["Catalog Rule ID"]);
+      });
       item.appendChild(text);
       item.appendChild(point);
+      item.appendChild(button);
       list.appendChild(item);
     });
   }
-
+  async function DeleteCatalogRule(id) {
+    console.log(id);
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/catalog_rules?id=" +
+          id,
+        {
+          method: "DELETE",
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (response.success == false) {
+          alert(result.message);
+        } else if (response.status == 200) {
+          console.log(result);
+          GetCatalogRules(result);
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
   async function GetCatalogRules() {
     try {
       // Send POST request
@@ -152,10 +188,7 @@ window.onload = function () {
     var store = document.getElementById("store-catalog");
     store.innerHTML = "";
     console.log(items);
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    const pageItems = items.slice(start, end);
-    for (let product of pageItems) {
+    for (let product of items) {
       const product_div = document.createElement("div");
       product_div.className = "product_wrapper";
       const product_img = document.createElement("img");

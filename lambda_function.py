@@ -2524,6 +2524,9 @@ def get_products(queryParams):
         rules = _get_catalog_rules(org)
         print(f"DEBUG - Catalog Rules for org {org}:\n", json.dumps(rules, indent=2))
         
+        if len(rules) == 0:
+            return build_response(200, products)
+        
         # initialize filter criteria
         allowed_categories = []
         max_price = float('inf')
@@ -2586,7 +2589,8 @@ def get_catalog_rules(queryParams):
         raise Exception(f"Missing required query parameter: org")
 
     rules = _get_catalog_rules(org)
-        
+    
+    return build_response(200, rules)
     if rules:
         return build_response(200, rules)
     else:
@@ -2778,6 +2782,31 @@ def delete_notification(queryParams):
     
     return build_response(404, f"No user found with id={usr_id}")
 
+def delete_catalog_rule(queryParams):
+    # marks user as deleted in the database
+    queryParams = queryParams or {}
+    cat_id = queryParams.get("id")
+    if cat_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Catalog_Rules
+            SET cat_isdeleted = 1
+            WHERE cat_id = %s
+            AND cat_isdeleted = 0
+        """, cat_id)
+        result = cur.fetchall()
+        affected = cur.rowcount
+        conn.commit()
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"Category ID {cat_id} deleted"
+        })
+    
+    return build_response(404, f"No Category found with id={cat_id}")
+
 # ==== handler (main) ===================================================================
 # overall handler for requests
 def lambda_handler(event, context):
@@ -2840,6 +2869,8 @@ def lambda_handler(event, context):
             response = delete_user(queryParams)
         elif (method == "DELETE" and path == "/notifications"):
             response = delete_notification(queryParams)
+        elif (method == "DELETE" and path == "/catalog_rules"):
+            response = delete_catalog_rule(queryParams)
         
         # POST
         elif (method == "POST" and path == "/signup"):
