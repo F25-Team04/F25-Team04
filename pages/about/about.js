@@ -39,7 +39,7 @@ function LoadNav() {
 
     const catalogView = document.createElement("a");
     catalogView.href =
-      "..SponsorCatalogViewSponsorCatalogView.html?id=" +
+      "../SponsorCatalogView/SponsorCatalogView.html?id=" +
       USER_ID +
       "&org=" +
       ORG_ID;
@@ -75,7 +75,7 @@ function LoadNav() {
     li.appendChild(bulk);
 
     list.appendChild(li);
-  } else {
+  } else if ((role = "driver")) {
     if (USER_ID != null && ORG_ID == null) {
       const li = document.createElement("li");
       const switchOrg = document.createElement("a");

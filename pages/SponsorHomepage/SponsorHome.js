@@ -26,7 +26,7 @@ window.onload = function () {
 
   const catalogView = document.createElement("a");
   catalogView.href =
-    "..SponsorCatalogViewSponsorCatalogView.html?id=" +
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
