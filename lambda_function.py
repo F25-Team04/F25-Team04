@@ -115,6 +115,8 @@ def _get_catalog_rules(org):
     # internal use function
     # returns active catalog rules for the specified organization
     with conn.cursor() as cur:
+        conn.ping(reconnect=True)
+        conn.autocommit(True)
         cur.execute("""
             SELECT 
                 cat_id AS "Catalog Rule ID",
@@ -1079,8 +1081,11 @@ def post_catalog_rules(body):
             float(rule_value)
         except ValueError:
             raise Exception(f"Invalid rule value for type {rule_type}: must be a number")
+        
 
     with conn.cursor() as cur:
+        conn.ping(reconnect=True)
+        conn.autocommit(True)
         cur.execute("""
             INSERT INTO Catalog_Rules (cat_org, cat_type, cat_value)
             VALUES (%s, %s, %s)
@@ -2708,6 +2713,8 @@ def get_cart(queryParams):
     """
 
     with conn.cursor() as cur:
+        conn.ping(reconnect=True)
+        conn.autocommit(True)
         cur.execute(sql, values)
         rows = cur.fetchall()
         
