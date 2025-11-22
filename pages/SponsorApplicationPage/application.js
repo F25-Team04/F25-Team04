@@ -39,7 +39,7 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
-  // Navigation bar links
+  // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
@@ -50,24 +50,24 @@ window.onload = function () {
   link.textContent = "Home";
   li.appendChild(link);
 
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
-  list.appendChild(li);
-
   const createSponsor = document.createElement("a");
   createSponsor.href =
     "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
+  createSponsor.textContent = "Create Account";
   li.appendChild(createSponsor);
+  list.appendChild(li);
+
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
 
   const app = document.createElement("a");
@@ -94,8 +94,6 @@ window.onload = function () {
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
 
-  list.appendChild(li);
-
   // Pulls pending driver requests for the organization that the user belongs to
   async function GetPending() {
     try {
@@ -114,7 +112,7 @@ window.onload = function () {
         } else if (response.status == 200) {
           const list = document.getElementById("application-list");
           list.innerHTML = "";
-          
+
           result.forEach((driver) => {
             // Row wrapper
             const item = document.createElement("div");

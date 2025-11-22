@@ -3,6 +3,7 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
+  // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
@@ -12,16 +13,6 @@ window.onload = function () {
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
   link.textContent = "Home";
   li.appendChild(link);
-  
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
-  list.appendChild(li);
 
   const createSponsor = document.createElement("a");
   createSponsor.href =
@@ -29,8 +20,18 @@ window.onload = function () {
     USER_ID +
     "&org=" +
     ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
+  createSponsor.textContent = "Create Account";
   li.appendChild(createSponsor);
+  list.appendChild(li);
+
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
 
   const app = document.createElement("a");
@@ -56,8 +57,6 @@ window.onload = function () {
     "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
-
-  list.appendChild(li);
 
   document
     .getElementById("conversionForm")

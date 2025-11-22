@@ -3,26 +3,16 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
-  // Navigation bar links
+  // Nav
   var list = this.document.getElementById("links");
+  const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
   about.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
-  const li = document.createElement("li");
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
   link.textContent = "Home";
   li.appendChild(link);
-
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
-  list.appendChild(li);
 
   const createSponsor = document.createElement("a");
   createSponsor.href =
@@ -30,8 +20,18 @@ window.onload = function () {
     USER_ID +
     "&org=" +
     ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
+  createSponsor.textContent = "Create Account";
   li.appendChild(createSponsor);
+  list.appendChild(li);
+
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "..SponsorCatalogViewSponsorCatalogView.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
 
   const app = document.createElement("a");
@@ -42,16 +42,6 @@ window.onload = function () {
     ORG_ID;
   app.textContent = "Applications";
   li.appendChild(app);
-
-  const pointsManager = document.createElement("a");
-  pointsManager.href =
-    "../points-manager/points-manager.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  pointsManager.textContent = "Points Manager";
-  li.appendChild(pointsManager);
-  list.appendChild(li);
 
   const change = document.createElement("a");
   change.href =

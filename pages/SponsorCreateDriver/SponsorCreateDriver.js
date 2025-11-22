@@ -26,24 +26,24 @@ window.onload = function () {
   link.textContent = "Home";
   li.appendChild(link);
 
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
-  list.appendChild(li);
-
   const createSponsor = document.createElement("a");
   createSponsor.href =
     "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
+  createSponsor.textContent = "Create Account";
   li.appendChild(createSponsor);
+  list.appendChild(li);
+
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
 
   const app = document.createElement("a");
@@ -88,7 +88,7 @@ window.onload = function () {
     });
 
   // Form submit
- const form = document.getElementById("create");
+  const form = document.getElementById("create");
   if (!form) return;
 
   form.addEventListener("submit", async function (event) {
@@ -136,5 +136,14 @@ window.onload = function () {
       console.error("Error:", error);
       alert("An error occurred while creating the driver user.");
     }
+  });
+
+  SponsorButton = this.document.getElementById("create-sponsor");
+  SponsorButton.addEventListener("click", function () {
+    window.location =
+      "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
   });
 };

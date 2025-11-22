@@ -9,6 +9,60 @@ let storeItems = [];
 let CurrDriverPoints;
 
 window.onload = function () {
+  // Nav
+  var list = this.document.getElementById("links");
+  const li = document.createElement("li");
+  var about = this.document.getElementById("about-page");
+  about.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
+  const link = document.createElement("a");
+  link.href =
+    "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
+  link.textContent = "Home";
+  li.appendChild(link);
+
+  const createSponsor = document.createElement("a");
+  createSponsor.href =
+    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  createSponsor.textContent = "Create Account";
+  li.appendChild(createSponsor);
+  list.appendChild(li);
+
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
+  list.appendChild(li);
+
+  const app = document.createElement("a");
+  app.href =
+    "../SponsorApplicationPage/sponsor-applications.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  app.textContent = "Applications";
+  li.appendChild(app);
+
+  const change = document.createElement("a");
+  change.href =
+    "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  change.textContent = "Change Point Conversion Rate";
+  li.appendChild(change);
+
+  const bulk = document.createElement("a");
+  bulk.href =
+    "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
+  bulk.textContent = "Bulk Loader";
+  li.appendChild(bulk);
   const form = this.document.getElementById("create-catalog");
   const dropdown = document.getElementById("rule-type");
   dropdown.addEventListener("change", () => {
