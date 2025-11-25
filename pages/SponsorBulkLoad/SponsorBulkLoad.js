@@ -46,6 +46,7 @@ function setupNavBar() {
   add("../SponsorCreateSponsor/SponsorCreateSponsor.html", "Create Account");
   add("../SponsorCatalogView/SponsorCatalogView.html", "Catalog View");
   add("../SponsorApplicationPage/sponsor-applications.html", "Applications");
+  add("../points-manager/points-manager.html", "Points Manager");
   add(
     "../SponsorChangeConversionRate/ChangeConversionRate.html",
     "Change Point Conversion Rate"
