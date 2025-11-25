@@ -37,14 +37,19 @@
     </div>
 
     <div class="manager-grid">
-        <div id="drivers-list" class="drivers-list">
-
-        </div>
+        <div id="drivers-list" class="drivers-list"></div>
 
         <div class="points-manager">
+          <!-- Empty state -->
+          <div id="points-empty" class="points-empty">
+            <p>Select a driver to manage their points.</p>
+          </div>
+          
+          <!-- Editor state -->
+          <div id="points-editor" class="points-editor">
             <div class="driver-header">
-              <h2 id="name" class="name">Moar Points</h2>
-              <p id="emp-id" class="emp-id">ID: 67</p>
+              <h2 id="name" class="name"></h2>
+              <p id="emp-id" class="emp-id"></p>
             </div>
 
             <div class="points-card">
@@ -52,7 +57,7 @@
                 <i class='bx  bx-medal-star-alt rewards-icon'  ></i> 
                 <p class="points-text">Available Points</p>
               </div>
-              <h2 id="points" class="points-num">320525</h2>
+              <h2 id="points" class="points-num"></h2>
             </div>
 
             <div class="form-group">
@@ -66,19 +71,20 @@
               />
             </div>
 
-            <div class="action-buttons">
-              <button class="btn add-btn">
-                <i class='bx  bx-plus'></i>
-                Add Points
-              </button>
-              <button class="btn remove-btn">
-                <i class='bx  bx-minus'></i>
-                Remove Points
-              </button>
-            </div>
-
             <div id="reason-dropdown" class="reason-dropdown"></div>
 
+            <div id="custom-reason-wrapper" class="form-group" hidden>
+              <label for="custom-reason-input">Custom reason</label>
+              <input
+                id="custom-reason-input"
+                type="text"
+                placeholder="Enter custom reason"
+              />
+            </div>
+
+            <button id="apply-points-btn" class="btn apply-btn" disabled>Apply Points</button>
+
+          </div>
         </div>
 
     </div>

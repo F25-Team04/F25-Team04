@@ -11,8 +11,7 @@ html, body {
 .header {
     display: flex;
     flex-direction: column;
-    margin: 48px;
-    margin-bottom: 24px;
+    margin: 24px 48px;
 }
 
 .subtitle {
@@ -22,12 +21,25 @@ html, body {
 .manager-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    align-items: center;
+    align-items: start;
     justify-content: center;
     margin: 48px;
+    margin-top: 0;
+    gap: 48px;
 }
 
-.points-manager {
+.points-empty {
+    width: 100%;
+    max-width: 680px;
+    padding: 36px;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    justify-content: center;
+    color: var(--muted-foreground);
+}
+
+.points-editor {
     width: 100%;
     max-width: 680px;
     padding: 24px;
@@ -89,12 +101,6 @@ html, body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
 .btn {
     color: white;
     display: inline-flex;
@@ -110,22 +116,19 @@ html, body {
     font-weight: 500;
 }
 
-.add-btn {
+.apply-btn {
     background-color: var(--revvy-green);
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.add-btn:hover {
+.apply-btn:not(:disabled):hover {
     background-color: #1bbf75;
 }
 
-.remove-btn {
-    background-color: #EF4444;
-    transition: background-color 0.2s ease
-}
-
-.remove-btn:hover {
-    background-color: #DC2626;
+.btn:disabled, .btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .reason-container {
@@ -134,12 +137,76 @@ html, body {
     gap: 8px;
 }
 
-.reason-container label {}
-
 .reason-dropdown select {
     height: 36px;
     border-radius: 12px;
     padding: 0 12px;
     border: 1px solid #d4d4d8;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+#points-value:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.drivers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 580px;
+    overflow-y: auto;
+    padding: 8px;   
+}
+
+.driver-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 12px;
+    width: 100%;
+    max-width: 680px;
+    border-radius: 12px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+
+.driver-card.selected {
+    outline: 2px solid var(--revvy-green);
+}
+
+.driver-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.driver-icon {
+    font-size: 24px;
+    color: var(--revvy-green);
+}
+
+.driver-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.driver-points {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.points-icon {
+    color: var(--revvy-green);
+    font-size: 16px;
 }
