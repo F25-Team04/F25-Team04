@@ -82,7 +82,7 @@ function LoadNav() {
     li.appendChild(bulk);
 
     list.appendChild(li);
-  } else if ((User["role"] = "driver")) {
+  } else if (User["Role"] == "driver") {
     console.log("Hey");
     if (USER_ID != null && ORG_ID == null) {
       const li = document.createElement("li");
@@ -152,6 +152,35 @@ function LoadNav() {
     switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
     switchOrg.textContent = "Switch Organization";
     li.appendChild(switchOrg);
+    list.appendChild(li);
+  } else if (User["Role"] == "admin") {
+    console.log("Hey");
+    var list = this.document.getElementById("links");
+    const li = document.createElement("li");
+    var about = this.document.getElementById("about-page");
+    about.href = "../about/about.html?id=" + USER_ID;
+    const link = document.createElement("a");
+    link.href = "../AdminHomepage/AdminHome.html?id=" + USER_ID;
+    link.textContent = "Dashboard";
+    li.appendChild(link);
+    const create = document.createElement("a");
+    create.href = "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
+    create.textContent = "Create Sponsor";
+    const create_org = document.createElement("a");
+    create_org.href =
+      "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
+    create_org.textContent = "Create Organization";
+    const create_admin = document.createElement("a");
+    create_admin.href =
+      "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
+    create_admin.textContent = "Create Admin";
+    const bulk_load = document.createElement("a");
+    bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
+    bulk_load.textContent = "Bulk Loader";
+    li.appendChild(create_admin);
+    li.appendChild(create);
+    li.appendChild(create_org);
+    li.appendChild(bulk_load);
     list.appendChild(li);
   }
 }
