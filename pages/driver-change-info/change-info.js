@@ -21,6 +21,12 @@ function enhanceNav() {
   dash.textContent = "Dashboard";
   li.appendChild(dash);
 
+  const notifications = document.createElement("a");
+  notifications.href =
+    "../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
+  notifications.textContent = "Notifications";
+  li.appendChild(notifications);
+
   const store = document.createElement("a");
   store.href =
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -41,6 +47,11 @@ function enhanceNav() {
   orders.textContent = "Orders";
   li.appendChild(orders);
 
+  const apply = document.createElement("a");
+  apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
+  apply.textContent = "Apply";
+  li.appendChild(apply);
+
   const account = document.createElement("a");
   account.href =
     "../driver-change-info/change-info.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -52,10 +63,6 @@ function enhanceNav() {
   switchOrg.textContent = "Switch Organization";
   li.appendChild(switchOrg);
 
-  const apply = document.createElement("a");
-  apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
-  apply.textContent = "Apply";
-  li.appendChild(apply);
   list.appendChild(li);
 
   navUl.appendChild(li);

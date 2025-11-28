@@ -1,29 +1,63 @@
 <!DOCTYPE html>
 <html>
-<header><script src = "notifs.js"></script></header>
-<body>
+  <header>
+    <script src="notifs.js"></script>
+    <link rel="stylesheet" href="../../css/global.css" />
+  </header>
+  <body>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      h1 {
+        text-align: center;
+      }
+      form {
+        text-align: center;
+      }
+      input {
+        background-color: rgb(224, 13, 13);
+        size: 100cap;
+        text-align: right;
+      }
+      span {
+        visibility: hidden;
+      }
+      #usrID {
+        background-color: white;
+      }
+    </style>
+    <header>
+      <nav class="navbar">
+        <div class="nav-container">
+          <div class="nav-brand">
+            <a href="../../index.html"
+              ><img class="brand-logo" src="../../assets/car-logo-flipped.png"
+            /></a>
+            <a href="../../index.html"
+              ><img class="brand-name" src="../../assets/revvy.png"
+            /></a>
+          </div>
+          <ul id="links">
+            <li><a href="../about/about.html" id="aboutPage">About</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <div>
+      <input type="checkbox" />
+    </div>
 
-  <style>
-    h1{text-align: center;}
-    form{text-align: center;}
-    input{background-color: rgb(224, 13, 13); size: 100cap; text-align: right;}
-    span{visibility:hidden;}
-    #usrID{background-color:white;}
-  </style>
-  <div>
-    <input type="checkbox">
-  </div>
+    <h1 style="background-color: rgb(0, 159, 50)">
+      <br />Notifications<br /><br />
+    </h1>
+    <div>
+      <input type="checkbox" id="hidePts" name="hidePts" />
+      <label for="hidePts">Hide Point Transactions<br /></label>
+    </div>
 
-  <h1 style="background-color:rgb(0, 159, 50) ;"><br>Notifications<br><br></h1>
-   <div>
-    <input type="checkbox" id = "hidePts" name = "hidePts">
-    <label for="hidePts">Hide Point Transactions<br></label>
-  </div>
-
-  <div id="orgs"></div>
-
-
-
-
-</body>   
+    <div id="orgs"></div>
+  </body>
 </html>

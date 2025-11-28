@@ -69,6 +69,12 @@ window.onload = function () {
   link.textContent = "Dashboard";
   li.appendChild(link);
 
+  const notifications = document.createElement("a");
+  notifications.href =
+    "../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
+  notifications.textContent = "Notifications";
+  li.appendChild(notifications);
+
   const store = document.createElement("a");
   store.href =
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
