@@ -2281,6 +2281,8 @@ def get_user(queryParams):
     """
 
     with conn.cursor() as cur:
+        conn.ping(reconnect=True)
+        conn.autocommit(True)
         cur.execute(sql, tuple(values))
         users = cur.fetchall()
         
