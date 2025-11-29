@@ -2479,17 +2479,38 @@ def get_driver_transactions(queryParams):
         
     return build_response(200, transactions)
 
-def get_security_questions():
-    # returns list of security questions
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT sqs_question AS "Question"
-            FROM Security_Questions
-        """)
-        result = cur.fetchall()
-        print("DEBUG - Security Questions result:", result) 
-        questions = [item["Question"] for item in result]
-        return build_response(200, questions)
+def get_security_questions(queryParams):
+    queryParams = queryParams or {}
+    email = queryParams.get("email")
+    
+    if email is None:
+        # returns list of security questions
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT sqs_question AS "Question"
+                FROM Security_Questions
+            """)
+            result = cur.fetchall()
+            print("DEBUG - Security Questions result:", result) 
+            questions = [item["Question"] for item in result]
+            return build_response(200, questions)
+    
+    else:
+        # returns security question for specified email
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT usr_securityquestion AS "Question"
+                FROM Users
+                WHERE usr_email = %s
+                AND usr_isdeleted = 0
+            """, email)
+            user = cur.fetchone()
+            if user:
+                question = user.get("Question")
+                print(f"DEBUG - Security Question for {email}: {question}")
+                return build_response(200, {"email": email, "question": question})
+            else:
+                return build_response(404, f"No user found with email: {email}")
 
 def get_products(queryParams):
     # returns list of products from FakeStoreAPI 
@@ -2844,7 +2865,7 @@ def lambda_handler(event, context):
         elif (method == "GET" and path == "/point_rules"):
             response = get_point_rules(queryParams)
         elif (method == "GET" and path == "/security_questions"):
-            response = get_security_questions()
+            response = get_security_questions(queryParams)
         elif (method == "GET" and path == "/products"):
             response = get_products(queryParams)
         elif (method == "GET" and path == "/product"):

@@ -64,21 +64,14 @@ body {
     padding: 20px 45px 20px 20px;
 }
 
-.input-box i {
-    color: var(--revvy-green);
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-}
-
-.wrapper .remember-forgot {
+.remember-forgot {
     display: flex;
     justify-content: space-between;
+    align-items: center;   
     font-size: 14.5px;
-    margin: -15px 0 15px;
+    margin: -30px 0 30px;  
 }
+
 
 .remember-forgot label input {
     accent-color: var(--revvy-green);
@@ -127,7 +120,7 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 14px;
-    margin: 15px 0 15px;
+    margin: 15px 20px 15px;
 }
 
 .caps-indicator {
@@ -145,9 +138,45 @@ body {
     border-color: var(--revvy-green);
 }
 
-.toggle-pw {
-    cursor: pointer;
+.input-box {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin: 30px 0;
 }
+
+/* Position the eye button INSIDE the password field */
+.input-box .toggle-pw {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Style just the eye icon inside the button */
+.input-box .toggle-pw i {
+    font-size: 20px;
+    color: var(--revvy-green);
+}
+
+/* Email field icon (user) still positioned nicely on the right */
+.input-box .bx-user {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: var(--revvy-green);
+}
+
 
 footer p{
     padding: 0px 30px 24px;
