@@ -73,6 +73,17 @@ window.onload = function () {
     "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
+
+      const impersonator = document.createElement("a");
+    impersonator.href =
+      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    impersonator.textContent = "Impersonation";
+    li.appendChild(impersonator);
+
+    
   const form = this.document.getElementById("create-catalog");
   const dropdown = document.getElementById("rule-type");
   dropdown.addEventListener("change", () => {

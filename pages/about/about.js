@@ -81,6 +81,15 @@ function LoadNav() {
     bulk.textContent = "Bulk Loader";
     li.appendChild(bulk);
 
+    const impersonator = document.createElement("a");
+    impersonator.href =
+      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    impersonator.textContent = "Impersonation";
+    li.appendChild(impersonator);
+
     list.appendChild(li);
   } else if (User["Role"] == "driver") {
     console.log("Hey");
@@ -177,10 +186,14 @@ function LoadNav() {
     const bulk_load = document.createElement("a");
     bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
     bulk_load.textContent = "Bulk Loader";
+        const impersonator = document.createElement("a");
+  impersonator.href = "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
+  impersonator.textContent = "Impersonation";
     li.appendChild(create_admin);
     li.appendChild(create);
     li.appendChild(create_org);
     li.appendChild(bulk_load);
+    li.appendChild(impersonator);
     list.appendChild(li);
   }
 }

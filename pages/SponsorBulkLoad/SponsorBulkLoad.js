@@ -52,6 +52,7 @@ function setupNavBar() {
     "Change Point Conversion Rate"
   );
   add("../SponsorBulkLoad/SponsorBulkLoad.html", "Bulk Loader");
+  add("../SponsorImpersonator/SponsorImpersonator.html", "Impersonation");
 
   list.appendChild(li);
 }

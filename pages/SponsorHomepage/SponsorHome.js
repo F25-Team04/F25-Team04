@@ -53,6 +53,7 @@ window.onload = function () {
   li.appendChild(pointsManager);
   list.appendChild(li);
 
+
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
@@ -68,6 +69,15 @@ window.onload = function () {
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
 
+      const impersonator = document.createElement("a");
+    impersonator.href =
+      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    impersonator.textContent = "Impersonation";
+    li.appendChild(impersonator);
+    
   list.appendChild(li);
 
   function MakeRulesList(rules) {

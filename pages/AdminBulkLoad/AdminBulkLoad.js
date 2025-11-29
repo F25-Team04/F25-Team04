@@ -51,6 +51,7 @@ function setupNavBar() {
     "Create Organization"
   );
   add("../AdminBulkLoad/AdminBulkLoad.html", "Bulk Loader");
+    add("../AdminImpersonator/AdminImpersonator.html", "Impersonation");
 
   list.appendChild(li);
 }
