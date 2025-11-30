@@ -447,6 +447,7 @@ def post_create_sponsor(body):
     email = body.get("email")
     fName = body.get("first_name")
     lName = body.get("last_name")
+    phoneNum = body.get("phone_number")
     securityQ = body.get("security")
     securityA = body.get("answer")
     org = body.get("org")
@@ -455,6 +456,7 @@ def post_create_sponsor(body):
         "email": email,
         "first_name": fName,
         "last_name": lName,
+        "phone_number": phoneNum,
         "security": securityQ,
         "answer": securityA,
         "org": org
@@ -496,8 +498,9 @@ def post_create_sponsor(body):
                     usr_securityquestion,
                     usr_securityanswer,
                     usr_firstname,
-                    usr_lastname
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    usr_lastname,
+                    usr_phone
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 email,
                 pwd_hash,
@@ -507,6 +510,7 @@ def post_create_sponsor(body):
                 securityA,
                 fName,
                 lName,
+                phoneNum
             ))
 
             sponsor_id = cur.lastrowid
