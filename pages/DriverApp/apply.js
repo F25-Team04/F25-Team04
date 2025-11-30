@@ -1,6 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
+let ORGS = {};
 
 function enhanceNav() {
   var list = this.document.getElementById("links");
@@ -78,8 +79,8 @@ function generateOrgs(orgs) {
   const dropdown = document.getElementById("dropdown");
   if (!dropdown) return;
   dropdown.innerHTML = ""; // clear any previous options
-
   orgs.forEach((org, idx) => {
+    console.log(org["org_name"] + " " + org["org_id"]);
     const option = document.createElement("option");
     const label =
       org && typeof org === "object"
@@ -87,7 +88,7 @@ function generateOrgs(orgs) {
         : String(org);
 
     option.value = label; // show name in the UI
-    option.dataset.id = String(idx + 1); // keep 1-based org id to submit
+    option.dataset.id = org["org_id"]; // keep 1-based org id to submit
     dropdown.appendChild(option);
   });
 }
@@ -96,7 +97,7 @@ window.onload = function () {
   enhanceNav();
 
   fetch(
-    "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organizations"
+    "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organizations?include_ids=true"
   )
     .then((response) => response.json())
     .then((orgs) => {
@@ -133,6 +134,8 @@ window.onload = function () {
       const fd = new FormData(event.target);
       const note = (fd.get("note") || "").toString().trim();
 
+      console.log("Submitting application for org ID:", orgId);
+
       const body = {
         user: USER_ID,
         org: orgId,
@@ -148,16 +151,20 @@ window.onload = function () {
             body: JSON.stringify(body),
           }
         );
+        const clone = response.clone();
+        try {
+          const ans = await response.json();
 
-        const ans = await response.json();
-        if (ans.success === true) {
-          alert("Application submitted succesfully.");
-          GetApplications();
-        } else {
-          alert(ans.message);
+          if (ans.success === true) {
+            alert("Application submitted succesfully.");
+            GetApplications();
+          }
+        } catch (err) {
+          const text = await clone.text();
+          alert(text);
         }
       } catch (err) {
-        alert("Could not submit application: " + err.message);
+        console.error("Error submitting application:", err);
       }
     });
 
