@@ -322,7 +322,9 @@ window.onload = function () {
       console.log(response);
       if (response.ok) {
         const result = await response.json();
-
+        if (response.status == 200) {
+          alert("Item added to cart successfully.");
+        }
         if (response.status != 200) {
           alert(result.message);
         }
