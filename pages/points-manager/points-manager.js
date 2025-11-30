@@ -17,46 +17,17 @@ window.onload = function () {
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
 
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+    const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
-  list.appendChild(li);
-
-  const createSponsor = document.createElement("a");
-  createSponsor.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
-  li.appendChild(createSponsor);
-  list.appendChild(li);
-
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
-
-  const pointsManager = document.createElement("a");
-  pointsManager.href =
-    "../points-manager/points-manager.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  pointsManager.textContent = "Points Manager";
-  li.appendChild(pointsManager);
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
 
   const change = document.createElement("a");

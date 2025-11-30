@@ -42,11 +42,8 @@ function setupNavBar() {
     li.appendChild(a);
   }
 
-  add("../SponsorHomepage/SponsorHome.html", "Home");
-  add("../SponsorCreateSponsor/SponsorCreateSponsor.html", "Create Account");
+  add("../SponsorHomepage/SponsorHome.html", "Dashboard");
   add("../SponsorCatalogView/SponsorCatalogView.html", "Catalog View");
-  add("../SponsorApplicationPage/sponsor-applications.html", "Applications");
-  add("../points-manager/points-manager.html", "Points Manager");
   add(
     "../SponsorChangeConversionRate/ChangeConversionRate.html",
     "Change Point Conversion Rate"

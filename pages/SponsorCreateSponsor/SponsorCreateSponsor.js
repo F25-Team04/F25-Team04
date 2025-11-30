@@ -23,18 +23,8 @@ window.onload = function () {
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
-
-  const createSponsor = document.createElement("a");
-  createSponsor.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createSponsor.textContent = "Create Account";
-  li.appendChild(createSponsor);
-  list.appendChild(li);
 
   const catalogView = document.createElement("a");
   catalogView.href =
@@ -44,25 +34,6 @@ window.onload = function () {
     ORG_ID;
   catalogView.textContent = "Catalog View";
   li.appendChild(catalogView);
-  list.appendChild(li);
-
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
-
-  const pointsManager = document.createElement("a");
-  pointsManager.href =
-    "../points-manager/points-manager.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  pointsManager.textContent = "Points Manager";
-  li.appendChild(pointsManager);
   list.appendChild(li);
 
   const change = document.createElement("a");

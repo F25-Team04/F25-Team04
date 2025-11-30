@@ -11,18 +11,8 @@ window.onload = function () {
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
-
-  const createSponsor = document.createElement("a");
-  createSponsor.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createSponsor.textContent = "Create Account";
-  li.appendChild(createSponsor);
-  list.appendChild(li);
 
   const catalogView = document.createElement("a");
   catalogView.href =
@@ -33,26 +23,6 @@ window.onload = function () {
   catalogView.textContent = "Catalog View";
   li.appendChild(catalogView);
   list.appendChild(li);
-
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
-
-  const pointsManager = document.createElement("a");
-  pointsManager.href =
-    "../points-manager/points-manager.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  pointsManager.textContent = "Points Manager";
-  li.appendChild(pointsManager);
-  list.appendChild(li);
-
 
   const change = document.createElement("a");
   change.href =
@@ -133,15 +103,13 @@ window.onload = function () {
       if (response.ok) {
         var result = await response.json();
         result = result[0];
-        if (response.success == false) {
-          alert(result.message);
-        } else if (response.status == 200) {
-          console.log(result["Organizations"][0]["org_name"]);
-          message = document.getElementById("welcome_message");
-          message.textContent = "Welcome " + result["First Name"] + "!";
-          document.getElementById("org-name").innerText =
-            result["Organizations"][0]["org_name"];
-        }
+
+        const message = document.getElementById("welcome_message");
+        message.textContent = "Welcome back, " + result["First Name"] + "!";
+
+        document.getElementById("org").innerText = result["Organizations"][0]["org_name"];
+
+        fillDashboard(result);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -233,4 +201,60 @@ window.onload = function () {
         console.error("Error:", error);
       }
     });
+
+  const createDriverBtn = document.getElementById("create-driver-btn");
+  const createSponsorBtn = document.getElementById("create-sponsor-btn");
+  const viewApplicationsBtn = document.getElementById("view-applications-btn");
+  const pointsManagerBtn = document.getElementById("points-manager-btn");
+
+  if (createDriverBtn) {
+    createDriverBtn.addEventListener("click", function () {
+      window.location.href =
+        "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
+
+  if (createSponsorBtn) {
+    createSponsorBtn.addEventListener("click", function () {
+      window.location.href =
+        "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
+
+  if (viewApplicationsBtn) {
+    viewApplicationsBtn.addEventListener("click", function () {
+      window.location.href =
+        "../SponsorApplicationPage/sponsor-applications.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
+
+  if (pointsManagerBtn) {
+    pointsManagerBtn.addEventListener("click", function () {
+      window.location.href =
+        "../points-manager/points-manager.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
 };
+
+function fillDashboard(sponsorInfo) {
+  place = document.getElementById("name");
+  place.innerHTML = sponsorInfo["First Name"] + " " + sponsorInfo["Last Name"];
+  place = document.getElementById("usrID");
+  place.innerHTML = "ID: " + sponsorInfo["User ID"];
+  place = document.getElementById("email");
+  place.innerHTML = sponsorInfo["Email"];
+  place = document.getElementById("role");
+  place.innerHTML = sponsorInfo["Role"];
+}
