@@ -12,23 +12,25 @@ window.onload = function () {
   create.href = "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
   create.textContent = "Create Sponsor";
   const create_org = document.createElement("a");
-  create_org.href = "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
+  create_org.href =
+    "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
   create_org.textContent = "Create Organization";
   const create_admin = document.createElement("a");
   create_admin.href = "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
   create_admin.textContent = "Create Admin";
-    const bulk_load = document.createElement("a");
-    bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
-    bulk_load.textContent = "Bulk Loader";
-        const impersonator = document.createElement("a");
-  impersonator.href = "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
+  const bulk_load = document.createElement("a");
+  bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
+  bulk_load.textContent = "Bulk Loader";
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
   impersonator.textContent = "Impersonation";
-    li.appendChild(create_admin);
-    li.appendChild(create);
-    li.appendChild(create_org);
-    li.appendChild(bulk_load);
-    li.appendChild(impersonator);
-    list.appendChild(li);
+  li.appendChild(create_admin);
+  li.appendChild(create);
+  li.appendChild(create_org);
+  li.appendChild(bulk_load);
+  li.appendChild(impersonator);
+  list.appendChild(li);
 
   document
     .getElementById("create")
@@ -38,6 +40,7 @@ window.onload = function () {
       // Gather form data
       const form = event.target;
       const formData = new FormData(form);
+      const body = Object.fromEntries(formData.entries());
       try {
         // Send POST request
         const response = await fetch(
@@ -47,7 +50,7 @@ window.onload = function () {
             headers: {
               "Content-Type": "application/json", // IMPORTANT
             },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(body),
           }
         );
         if (response.ok) {
@@ -56,11 +59,41 @@ window.onload = function () {
           if (result.success == false) {
             alert(result.message);
           } else if (result.success == true) {
-            GetUser(result.message);
+            alert("Sponsor created successfully.");
           }
         }
       } catch (error) {
         console.error("Error:", error);
       }
     });
+  function generateQuestions(questions) {
+    const dropdown = document.getElementById("questions");
+    questions.forEach((question) => {
+      const option = document.createElement("option");
+      option.value = question;
+      option.textContent = question;
+      dropdown.appendChild(option);
+    });
+  }
+  async function GetSecurityQuestion() {
+    try {
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/security_questions"
+      );
+
+      if (!response.ok) {
+        const msg = await response.text();
+        alert(msg || "Unable to find an account with that email.");
+        return;
+      }
+
+      const data = await response.json();
+      console.log(data);
+      generateQuestions(data);
+    } catch (error) {
+      console.error("Error fetching security question:", error);
+      alert("An error occurred while looking up your account.");
+    }
+  }
+  GetSecurityQuestion();
 };
