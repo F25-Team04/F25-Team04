@@ -3,55 +3,37 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
+
   // build nav
-  var list = this.document.getElementById("links");
-  var aboutPage = this.document.getElementById("aboutPage");
-  aboutPage.href = "../../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
+  const list = document.getElementById("links");
+  const aboutLink = list.querySelector("a");   // <-- the About link in HTML
+
+  // update About link safely
+  if (aboutLink) {
+    aboutLink.href = "../../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
+  }
+
+  // build remaining navbar links
   const li = document.createElement("li");
-  const link = document.createElement("a");
-  link.href = "../../driver/driver.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Dashboard";
-  li.appendChild(link);
-  const notifications = document.createElement("a");
-  notifications.href =
-    "../../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
-  notifications.textContent = "Notifications";
-  li.appendChild(notifications);
-  const store = document.createElement("a");
-  store.href =
-    "../../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
-  store.textContent = "Store";
-  li.appendChild(store);
-  const cart = document.createElement("a");
-  cart.href =
-    "../../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
-  cart.textContent = "Cart";
-  li.appendChild(cart);
-  const orders = document.createElement("a");
-  orders.href =
-    "../driver/driver-orders/driver-orders.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  orders.textContent = "Orders";
-  li.appendChild(orders);
-  const apply = document.createElement("a");
-  apply.href = "../../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
-  apply.textContent = "Apply";
-  li.appendChild(apply);
-  const account = document.createElement("a");
-  account.href =
-    "../../driver-change-info/change-info.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  account.textContent = "Update Account Info";
-  li.appendChild(account);
-  const switchOrg = document.createElement("a");
-  switchOrg.href = "../../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
-  switchOrg.textContent = "Switch Organization";
-  li.appendChild(switchOrg);
+
+  function addNav(text, path) {
+    const a = document.createElement("a");
+    a.href = path + "?id=" + USER_ID + "&org=" + ORG_ID;
+    a.textContent = text;
+    li.appendChild(a);
+  }
+
+  addNav("Dashboard", "../../driver/driver.html");
+  addNav("Notifications", "../../notificationsPage/notifs.html");
+  addNav("Store", "../../DriverStorePage/DriverStore.html");
+  addNav("Cart", "../../DriverCart/DriverCart.html");
+  addNav("Orders", "../driver/driver-orders/driver-orders.html");
+  addNav("Apply", "../../DriverApp/apply.html");
+  addNav("Update Account Info", "../../driver-change-info/change-info.html");
+  addNav("Switch Organization", "../../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID);
+
   list.appendChild(li);
+
 
   async function GetPoints() {
     try {
