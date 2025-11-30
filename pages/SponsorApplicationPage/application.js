@@ -135,6 +135,11 @@ window.onload = function () {
 
             // Event listener for approve button
             approve.addEventListener("click", async () => {
+              const confirmed = confirm(
+                "Are you sure you want to APPROVE this application?"
+              );
+              if (!confirmed) return;
+
               try {
                 await ApplicationDecision(
                   driver["Application ID"],
@@ -149,24 +154,34 @@ window.onload = function () {
 
             // Event listener for reject button
             reject.addEventListener("click", async () => {
+              const confirmed = confirm(
+                "Are you sure you want to REJECT this application?"
+              );
+              if (!confirmed) return;
+
               try {
                 const note = prompt(
                   "Enter a rejection note to send to the driver (required):",
                   ""
                 );
-                if (note === null) {
+
+                // If user cancels the prompt, don't do anything
+                if (note === null || note.trim() === "") {
+                  alert("Rejection note is required.");
                   return;
                 }
-                ApplicationDecision(
+
+                await ApplicationDecision(
                   driver["Application ID"],
                   USER_ID,
                   false,
                   note
                 );
+
+                list.removeChild(item);
               } catch (error) {
                 console.error("Error:", error);
               }
-              list.removeChild(item);
             });
           });
         }
