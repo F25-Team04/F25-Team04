@@ -160,21 +160,21 @@ window.onload = function () {
       pointsText.textContent = " points";
       productCost.append(rewardsIcon, pointsValue, pointsText);
 
-      var orderButton = document.createElement("button");
-      orderButton.innerText = "Order Item";
-      orderButton.addEventListener("click", function () {
-        if (PricePoints > CurrDriverPoints) {
-          alert("Item is to expensive");
-        } else {
-          window.location =
-            "../OrderSummary/OrderSummary.html?id=" +
-            USER_ID +
-            "&org=" +
-            ORG_ID +
-            "&prod=" +
-            product["itm_productid"];
-        }
-      });
+      // var orderButton = document.createElement("button");
+      // orderButton.innerText = "Order Item";
+      // orderButton.addEventListener("click", function () {
+      //   if (PricePoints > CurrDriverPoints) {
+      //     alert("Item is to expensive");
+      //   } else {
+      //     window.location =
+      //       "../OrderSummary/OrderSummary.html?id=" +
+      //       USER_ID +
+      //       "&org=" +
+      //       ORG_ID +
+      //       "&prod=" +
+      //       product["itm_productid"];
+      //   }
+      // });
 
       var addCart = document.createElement("button");
       addCart.innerText = "Remove From Cart";
@@ -183,7 +183,7 @@ window.onload = function () {
       });
 
       metaRow.appendChild(productCost);
-      metaRow.appendChild(orderButton);
+      // metaRow.appendChild(orderButton);
       metaRow.appendChild(addCart);
 
       content.appendChild(productName);

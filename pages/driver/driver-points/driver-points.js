@@ -35,11 +35,15 @@ window.onload = function () {
     addNav("Notifications", "../../notificationsPage/notifs.html");
     addNav("Store", "../../DriverStorePage/DriverStore.html");
     addNav("Cart", "../../DriverCart/DriverCart.html");
-    addNav("Orders", "../driver/driver-orders/driver-orders.html");
+    addNav("Orders", "../driver-orders/driver-orders.html");
     addNav("Apply", "../../DriverApp/apply.html");
     addNav("Update Account Info", "../../driver-change-info/change-info.html");
     // Switch org usually doesn't need an org param, just the id
-    addNav("Switch Organization", "../../DriverSelectOrg/DriverSelectOrg.html", false);
+    addNav(
+      "Switch Organization",
+      "../../DriverSelectOrg/DriverSelectOrg.html",
+      false
+    );
 
     linksList.appendChild(navLi);
   }
@@ -134,7 +138,9 @@ window.onload = function () {
       const response = await fetch(
         `https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/driver_transactions?id=${encodeURIComponent(
           USER_ID
-        )}` + "&org=" + encodeURIComponent(ORG_ID),
+        )}` +
+          "&org=" +
+          encodeURIComponent(ORG_ID),
         { method: "GET" }
       );
 
@@ -183,7 +189,9 @@ window.onload = function () {
         // Try both NewBalance and "New Balance" to be safe
         const rawNewBalance = t.NewBalance ?? t["New Balance"];
         const hasNewBalance =
-          rawNewBalance !== undefined && rawNewBalance !== null && rawNewBalance !== "";
+          rawNewBalance !== undefined &&
+          rawNewBalance !== null &&
+          rawNewBalance !== "";
 
         const newBalanceNumber = hasNewBalance ? Number(rawNewBalance) : null;
         const formattedNewBalance =

@@ -51,3 +51,9 @@ h1 {
   text-align: center;
   width: 100%;
 }
+
+#conversion {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 18px;
+}

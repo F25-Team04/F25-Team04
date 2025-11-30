@@ -34,10 +34,7 @@ window.onload = function () {
   li.appendChild(cart);
   const orders = document.createElement("a");
   orders.href =
-    "../driver/driver-orders/driver-orders.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
+    "../driver-orders/driver-orders.html?id=" + USER_ID + "&org=" + ORG_ID;
   orders.textContent = "Orders";
   li.appendChild(orders);
   const apply = document.createElement("a");
@@ -319,8 +316,8 @@ function renderOrders(orders) {
     // row container
     const row = document.createElement("div");
     row.style.display = "flex";
-    row.style.alignItems = "flex-start";   // allow multi-line layout
-    row.style.flexWrap = "wrap";          // row can wrap when narrow
+    row.style.alignItems = "flex-start"; // allow multi-line layout
+    row.style.flexWrap = "wrap"; // row can wrap when narrow
     row.style.gap = "16px";
     row.style.padding = "16px";
     if (i < orders.length - 1) row.style.borderBottom = "1px solid #ddd";
@@ -347,7 +344,7 @@ function renderOrders(orders) {
     middle.style.flexDirection = "column";
     middle.style.gap = "6px";
     middle.style.flex = "1";
-    middle.style.minWidth = "0";           // critical so text can shrink
+    middle.style.minWidth = "0"; // critical so text can shrink
 
     // top row: summary + tiny thumbnails in a 2-col grid
     const summaryRow = document.createElement("div");
@@ -358,7 +355,7 @@ function renderOrders(orders) {
 
     const content = document.createElement("div");
     content.className = "reason-date";
-    content.style.minWidth = "0";          // let text wrap
+    content.style.minWidth = "0"; // let text wrap
     content.style.overflow = "hidden";
 
     const pTitle = document.createElement("p");
@@ -372,7 +369,8 @@ function renderOrders(orders) {
     const pSub = document.createElement("p");
     const infoParts = [];
     if (dateStr) infoParts.push(dateStr);
-    if (itemCount) infoParts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+    if (itemCount)
+      infoParts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
     if (totalPts) infoParts.push(`${totalPts} pts`);
     if (totalUsd) infoParts.push(`$${totalUsd.toFixed(2)}`);
     pSub.textContent = infoParts.join(" • ");
@@ -482,7 +480,7 @@ function renderOrders(orders) {
 
         const left = document.createElement("span");
         left.textContent = name || "Item";
-        left.style.flex = "1";                  // take available space
+        left.style.flex = "1"; // take available space
         left.style.minWidth = "0";
         left.style.whiteSpace = "nowrap";
         left.style.overflow = "hidden";
@@ -512,18 +510,19 @@ function renderOrders(orders) {
       cancel.textContent = "Cancel Order";
       cancel.id = "cancel-button";
 
-      cancel.style.backgroundColor = "#EF4444";      // red
-      cancel.style.color = "white";                  // white text
+      cancel.style.backgroundColor = "#EF4444"; // red
+      cancel.style.color = "white"; // white text
       cancel.style.border = "none";
       cancel.style.padding = "6px 10px";
       cancel.style.borderRadius = "999px";
       cancel.style.fontSize = "12px";
       cancel.style.fontWeight = "600";
       cancel.style.cursor = "pointer";
-      cancel.style.transition = "background-color 0.2s ease, transform 0.15s ease";
+      cancel.style.transition =
+        "background-color 0.2s ease, transform 0.15s ease";
 
       cancel.addEventListener("mouseover", () => {
-        cancel.style.backgroundColor = "#DC2626";    // darker red on hover
+        cancel.style.backgroundColor = "#DC2626"; // darker red on hover
       });
       cancel.addEventListener("mouseout", () => {
         cancel.style.backgroundColor = "#EF4444";
@@ -550,8 +549,7 @@ function renderOrders(orders) {
       cancelledBadge.style.fontSize = "12px";
       cancelledBadge.style.fontWeight = "600";
       cancelledBadge.style.cursor = "default";
-}
-
+    }
 
     // right: fixed-width column for amount + optional cancel/cancelled button
     const rightBox = document.createElement("div");

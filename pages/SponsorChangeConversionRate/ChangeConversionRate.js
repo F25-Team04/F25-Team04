@@ -1,6 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
+let PointConversionRate = 0;
 
 window.onload = function () {
   // Nav
@@ -24,6 +25,22 @@ window.onload = function () {
   li.appendChild(catalogView);
   list.appendChild(li);
 
+  const app = document.createElement("a");
+  app.href =
+    "../SponsorApplicationPage/sponsor-applications.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  app.textContent = "Applications";
+  li.appendChild(app);
+
+  const pointsManager = document.createElement("a");
+  pointsManager.href =
+    "../points-manager/points-manager.html?id=" + USER_ID + "&org=" + ORG_ID;
+  pointsManager.textContent = "Points Manager";
+  li.appendChild(pointsManager);
+  list.appendChild(li);
+
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
@@ -39,14 +56,14 @@ window.onload = function () {
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
 
-      const impersonator = document.createElement("a");
-    impersonator.href =
-      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
-      USER_ID +
-      "&org=" +
-      ORG_ID;
-    impersonator.textContent = "Impersonation";
-    li.appendChild(impersonator);
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  impersonator.textContent = "Impersonation";
+  li.appendChild(impersonator);
 
   document
     .getElementById("conversionForm")
@@ -82,4 +99,37 @@ window.onload = function () {
         console.error("Error:", error);
       }
     });
+  async function GetUser() {
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
+          USER_ID,
+        {
+          method: "GET",
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (response.success == false) {
+          alert(result.message);
+        } else if (response.status == 200) {
+          User = result[0];
+          console.log(User);
+          console.log(PointConversionRate);
+          for (var org of result[0]["Organizations"]) {
+            if (org["org_id"] == ORG_ID) {
+              PointConversionRate = org["org_conversion_rate"];
+              document.getElementById("conversion").innerText =
+                "Current Conversion Rate: " + PointConversionRate;
+              window.location.reload;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+  GetUser();
 };

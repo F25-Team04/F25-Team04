@@ -30,6 +30,22 @@ window.onload = function () {
   li.appendChild(catalogView);
   list.appendChild(li);
 
+  const app = document.createElement("a");
+  app.href =
+    "../SponsorApplicationPage/sponsor-applications.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  app.textContent = "Applications";
+  li.appendChild(app);
+
+  const pointsManager = document.createElement("a");
+  pointsManager.href =
+    "../points-manager/points-manager.html?id=" + USER_ID + "&org=" + ORG_ID;
+  pointsManager.textContent = "Points Manager";
+  li.appendChild(pointsManager);
+  list.appendChild(li);
+
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
@@ -45,16 +61,15 @@ window.onload = function () {
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
 
-      const impersonator = document.createElement("a");
-    impersonator.href =
-      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
-      USER_ID +
-      "&org=" +
-      ORG_ID;
-    impersonator.textContent = "Impersonation";
-    li.appendChild(impersonator);
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  impersonator.textContent = "Impersonation";
+  li.appendChild(impersonator);
 
-    
   const form = this.document.getElementById("create-catalog");
   const dropdown = document.getElementById("rule-type");
   dropdown.addEventListener("change", () => {
@@ -244,13 +259,7 @@ window.onload = function () {
       const content = document.createElement("div");
       content.className = "product_content";
       console.log(PointConversionRate);
-      const PricePoints = parseInt(product["price"]) / PointConversionRate;
-
-      const totalCents = Math.round(
-        Number(product["price"] || product.price || 0) * 100
-      );
-      const dollars = Math.floor(totalCents / 100);
-      const cents = totalCents % 100;
+      const PricePoints = parseInt(product["price"]);
 
       const rating =
         (product["rating"] && product["rating"]["rate"]) ||
