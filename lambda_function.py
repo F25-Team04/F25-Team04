@@ -1177,12 +1177,11 @@ def post_orders(body):
             # 6) Log point transaction, sponsor id is null for orders placed by user themselves
             cur.execute("""
                 INSERT INTO Point_Transactions (
-                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
+                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date, ptr_newbalance
                 ) VALUES (
-                    %s, %s, %s, %s, NOW()
+                    %s, %s, %s, %s, NOW(), %s
                 )
-            """, (user_id, org_id, -total_points, "Order placed"))
-
+            """, (user_id, org_id, -total_points, "Order placed", new_balance))
             # 7) Insert order
             cur.execute("""
                 INSERT INTO Orders (
@@ -1502,12 +1501,11 @@ def post_checkout(body):
             # 5) Log point transaction, sponsor id is null for orders placed by user themselves
             cur.execute("""
                 INSERT INTO Point_Transactions (
-                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date
+                    ptr_driverid, ptr_org, ptr_pointdelta, ptr_reason, ptr_date, ptr_newbalance
                 ) VALUES (
-                    %s, %s, %s, %s, NOW()
+                    %s, %s, %s, %s, NOW(), %s
                 )
-            """, (user_id, org_id, -total_points, "Order placed"))
-
+            """, (user_id, org_id, -total_points, "Order placed", new_balance))
             # 6) confirm order
             cur.execute("""
                 UPDATE Orders 
@@ -2124,19 +2122,31 @@ def post_change_conversion_rate(body):
 # ==== GET ==============================================================================
 def get_driver_transactions(queryParams):
     driverID = queryParams.get("id")
-    # internal use function
-    # returns active catalog rules for the specified organization
+    orgID = queryParams.get("org")
+    
+    if driverID is None:
+        return build_response(400, "Missing required query parameter: id")
+    
+    sql = """
+        SELECT 
+            ptr_pointdelta AS "Amount",
+            ptr_reason AS "Reason",
+            ptr_sponsorid AS "Giver",
+            ptr_date as "Date",
+            ptr_org AS "Organization",
+            ptr_newbalance AS "New Balance"
+        FROM Point_Transactions
+        WHERE ptr_driverid = %s
+        AND ptr_isdeleted = 0
+    """
+    params = (driverID,)
+    
+    if orgID is not None:
+        sql += " AND ptr_org = %s"
+        params = (driverID, orgID)
+
     with conn.cursor() as cur:
-        cur.execute("""
-            SELECT 
-                ptr_pointdelta AS "Amount",
-                ptr_reason AS "Reason",
-                ptr_sponsorid AS "Giver",
-                ptr_date as "Date"
-            FROM Point_Transactions
-            WHERE ptr_driverid = %s
-            AND ptr_isdeleted = 0
-        """, driverID)
+        cur.execute(sql, params)
         transactions = cur.fetchall()
         
     return build_response(200, transactions)
@@ -2151,7 +2161,9 @@ def get_driver_transactions_by_org(queryParams):
                 ptr_pointdelta AS "Amount",
                 ptr_reason AS "Reason",
                 ptr_sponsorid AS "Giver",
-                ptr_date as "Date"
+                ptr_date as "Date",
+                ptr_org AS "Organization",
+                ptr_newbalance AS "New Balance"
             FROM Point_Transactions
             WHERE ptr_org = %s
             AND ptr_isdeleted = 0
@@ -2459,25 +2471,6 @@ def get_application(queryParams):
         return build_response(200, applications)
     else:
         return build_response(404, "No applications match the given parameters.")
-
-def get_driver_transactions(queryParams):
-    driverID = queryParams.get("id")
-    # internal use function
-    # returns active catalog rules for the specified organization
-    with conn.cursor() as cur:
-        cur.execute("""
-            SELECT 
-                ptr_pointdelta AS "Amount",
-                ptr_reason AS "Reason",
-                ptr_sponsorid AS "Giver",
-                ptr_date as "Date"
-            FROM Point_Transactions
-            WHERE ptr_driverid = %s
-            AND ptr_isdeleted = 0
-        """, driverID)
-        transactions = cur.fetchall()
-        
-    return build_response(200, transactions)
 
 def get_security_questions(queryParams):
     queryParams = queryParams or {}

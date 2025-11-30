@@ -124,7 +124,9 @@ async function loadOrders({ sort = "date_desc" } = {}) {
   try {
     const resp = await fetch(
       "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" +
-        USER_ID,
+        USER_ID +
+        "&org=" +
+        ORG_ID,
       { method: "GET" }
     );
     if (!resp.ok) {
@@ -134,6 +136,10 @@ async function loadOrders({ sort = "date_desc" } = {}) {
     let orders = await resp.json();
 
     if (!Array.isArray(orders)) orders = [];
+
+    // Filter out cart orders
+    orders = orders.filter((o) => (o.ord_status ?? o.status) !== "cart");
+
     const num = (v) => Number(v ?? 0) || 0;
 
     // Precompute date + total points
@@ -276,14 +282,20 @@ function renderOrders(orders) {
   if (!orders.length) {
     const p = document.createElement("p");
     p.textContent = "You have not placed any orders yet.";
+    p.style.color = "#6b7280";
+    p.style.fontSize = "14px";
+    p.style.marginTop = "12px";
+    p.style.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
     container.appendChild(p);
     return;
   }
 
   orders.forEach((order, i) => {
-    // derive fields
     const ordId = order.ord_id ?? order.id ?? "";
     const status = String(order.ord_status ?? order.status ?? "unknown");
+    const isCancelled = status === "canceled";
+
     const d = orderDate(order);
     const dateStr = d
       ? d.toLocaleDateString("en-US", {
@@ -296,7 +308,6 @@ function renderOrders(orders) {
     const items = parseItems(order.items);
     const itemCount = items.length;
 
-    // allow multiple key shapes
     const num = (v) => Number(v ?? 0) || 0;
     let totalPts = 0;
     let totalUsd = 0;
@@ -308,7 +319,8 @@ function renderOrders(orders) {
     // row container
     const row = document.createElement("div");
     row.style.display = "flex";
-    row.style.alignItems = "center";
+    row.style.alignItems = "flex-start";   // allow multi-line layout
+    row.style.flexWrap = "wrap";          // row can wrap when narrow
     row.style.gap = "16px";
     row.style.padding = "16px";
     if (i < orders.length - 1) row.style.borderBottom = "1px solid #ddd";
@@ -329,43 +341,105 @@ function renderOrders(orders) {
     icon.style.fontSize = "28px";
     icon_div.appendChild(icon);
 
-    // middle: title + order summary
+    // middle: title + order summary + items section
     const middle = document.createElement("div");
     middle.style.display = "flex";
     middle.style.flexDirection = "column";
     middle.style.gap = "6px";
+    middle.style.flex = "1";
+    middle.style.minWidth = "0";           // critical so text can shrink
+
+    // top row: summary + tiny thumbnails in a 2-col grid
+    const summaryRow = document.createElement("div");
+    summaryRow.style.display = "grid";
+    summaryRow.style.gridTemplateColumns = "minmax(0,1fr) auto";
+    summaryRow.style.alignItems = "center";
+    summaryRow.style.columnGap = "12px";
+
     const content = document.createElement("div");
     content.className = "reason-date";
+    content.style.minWidth = "0";          // let text wrap
+    content.style.overflow = "hidden";
 
     const pTitle = document.createElement("p");
     pTitle.textContent = `Order #${ordId} • ${status}`;
     pTitle.style.fontWeight = "500";
     pTitle.style.color = "black";
+    pTitle.style.margin = "0 0 2px 0";
+    pTitle.style.wordBreak = "break-word";
     content.appendChild(pTitle);
 
     const pSub = document.createElement("p");
-    const parts = [];
-    if (dateStr) parts.push(dateStr);
-    if (itemCount) parts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
-    if (totalPts) parts.push(`${totalPts} pts`);
-    if (totalUsd) parts.push(`$${totalUsd.toFixed(2)}`);
-    pSub.textContent = parts.join(" • ");
+    const infoParts = [];
+    if (dateStr) infoParts.push(dateStr);
+    if (itemCount) infoParts.push(`${itemCount} item${itemCount > 1 ? "s" : ""}`);
+    if (totalPts) infoParts.push(`${totalPts} pts`);
+    if (totalUsd) infoParts.push(`$${totalUsd.toFixed(2)}`);
+    pSub.textContent = infoParts.join(" • ");
     pSub.style.color = "#6b7280";
+    pSub.style.margin = "0";
+    pSub.style.wordBreak = "break-word";
     content.appendChild(pSub);
 
-    middle.appendChild(content);
+    summaryRow.appendChild(content);
 
-    // items list
+    // tiny preview images for first up to 3 items, fixed-width cell
+    if (itemCount > 0) {
+      const thumbsCell = document.createElement("div");
+      thumbsCell.style.display = "flex";
+      thumbsCell.style.alignItems = "center";
+      thumbsCell.style.justifyContent = "flex-end";
+      thumbsCell.style.gap = "4px";
+      thumbsCell.style.minWidth = "120px";
+      thumbsCell.style.maxWidth = "120px";
+
+      const maxThumbs = 3;
+      const thumbItems = items.slice(0, maxThumbs);
+
+      thumbItems.forEach((it) => {
+        const url = it.itm_image ?? it.image ?? "";
+        if (!url) return;
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = String(it.itm_name ?? it.name ?? "Item");
+        img.style.width = "40px";
+        img.style.height = "40px";
+        img.style.borderRadius = "6px";
+        img.style.objectFit = "contain";
+        img.style.backgroundColor = "#f3f4f6";
+        img.style.padding = "3px";
+        img.referrerPolicy = "no-referrer";
+        thumbsCell.appendChild(img);
+      });
+
+      if (itemCount > maxThumbs) {
+        const extraCount = itemCount - maxThumbs;
+        const more = document.createElement("span");
+        more.textContent = `+${extraCount}`;
+        more.style.fontSize = "12px";
+        more.style.color = "#6b7280";
+        more.style.fontWeight = "500";
+        more.style.padding = "2px 6px";
+        more.style.borderRadius = "999px";
+        more.style.backgroundColor = "#f3f4f6";
+        thumbsCell.appendChild(more);
+      }
+
+      summaryRow.appendChild(thumbsCell);
+    }
+
+    middle.appendChild(summaryRow);
+
+    // items list (detailed) under the summary row
     if (itemCount) {
-      // wrap to add a label + divider without changing your UL
       const section = document.createElement("div");
       section.style.marginTop = "6px";
       section.style.paddingTop = "6px";
-      section.style.borderTop = "1px solid #ddd";
+      section.style.borderTop = "1px solid #d0d0d0";
       section.style.borderLeft = "3px solid rgba(59,130,246,0.25)";
       section.style.paddingLeft = "10px";
 
-      // label row
       const label = document.createElement("div");
       label.style.display = "flex";
       label.style.alignItems = "center";
@@ -406,21 +480,20 @@ function renderOrders(orders) {
         li.style.gap = "8px";
         li.style.alignItems = "baseline";
 
-        // left: item name
         const left = document.createElement("span");
         left.textContent = name || "Item";
+        left.style.flex = "1";                  // take available space
+        left.style.minWidth = "0";
         left.style.whiteSpace = "nowrap";
         left.style.overflow = "hidden";
         left.style.textOverflow = "ellipsis";
-        left.style.maxWidth = "420px";
         li.appendChild(left);
 
-        // right: item cost
         const right = document.createElement("span");
-        const parts = [];
-        if (pts) parts.push(`${pts} pts`);
-        if (usd) parts.push(`$${usd.toFixed(2)}`);
-        right.textContent = parts.join(" / ");
+        const costParts = [];
+        if (pts) costParts.push(`${pts} pts`);
+        if (usd) costParts.push(`$${usd.toFixed(2)}`);
+        right.textContent = costParts.join(" / ");
         li.appendChild(right);
 
         ul.appendChild(li);
@@ -429,37 +502,96 @@ function renderOrders(orders) {
       section.appendChild(ul);
       middle.appendChild(section);
     }
-    if (status == "confirmed") {
-      var cancel = document.createElement("button");
+
+    // Cancel button OR "Cancelled" badge
+    let cancel = null;
+    let cancelledBadge = null;
+
+    if (status === "confirmed") {
+      cancel = document.createElement("button");
       cancel.textContent = "Cancel Order";
       cancel.id = "cancel-button";
-      cancel.addEventListener("click", function () {
+
+      cancel.style.backgroundColor = "#EF4444";      // red
+      cancel.style.color = "white";                  // white text
+      cancel.style.border = "none";
+      cancel.style.padding = "6px 10px";
+      cancel.style.borderRadius = "999px";
+      cancel.style.fontSize = "12px";
+      cancel.style.fontWeight = "600";
+      cancel.style.cursor = "pointer";
+      cancel.style.transition = "background-color 0.2s ease, transform 0.15s ease";
+
+      cancel.addEventListener("mouseover", () => {
+        cancel.style.backgroundColor = "#DC2626";    // darker red on hover
+      });
+      cancel.addEventListener("mouseout", () => {
+        cancel.style.backgroundColor = "#EF4444";
+      });
+      cancel.addEventListener("mousedown", () => {
+        cancel.style.transform = "scale(0.96)";
+      });
+      cancel.addEventListener("mouseup", () => {
+        cancel.style.transform = "scale(1)";
+      });
+
+      cancel.addEventListener("click", () => {
         CancelOrder(order);
       });
-    }
-    // right: amount
+    } else if (isCancelled) {
+      cancelledBadge = document.createElement("button");
+      cancelledBadge.textContent = "Cancelled";
+      cancelledBadge.disabled = true;
+      cancelledBadge.style.backgroundColor = "#e5e7eb";
+      cancelledBadge.style.color = "#6b7280";
+      cancelledBadge.style.border = "none";
+      cancelledBadge.style.padding = "6px 10px";
+      cancelledBadge.style.borderRadius = "999px";
+      cancelledBadge.style.fontSize = "12px";
+      cancelledBadge.style.fontWeight = "600";
+      cancelledBadge.style.cursor = "default";
+}
+
+
+    // right: fixed-width column for amount + optional cancel/cancelled button
+    const rightBox = document.createElement("div");
+    rightBox.style.display = "flex";
+    rightBox.style.flexDirection = "column";
+    rightBox.style.alignItems = "flex-end";
+    rightBox.style.gap = "8px";
+    rightBox.style.minWidth = "150px";
+    rightBox.style.maxWidth = "150px";
+
     const pAmount = document.createElement("h3");
     pAmount.className = "points-value";
     if (totalPts) {
       pAmount.textContent = `-${totalPts}`;
     } else if (totalUsd) {
-      // fallback
       pAmount.textContent = `-$${totalUsd.toFixed(2)}`;
     } else {
       pAmount.textContent = "";
     }
-    pAmount.style.color = "#3B82F6";
-    pAmount.style.fontSize = "22px";
-
-    // assemble
-    row.appendChild(icon_div);
-
-    row.appendChild(middle);
-
-    row.appendChild(pAmount);
-    if (cancel) {
-      row.appendChild(cancel);
+    pAmount.style.color = isCancelled ? "#9CA3AF" : "#3B82F6";
+    if (isCancelled) {
+      pAmount.style.textDecoration = "line-through";
+      pAmount.style.textDecorationThickness = "3px";
+      pAmount.style.fontWeight = "600";
     }
+    pAmount.style.fontSize = "22px";
+    pAmount.style.margin = "0";
+
+    rightBox.appendChild(pAmount);
+    if (cancel) {
+      rightBox.appendChild(cancel);
+    } else if (cancelledBadge) {
+      rightBox.appendChild(cancelledBadge);
+    }
+
+    // assemble row
+    row.appendChild(icon_div);
+    row.appendChild(middle);
+    row.appendChild(rightBox);
+
     container.appendChild(row);
   });
 
@@ -469,7 +601,6 @@ function renderOrders(orders) {
       const data = {
         order_id: order.ord_id,
       };
-      // Send POST request
       const response = await fetch(
         "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/cancel_order",
         {
@@ -479,14 +610,14 @@ function renderOrders(orders) {
       );
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         location.reload();
       } else {
         const text = await response.text();
-        alert(text);
+        console.error(text);
       }
     } catch (error) {
-      alert("EROR " + error);
+      alert("ERROR " + error);
     }
   }
 }
