@@ -40,22 +40,6 @@ body {
   color: var(--muted-foreground);
 }
 
-#admin-dropdown {
-  width: 100%;
-  max-width: 420px;
-  height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 15px;
-  background: #fff;
-}
-#admin-dropdown:focus {
-  outline: none;
-  border-color: var(--revvy-green);
-}
-
-/* Card container */
 #admin-cards {
   width: 100%;
   max-width: 800px;
