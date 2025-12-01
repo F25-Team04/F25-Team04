@@ -135,6 +135,9 @@ window.onload = function () {
           if (response.success == false) {
             alert(result.message);
           } else if (response.status == 200) {
+            setTimeout(() => {
+              console.log("done waiting!");
+            }, 2000); // 2000 ms = 2 seconds
             window.location.reload();
           }
         }
@@ -191,7 +194,7 @@ window.onload = function () {
           alert(result.message);
         } else if (response.status == 200) {
           console.log(result);
-          GetCatalogRules(result);
+          window.location.reload();
         }
       }
     } catch (error) {
