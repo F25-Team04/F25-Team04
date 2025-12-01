@@ -14,6 +14,7 @@
       href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="AdminCreateSponsor.css"/>
     <script type="text/javascript" src="AdminCreateSponsor.js"></script>
   </head>
   <header>
@@ -34,7 +35,7 @@
     </nav>
   </header>
   <body>
-    <h1>Create Sponsor</h1>
+    <h1 class="title">Create Sponsor</h1>
     <form id="create">
       <label for="first_name">First Name: </label>
       <input name="first_name" type="text" placeholder="First Name" required />
@@ -43,7 +44,9 @@
       <input name="last_name" type="text" placeholder="Last Name" required />
       <br />
       <label for="email">Email: </label>
-      <input name="email" type="text" placeholder="Last Name" required />
+      <input name="email" type="text" placeholder="email@example.com" required />
+      <label for="phone_number">Phone Number: </label>
+      <input name="phone_number" type="text" placeholder="XXX-XXX-XXXX" required />
       <label for="security">Security Question: (Choose a question)</label>
       <input
         type="text"

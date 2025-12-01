@@ -55,12 +55,21 @@ window.onload = function () {
         container.textContent = "Loading...";
         try {
             const resp = await fetch(`${API_BASE}/sponsor?org=${encodeURIComponent(orgId)}`);
+            const txt = await resp.text().catch(() => "");
+            let payload;
+            try { payload = JSON.parse(txt); } catch { payload = null; }
+
             if (!resp.ok) {
-                container.textContent = await resp.text().catch(() => "Failed to load sponsors.");
+                const msg = payload?.message || txt || "Failed to load sponsors.";
+                container.innerHTML = `<p>${msg}</p>`;
                 return;
             }
-            let sponsors = await resp.json();
-            if (!Array.isArray(sponsors)) sponsors = [];
+
+            let sponsors = Array.isArray(payload) ? payload : [];
+            if (!sponsors.length) {
+                container.innerHTML = `<p>No sponsors found for organization ${orgId}.</p>`;
+                return;
+            }
             renderSponsorCards(sponsors, orgId);
         } catch (e) {
             console.error(e);

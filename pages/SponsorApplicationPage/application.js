@@ -40,6 +40,7 @@ const ORG_ID = params.get("org");
 
 window.onload = function () {
   // Nav
+  // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
@@ -60,6 +61,22 @@ window.onload = function () {
   li.appendChild(catalogView);
   list.appendChild(li);
 
+  const app = document.createElement("a");
+  app.href =
+    "../SponsorApplicationPage/sponsor-applications.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  app.textContent = "Applications";
+  li.appendChild(app);
+
+  const pointsManager = document.createElement("a");
+  pointsManager.href =
+    "../points-manager/points-manager.html?id=" + USER_ID + "&org=" + ORG_ID;
+  pointsManager.textContent = "Points Manager";
+  li.appendChild(pointsManager);
+  list.appendChild(li);
+
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
@@ -75,14 +92,15 @@ window.onload = function () {
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
 
-      const impersonator = document.createElement("a");
-    impersonator.href =
-      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
-      USER_ID +
-      "&org=" +
-      ORG_ID;
-    impersonator.textContent = "Impersonation";
-    li.appendChild(impersonator);
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  impersonator.textContent = "Impersonation";
+  li.appendChild(impersonator);
+  list.appendChild(li);
 
   // Pulls pending driver requests for the organization that the user belongs to
   async function GetPending() {

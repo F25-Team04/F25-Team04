@@ -1,14 +1,18 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
-const POINT_RULES_ENDPOINT = "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules";
-const DRIVER_ENDPOINT = "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/driver";
-const POINT_ADJUSTMENT_ENDPOINT = "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_adjustment";
+const POINT_RULES_ENDPOINT =
+  "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules";
+const DRIVER_ENDPOINT =
+  "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/driver";
+const POINT_ADJUSTMENT_ENDPOINT =
+  "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_adjustment";
 
 let SELECTED_DRIVER_ID = null;
 let SELECTED_DRIVER_POINTS = null;
 
 window.onload = function () {
+  // Nav
   // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
@@ -20,7 +24,7 @@ window.onload = function () {
   link.textContent = "Dashboard";
   li.appendChild(link);
 
-    const catalogView = document.createElement("a");
+  const catalogView = document.createElement("a");
   catalogView.href =
     "../SponsorCatalogView/SponsorCatalogView.html?id=" +
     USER_ID +
@@ -28,6 +32,22 @@ window.onload = function () {
     ORG_ID;
   catalogView.textContent = "Catalog View";
   li.appendChild(catalogView);
+  list.appendChild(li);
+
+  const app = document.createElement("a");
+  app.href =
+    "../SponsorApplicationPage/sponsor-applications.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  app.textContent = "Applications";
+  li.appendChild(app);
+
+  const pointsManager = document.createElement("a");
+  pointsManager.href =
+    "../points-manager/points-manager.html?id=" + USER_ID + "&org=" + ORG_ID;
+  pointsManager.textContent = "Points Manager";
+  li.appendChild(pointsManager);
   list.appendChild(li);
 
   const change = document.createElement("a");
@@ -45,14 +65,14 @@ window.onload = function () {
   bulk.textContent = "Bulk Loader";
   li.appendChild(bulk);
 
-      const impersonator = document.createElement("a");
-    impersonator.href =
-      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
-      USER_ID +
-      "&org=" +
-      ORG_ID;
-    impersonator.textContent = "Impersonation";
-    li.appendChild(impersonator);
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  impersonator.textContent = "Impersonation";
+  li.appendChild(impersonator);
 
   list.appendChild(li);
 
@@ -60,16 +80,15 @@ window.onload = function () {
   FetchDrivers();
   showEmptyPointsEditor();
   setupApplyPointsHandler();
-}
+};
 
 // Gets the rules for the organization that the user belongs to
 async function GetRules() {
   try {
     // Send POST request
-    const response = await fetch(
-      POINT_RULES_ENDPOINT + "?org=" + ORG_ID,
-      { method: "GET" }
-    );
+    const response = await fetch(POINT_RULES_ENDPOINT + "?org=" + ORG_ID, {
+      method: "GET",
+    });
     if (response.ok) {
       const result = await response.json();
       buildPointRulesDropdown(result);
@@ -81,10 +100,9 @@ async function GetRules() {
 
 async function FetchDrivers() {
   try {
-    const response = await fetch(
-      DRIVER_ENDPOINT + "?org=" + ORG_ID,
-      { method: "GET" }
-    );
+    const response = await fetch(DRIVER_ENDPOINT + "?org=" + ORG_ID, {
+      method: "GET",
+    });
 
     if (!response.ok) {
       console.error("Failed to fetch drivers, status:", response.status);
@@ -127,22 +145,22 @@ function buildPointRulesDropdown(rules) {
   select.appendChild(defaultOption);
 
   // Populate rule options
-  rules.forEach(r => {
-      const opt = document.createElement("option");
+  rules.forEach((r) => {
+    const opt = document.createElement("option");
 
-      const ruleId = r["Rule ID"];
-      const reason = r["Rule"];
-      const points = r["Points"];
+    const ruleId = r["Rule ID"];
+    const reason = r["Rule"];
+    const points = r["Points"];
 
-      const prefix = points > 0 ? "+" : "";
+    const prefix = points > 0 ? "+" : "";
 
-      opt.value = ruleId;
-      opt.textContent = `${reason} (${prefix}${points})`;
+    opt.value = ruleId;
+    opt.textContent = `${reason} (${prefix}${points})`;
 
-      // Store points for later usage
-      opt.dataset.points = points;
+    // Store points for later usage
+    opt.dataset.points = points;
 
-      select.appendChild(opt);
+    select.appendChild(opt);
   });
 
   // Custom option
@@ -242,7 +260,7 @@ function buildDriversList(drivers) {
     return;
   }
 
-  drivers.forEach(driver => {
+  drivers.forEach((driver) => {
     const userId = driver["User ID"];
     const firstName = driver["First Name"];
     const lastName = driver["Last Name"];
@@ -317,7 +335,7 @@ function buildDriversList(drivers) {
       SELECTED_DRIVER_POINTS = points;
 
       // Clear selection from all cards
-      document.querySelectorAll(".driver-card").forEach(c => {
+      document.querySelectorAll(".driver-card").forEach((c) => {
         c.classList.remove("selected");
       });
 
@@ -330,18 +348,18 @@ function buildDriversList(drivers) {
 }
 
 function showEmptyPointsEditor() {
-  const emptyBox  = document.getElementById("points-empty");
+  const emptyBox = document.getElementById("points-empty");
   const editorBox = document.getElementById("points-editor");
 
-  if (emptyBox) emptyBox.style.display  = "flex";
+  if (emptyBox) emptyBox.style.display = "flex";
   if (editorBox) editorBox.style.display = "none";
 }
 
 function showPointsEditor() {
-  const emptyBox  = document.getElementById("points-empty");
+  const emptyBox = document.getElementById("points-empty");
   const editorBox = document.getElementById("points-editor");
 
-  if (emptyBox) emptyBox.style.display  = "none";
+  if (emptyBox) emptyBox.style.display = "none";
   if (editorBox) editorBox.style.display = "flex";
 }
 
@@ -382,17 +400,19 @@ function setupApplyPointsHandler() {
     // Get reason
     let reason;
     if (ruleValue === "custom") {
-      reason = (customInput?.value.trim() || "Custom adjustment");
+      reason = customInput?.value.trim() || "Custom adjustment";
     } else {
       const selectedOption = ruleSelect.options[ruleSelect.selectedIndex];
-      reason = selectedOption ? selectedOption.textContent : "Rule-based adjustment";
+      reason = selectedOption
+        ? selectedOption.textContent
+        : "Rule-based adjustment";
     }
 
     const payload = {
       driver_id: SELECTED_DRIVER_ID,
       sponsor_id: USER_ID,
       delta: delta,
-      reason: reason
+      reason: reason,
     };
 
     // Prevent double click
@@ -402,13 +422,15 @@ function setupApplyPointsHandler() {
       const response = await fetch(POINT_ADJUSTMENT_ENDPOINT, {
         method: "POST",
         // headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        alert("Failed to adjust points: " + (result.message || response.status));
+        alert(
+          "Failed to adjust points: " + (result.message || response.status)
+        );
         return;
       }
 
@@ -424,7 +446,9 @@ function setupApplyPointsHandler() {
           `.driver-card[data-user-id="${SELECTED_DRIVER_ID}"]`
         );
         if (selectedCard) {
-          const cardPointsNum = selectedCard.querySelector(".driver-points h3, .driver-points span");
+          const cardPointsNum = selectedCard.querySelector(
+            ".driver-points h3, .driver-points span"
+          );
           if (cardPointsNum) cardPointsNum.textContent = newBalance;
           selectedCard.dataset.points = newBalance;
         }

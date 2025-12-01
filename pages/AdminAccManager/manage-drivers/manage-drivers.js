@@ -48,41 +48,42 @@ window.onload = function () {
     });
   }
 
-  async function fetchDrivers(orgId) {
-    const container = document.getElementById("driver-cards");
-    if (!container) return;
-    if (!orgId) {
-      container.innerHTML = "<p>Select an organization.</p>";
-      return;
-    }
-    container.textContent = "Loading...";
-    try {
-      const resp = await fetch(
-        `${API_BASE}/driver?org=${encodeURIComponent(orgId)}`
-      );
-      if (!resp.ok) {
-        container.textContent = await resp
-          .text()
-          .catch(() => "Failed to load drivers.");
-        return;
-      }
-      let drivers = await resp.json();
-      if (!Array.isArray(drivers)) drivers = [];
-      renderDriverCards(drivers, orgId);
-    } catch (e) {
-      console.error(e);
-      container.textContent = "Error loading drivers.";
-    }
-  }
+    async function fetchDrivers(orgId) {
+        const container = document.getElementById("driver-cards");
+        if (!container) return;
+        if (!orgId) {
+            container.innerHTML = "<p>Select an organization.</p>";
+            return;
+        }
+        container.textContent = "Loading...";
+        try {
+            const resp = await fetch(`${API_BASE}/driver?org=${encodeURIComponent(orgId)}`);
+            const txt = await resp.text().catch(() => "");
+            let payload;
+            try { payload = JSON.parse(txt); } catch { payload = null; }
 
-  function renderDriverCards(drivers, orgId) {
-    const container = document.getElementById("driver-cards");
-    if (!container) return;
-    container.innerHTML = "";
-    if (!drivers.length) {
-      container.innerHTML = `<p>No drivers found for organization ${orgId}.</p>`;
-      return;
+            if (!resp.ok) {
+                const msg = payload?.message || txt || "Failed to load drivers.";
+                container.innerHTML = `<p>${msg}</p>`;
+                return;
+            }
+
+            const drivers = Array.isArray(payload) ? payload : [];
+            if (!drivers.length) {
+                container.innerHTML = `<p>No drivers found for organization ${orgId}.</p>`;
+                return;
+            }
+            renderDriverCards(drivers);
+        } catch (e) {
+            console.error(e);
+            container.textContent = "Error loading drivers.";
+        }
     }
+
+    function renderDriverCards(drivers){
+        const container = document.getElementById("driver-cards");
+        if (!container) return;
+        container.innerHTML = "";
 
     drivers.forEach((s) => {
       const card = document.createElement("div");
