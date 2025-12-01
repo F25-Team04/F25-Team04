@@ -4,6 +4,8 @@ const USER_ID = params.get("id");
 window.onload = function () {
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
+  var about = this.document.getElementById("about-page");
+  about.href = "../about/about.html?id=" + USER_ID;
   const link = document.createElement("a");
   link.href = "../AdminHomepage/AdminHome.html?id=" + USER_ID;
   link.textContent = "Dashboard";
@@ -12,14 +14,29 @@ window.onload = function () {
   create.href = "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
   create.textContent = "Create Sponsor";
   const create_org = document.createElement("a");
-  create_org.href = "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
+  create_org.href =
+    "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
   create_org.textContent = "Create Organization";
+  const create_driver = document.createElement("a");
+  create_driver.href = "../AdminCreateDriver/AdminCreateDriver.html?id=" + USER_ID;
+  create_driver.textContent = "Create Driver";
   const create_admin = document.createElement("a");
   create_admin.href = "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
   create_admin.textContent = "Create Admin";
+  const bulk_load = document.createElement("a");
+  bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
+  bulk_load.textContent = "Bulk Loader";
+
+  const impersonator = document.createElement("a");
+  impersonator.href = "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
+  impersonator.textContent = "Impersonation";
+
   li.appendChild(create_admin);
+  li.appendChild(create_driver);
   li.appendChild(create);
   li.appendChild(create_org);
+  li.appendChild(bulk_load);
+  li.appendChild(impersonator);
   list.appendChild(li);
 
   document

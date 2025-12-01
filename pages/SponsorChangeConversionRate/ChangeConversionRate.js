@@ -1,8 +1,10 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
+let PointConversionRate = 0;
 
 window.onload = function () {
+  // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
@@ -10,37 +12,18 @@ window.onload = function () {
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
-  
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
-  list.appendChild(li);
 
-  const createSponsor = document.createElement("a");
-  createSponsor.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
-  li.appendChild(createSponsor);
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
-
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
 
   const change = document.createElement("a");
   change.href =
@@ -50,7 +33,27 @@ window.onload = function () {
     ORG_ID;
   change.textContent = "Change Point Conversion Rate";
   li.appendChild(change);
-  list.appendChild(li);
+
+  const bulk = document.createElement("a");
+  bulk.href =
+    "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
+  bulk.textContent = "Bulk Loader";
+  li.appendChild(bulk);
+
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  impersonator.textContent = "Impersonation";
+  li.appendChild(impersonator);
+
+  const report = document.createElement("a");
+  report.href =
+    "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+  report.textContent = "Build Report";
+  li.appendChild(report);
 
   document
     .getElementById("conversionForm")
@@ -86,4 +89,37 @@ window.onload = function () {
         console.error("Error:", error);
       }
     });
+  async function GetUser() {
+    try {
+      // Send POST request
+      const response = await fetch(
+        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?id=" +
+          USER_ID,
+        {
+          method: "GET",
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        if (response.success == false) {
+          alert(result.message);
+        } else if (response.status == 200) {
+          User = result[0];
+          console.log(User);
+          console.log(PointConversionRate);
+          for (var org of result[0]["Organizations"]) {
+            if (org["org_id"] == ORG_ID) {
+              PointConversionRate = org["org_conversion_rate"];
+              document.getElementById("conversion").innerText =
+                "Current Conversion Rate: " + PointConversionRate;
+              window.location.reload;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+  GetUser();
 };

@@ -1,0 +1,85 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--muted-background);
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#wrapper {
+  max-width: 800px;
+  margin: 32px auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+#wrapper h1 {
+  color: var(--revvy-black);
+}
+
+#wrapper p {
+  color: var(--muted-foreground);
+}
+
+#org-cards {
+  width: 100%;
+  max-width: 800px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.org-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.org-name {
+  font-weight: 600;
+  color: var(--revvy-black);
+}
+
+.org-id {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.org-delete {
+  align-self: flex-start;
+  margin-top: 6px;
+  background: #c53030;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+.org-delete:hover {
+  background: #a82020;
+}
+.org-delete:active {
+  transform: scale(0.98);
+}

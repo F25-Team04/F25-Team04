@@ -24,10 +24,57 @@
     </nav>
   </header>
   <body>
-      
-    <h1 id="welcome_message"></h1>
-    <div class="organization">
-      <h3 class="org-name" id="org-name">Organization Name</h3>
+    <div class="main">
+      <h1 id="welcome_message" class="welcome-message"></h1>
+      <h3 class="greeting-desc">Manage your organization, drivers, and sponsorship</h3>
+
+      <div class="sponsor-card">
+        <div class="profile-icon"><i class='bx  bx-user-circle' style='color:#1ED760'></i></div>
+          <div class="sponsor-info">
+            <h2 id="name"></h2>
+            <p id="usrID"></p>
+            <p id="email"></p>
+            <div class="org-role">
+              <p>Organization: <span id="org" class="org-name"></span></p>
+              <p>Role: <span id="role" class="role-name"></span></p>
+            </div>
+          </div>
+      </div>
+
+      <h2 class="subtitle">Management Modules</h2>
+      <div class="management-modules">
+        <div class="management-card">
+          <h3 class="action-title"><i class='bx  bx-truck'></i>Create Driver Account</h3>
+          <p class="action-desc">Add new drivers to your organization and set them up to start earning points.</p>
+          <button id="create-driver-btn" class="btn management-btn">Go</button>
+        </div>
+
+        <div class="management-card">
+          <h3 class="action-title"><i class='bx  bx-enterprise'></i>Create Sponsor Account</h3>
+          <p class="action-desc">Create sponsor accounts that can manage rewards, catalogs, and driver programs.</p>
+          <button id="create-sponsor-btn" class="btn management-btn">Go</button>
+        </div>
+
+        <div class="management-card">
+          <h3 class="action-title"><i class='bx  bx-form'></i>View Applications</h3>
+          <p class="action-desc">Review pending driver applications and approve or reject them in one place.</p>
+          <button id="view-applications-btn" class="btn management-btn">Go</button>
+        </div>
+
+        <div class="management-card">
+          <h3 class="action-title"><i class='bx  bx-trophy-star'></i>Points Manager</h3>
+          <p class="action-desc">Adjust driver point balances and manage rewards activity across your organization.</p>
+          <button id="points-manager-btn" class="btn management-btn">Go</button>
+        </div>
+      </div>
+
+      <div class="rules">
+        <h3 class="rules-title">Your Rules</h1>
+        <div id="rule-list" class="rule-list"></div>
+      </div>
+
+      <h2 class="subtitle">Add a New Rule</h2>
+      <div class="add-rule-card">
         <form id="ruleForm">
           <div class="input-box">
             <label for="rule-reason">Rule</label>
@@ -40,13 +87,9 @@
           </div>
           
           <button class="btn" type="submit">Add Rule</button>
-          <div id="rule-list"></div>
         </form>
-    </div>
-    
-    <div class="rules">
-      <h3 class="rules-title">Your Rules</h1>
-      <div id="rule-list"></div>
+      </div>
+
     </div>
   </body>
 </html>

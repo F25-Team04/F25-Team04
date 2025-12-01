@@ -9,6 +9,9 @@ window.onload = function () {
     link.href = "../../AdminHomepage/AdminHome.html?id=" + USER_ID;
     link.textContent = "Dashboard";
     li.appendChild(link);
+    const create_driver = document.createElement("a");
+    create_driver.href = "../../AdminCreateDriver/AdminCreateDriver.html?id=" + USER_ID;
+    create_driver.textContent = "Create Driver";
     const create = document.createElement("a");
     create.href = "../../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
     create.textContent = "Create Sponsor";
@@ -18,9 +21,18 @@ window.onload = function () {
     const create_admin = document.createElement("a");
     create_admin.href = "../../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
     create_admin.textContent = "Create Admin";
+    const bulk_load = document.createElement("a");
+    bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
+    bulk_load.textContent = "Bulk Loader";
+        const impersonator = document.createElement("a");
+  impersonator.href = "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
+  impersonator.textContent = "Impersonation";
     li.appendChild(create_admin);
+    li.appendChild(create_driver);
     li.appendChild(create);
     li.appendChild(create_org);
+    li.appendChild(bulk_load);
+    li.appendChild(impersonator);
     list.appendChild(li);
 
     // Populate dropdown with { org_id, org_name }
@@ -47,12 +59,21 @@ window.onload = function () {
         container.textContent = "Loading...";
         try {
             const resp = await fetch(`${API_BASE}/sponsor?org=${encodeURIComponent(orgId)}`);
+            const txt = await resp.text().catch(() => "");
+            let payload;
+            try { payload = JSON.parse(txt); } catch { payload = null; }
+
             if (!resp.ok) {
-                container.textContent = await resp.text().catch(() => "Failed to load sponsors.");
+                const msg = payload?.message || txt || "Failed to load sponsors.";
+                container.innerHTML = `<p>${msg}</p>`;
                 return;
             }
-            let sponsors = await resp.json();
-            if (!Array.isArray(sponsors)) sponsors = [];
+
+            let sponsors = Array.isArray(payload) ? payload : [];
+            if (!sponsors.length) {
+                container.innerHTML = `<p>No sponsors found for organization ${orgId}.</p>`;
+                return;
+            }
             renderSponsorCards(sponsors, orgId);
         } catch (e) {
             console.error(e);

@@ -15,6 +15,11 @@ window.onload = function () {
   link.href = "../driver/driver.html?id=" + USER_ID + "&org=" + ORG_ID;
   link.textContent = "Dashboard";
   li.appendChild(link);
+  const notifications = document.createElement("a");
+  notifications.href =
+    "../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
+  notifications.textContent = "Notifications";
+  li.appendChild(notifications);
   const store = document.createElement("a");
   store.href =
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -155,21 +160,21 @@ window.onload = function () {
       pointsText.textContent = " points";
       productCost.append(rewardsIcon, pointsValue, pointsText);
 
-      var orderButton = document.createElement("button");
-      orderButton.innerText = "Order Item";
-      orderButton.addEventListener("click", function () {
-        if (PricePoints > CurrDriverPoints) {
-          alert("Item is to expensive");
-        } else {
-          window.location =
-            "../OrderSummary/OrderSummary.html?id=" +
-            USER_ID +
-            "&org=" +
-            ORG_ID +
-            "&prod=" +
-            product["itm_productid"];
-        }
-      });
+      // var orderButton = document.createElement("button");
+      // orderButton.innerText = "Order Item";
+      // orderButton.addEventListener("click", function () {
+      //   if (PricePoints > CurrDriverPoints) {
+      //     alert("Item is to expensive");
+      //   } else {
+      //     window.location =
+      //       "../OrderSummary/OrderSummary.html?id=" +
+      //       USER_ID +
+      //       "&org=" +
+      //       ORG_ID +
+      //       "&prod=" +
+      //       product["itm_productid"];
+      //   }
+      // });
 
       var addCart = document.createElement("button");
       addCart.innerText = "Remove From Cart";
@@ -178,7 +183,7 @@ window.onload = function () {
       });
 
       metaRow.appendChild(productCost);
-      metaRow.appendChild(orderButton);
+      // metaRow.appendChild(orderButton);
       metaRow.appendChild(addCart);
 
       content.appendChild(productName);
@@ -244,6 +249,13 @@ window.onload = function () {
     CurrDriverPoints = parseInt(points);
   }
   async function ConfirmOrder() {
+    console.log(User["Address"]);
+    if (!User["Address"] || User["Address"] == "") {
+      alert(
+        "Please update your address in Update Account Info before Confirming Order."
+      );
+      return;
+    }
     const data = {
       user_id: USER_ID,
       org_id: ORG_ID,
@@ -267,7 +279,7 @@ window.onload = function () {
         if (response.status != 200) {
           alert(result.message);
         } else if (response.status == 200) {
-          GetShop();
+          window.location.reload();
         }
       }
     } catch (error) {

@@ -69,6 +69,12 @@ window.onload = function () {
   link.textContent = "Dashboard";
   li.appendChild(link);
 
+  const notifications = document.createElement("a");
+  notifications.href =
+    "../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
+  notifications.textContent = "Notifications";
+  li.appendChild(notifications);
+
   const store = document.createElement("a");
   store.href =
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -143,141 +149,226 @@ window.onload = function () {
   }
 
   async function GetRules() {
-    try {
-      // Send POST request
-      const response = await fetch(
-        "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules?org=" +
-          ORG_ID,
-        {
-          method: "GET",
-        }
-      );
-      if (response.ok) {
-        const result = await response.json();
-        if (response.success == false) {
-          alert(result.message);
-        } else if (response.status == 200) {
-          CreateRuleList(result);
-        }
+  const list = document.getElementById("list-rule");
+  if (!list) return;
+
+  // Clear anything currently there
+  list.innerHTML = "";
+
+  // Loading state
+  const loadingMsg = document.createElement("p");
+  loadingMsg.textContent = "Loading your organization’s point rules...";
+  loadingMsg.style.color = "#6b7280"; // soft gray
+  loadingMsg.style.fontSize = "14px";
+  loadingMsg.style.marginTop = "12px";
+  loadingMsg.style.fontFamily =
+    "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  list.appendChild(loadingMsg);
+
+  try {
+    const response = await fetch(
+      "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/point_rules?org=" +
+        ORG_ID,
+      {
+        method: "GET",
       }
-    } catch (error) {
-      console.error("Error:", error);
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      // Let the renderer decide what to show (handles empty array nicely)
+      CreateRuleList(result);
+    } else {
+      // Non-2xx status
+      const status = response.status;
+      list.innerHTML = "";
+
+      const msg = document.createElement("p");
+      if (status === 404) {
+        // Lambda uses 404 when there are no rules
+        msg.textContent = "This organization doesn’t have any point rules yet.";
+      } else {
+        msg.textContent =
+          "We couldn’t load your organization’s point rules right now. Please try again in a moment.";
+      }
+      msg.style.color = "#6b7280";
+      msg.style.fontSize = "14px";
+      msg.style.marginTop = "12px";
+      
+      msg.style.fontFamily =
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+      list.appendChild(msg);
     }
+  } catch (error) {
+    console.error("Error loading point rules:", error);
+    list.innerHTML = "";
+
+    const msg = document.createElement("p");
+    msg.textContent =
+      "We couldn't load your organization’s point rules right now. Please try again in a moment.";
+    msg.style.color = "#6b7280";
+    msg.style.fontSize = "14px";
+    msg.style.marginTop = "12px";
+    msg.style.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    list.appendChild(msg);
   }
+}
+
 
   function CreateRuleList(rules) {
-    const list = document.getElementById("list-rule");
-    list.innerHTML = "";
-    rules.forEach((rule) => {
-      let item = document.createElement("div");
-      let text = document.createElement("p");
-      let point = document.createElement("p");
-      item.id = "rule-row";
-      point.id = "pointnum";
-      text.id = "rule-descript";
-      text.textContent = rule["Rule"];
-      point.textContent = rule["Points"];
-      item.textContent = rule.text;
-      item.appendChild(text);
-      item.appendChild(point);
-      list.appendChild(item);
-    });
+  const list = document.getElementById("list-rule");
+  if (!list) return;
+
+  // Clear any existing content
+  list.innerHTML = "";
+
+  // Add a little space between the header and this list
+  list.style.marginTop = "8px";
+  list.style.paddingBottom = "16px"; 
+
+  // If there are no rules, show a gentle message
+  if (!Array.isArray(rules) || rules.length === 0) {
+    const msg = document.createElement("p");
+    msg.textContent =
+      "This organization doesn't have any point rules yet.";
+    msg.style.color = "#6b7280"; // gray
+    msg.style.fontSize = "14px";
+    msg.style.marginTop = "4px";
+    msg.style.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    list.appendChild(msg);
+    return;
   }
-  function fillTransactions(transactionInfo) {
-    const data = transactionInfo;
-    data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
-    const area = document.getElementById("recentTransactions");
+  // Otherwise render the rules
+  rules.forEach((rule) => {
+    const item = document.createElement("div");
+    const text = document.createElement("p");
+    const point = document.createElement("p");
 
-    const rows = data.slice(0, 3);
-    const numTrans = rows.length;
+    item.id = "rule-row";
+    point.id = "pointnum";
+    text.id = "rule-descript";
 
-    for (i = 0; i < numTrans; ++i) {
-      const t = rows[i];
-      const div = document.createElement("div");
-      const isLoss = Number(t.Amount) < 0;
-      const isOrder = t.Giver == null;
+    text.textContent = rule["Rule"];
+    point.textContent = rule["Points"];
 
-      // left: icon
-      const icon_div = document.createElement("span");
-      icon_div.style.display = "inline-flex";
-      icon_div.style.alignItems = "center";
-      icon_div.style.justifyContent = "center";
-      icon_div.style.width = "36px";
-      icon_div.style.height = "36px";
-      icon_div.style.borderRadius = "50%";
+    item.appendChild(text);
+    item.appendChild(point);
+    list.appendChild(item);
+  });
+}
 
-      let bg, iconClass, iconColor;
+function fillTransactions(transactionInfo) {
+  const area = document.getElementById("recentTransactions");
+  if (!area) return;
 
-      // If it's an order
-      if (isOrder) {
-        bg = "rgba(59, 130, 246, 0.10)";
-        iconClass = "bx bx-shopping-bag-alt";
-        iconColor = "#3B82F6";
-      }
-      // If it's a deduction
-      else if (isLoss) {
-        bg = "rgba(239, 68, 68, 0.10)";
-        iconClass = "bx bx-trending-down";
-        iconColor = "#EF4444";
-      }
-      // If it's an earning
-      else {
-        bg = "rgba(30, 215, 96, 0.10)";
-        iconClass = "bx bx-trending-up";
-        iconColor = "#1ED760";
-      }
+  // Clear anything that was there before
+  area.innerHTML = "";
 
-      icon_div.style.backgroundColor = bg;
+  // If nothing to show, display a small helper message
+  if (!Array.isArray(transactionInfo) || transactionInfo.length === 0) {
+    const p = document.createElement("p");
+    p.textContent =
+      "You don’t have any point activity yet in this organization.";
+    p.style.color = "#6b7280"; // gray-ish
+    p.style.fontSize = "14px";
+    p.style.marginTop = "12px";
+    p.style.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    area.appendChild(p);
+    return;
+  }
 
-      const icon = document.createElement("i");
-      icon.className = "bx " + iconClass;
-      icon.style.color = iconColor;
-      icon.style.fontSize = "28px";
-      icon_div.appendChild(icon);
+  const data = transactionInfo.slice(); // copy
+  data.sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
-      // middle: reason + date stacked
-      const content = document.createElement("div");
-      content.className = "reason-date";
+  const rows = data.slice(0, 3);
+  const numTrans = rows.length;
 
-      const pReason = document.createElement("p");
-      pReason.textContent = t.Reason ?? "";
-      pReason.style.color = "black";
-      pReason.style.fontWeight = "500";
-      content.appendChild(pReason);
+  for (let i = 0; i < numTrans; ++i) {
+    const t = rows[i];
+    const div = document.createElement("div");
+    const isLoss = Number(t.Amount) < 0;
+    const isOrder = t.Giver == null;
 
-      const pDate = document.createElement("p");
-      pDate.textContent = new Date(t.Date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-      pDate.style.color = "#6b7280";
-      content.appendChild(pDate);
+    // left: icon
+    const icon_div = document.createElement("span");
+    icon_div.style.display = "inline-flex";
+    icon_div.style.alignItems = "center";
+    icon_div.style.justifyContent = "center";
+    icon_div.style.width = "36px";
+    icon_div.style.height = "36px";
+    icon_div.style.borderRadius = "50%";
 
-      // right: amount
-      const pAmount = document.createElement("h3");
-      pAmount.className = "points-value";
-      pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
-      pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
-      pAmount.style.fontSize = "22px";
+    let bg, iconClass, iconColor;
 
-      // assemble
-      div.appendChild(icon_div);
-      div.appendChild(content);
-      div.appendChild(pAmount);
-
-      // row styling
-      div.className = isLoss ? "loss" : "gain";
-      div.style.display = "flex";
-      div.style.alignItems = "center";
-      div.style.gap = "16px";
-      div.style.padding = "16px";
-      if (i < numTrans - 1) div.style.borderBottom = "1px solid #ddd";
-
-      area.appendChild(div);
+    if (isOrder) {
+      bg = "rgba(59, 130, 246, 0.10)";
+      iconClass = "bx bx-shopping-bag-alt";
+      iconColor = "#3B82F6";
+    } else if (isLoss) {
+      bg = "rgba(239, 68, 68, 0.10)";
+      iconClass = "bx bx-trending-down";
+      iconColor = "#EF4444";
+    } else {
+      bg = "rgba(30, 215, 96, 0.10)";
+      iconClass = "bx bx-trending-up";
+      iconColor = "#1ED760";
     }
+
+    icon_div.style.backgroundColor = bg;
+
+    const icon = document.createElement("i");
+    icon.className = "bx " + iconClass;
+    icon.style.color = iconColor;
+    icon.style.fontSize = "28px";
+    icon_div.appendChild(icon);
+
+    // middle: reason + date
+    const content = document.createElement("div");
+    content.className = "reason-date";
+
+    const pReason = document.createElement("p");
+    pReason.textContent = t.Reason ?? "";
+    pReason.style.color = "black";
+    pReason.style.fontWeight = "500";
+    content.appendChild(pReason);
+
+    const pDate = document.createElement("p");
+    pDate.textContent = new Date(t.Date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    pDate.style.color = "#6b7280";
+    content.appendChild(pDate);
+
+    // right: amount
+    const pAmount = document.createElement("h3");
+    pAmount.className = "points-value";
+    pAmount.textContent = isLoss ? t.Amount : "+" + t.Amount;
+    pAmount.style.color = isLoss ? "#EF4444" : "#1ED760";
+    pAmount.style.fontSize = "22px";
+
+    // assemble
+    div.appendChild(icon_div);
+    div.appendChild(content);
+    div.appendChild(pAmount);
+
+    div.className = isLoss ? "loss" : "gain";
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.gap = "16px";
+    div.style.padding = "16px";
+    if (i < numTrans - 1) div.style.borderBottom = "1px solid #ddd";
+
+    area.appendChild(div);
   }
+}
+
+
 
   function getGreeting() {
     const hour = new Date().getHours();
@@ -310,12 +401,21 @@ window.onload = function () {
   async function loadRecentOrders() {
     const container = document.getElementById("recentOrders");
     if (!container) return;
-    container.innerHTML = "Loading...";
+    container.innerHTML = "";
+    const loadingMsg = document.createElement("p");
+    loadingMsg.textContent = "Loading your recent orders...";
+    loadingMsg.style.color = "#6b7280"; // soft gray
+    loadingMsg.style.fontSize = "14px";
+    loadingMsg.style.marginTop = "12px";
+    loadingMsg.style.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    container.appendChild(loadingMsg);
+
 
     try {
       const resp = await fetch(
         "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/orders?id=" +
-          USER_ID,
+          USER_ID + "&org=" + ORG_ID,
         { method: "GET" }
       );
       if (!resp.ok) {
@@ -325,6 +425,8 @@ window.onload = function () {
 
       let orders = await resp.json();
       if (!Array.isArray(orders)) orders = [];
+      orders = orders.filter(o => (o.ord_status ?? o.status) !== "cart");
+
 
       // Most recent first
       orders.sort((a, b) => {
@@ -337,14 +439,16 @@ window.onload = function () {
       });
 
       const top3 = orders.slice(0, 3);
-
       container.innerHTML = "";
       if (!top3.length) {
         const p = document.createElement("p");
-        p.textContent = "No recent orders.";
+        p.textContent = "You haven’t placed any orders yet. Visit the Store to redeem rewards.";
+        p.style.color = "#6b7280";   // gray
+        p.style.fontSize = "14px";
         container.appendChild(p);
         return;
       }
+
 
       top3.forEach((order, i) => {
         // compute date, totals, status
@@ -439,7 +543,17 @@ window.onload = function () {
       });
     } catch (e) {
       console.error("Recent orders error:", e);
-      container.textContent = "Failed to load recent orders.";
+      container.innerHTML = "";
+      const errorMsg = document.createElement("p");
+      errorMsg.textContent =
+        "You haven't made any orders yet in this organization.";
+      errorMsg.style.color = "#6b7280";
+      errorMsg.style.fontSize = "14px";
+      errorMsg.style.marginTop = "12px";
+      errorMsg.style.fontFamily =
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+      container.appendChild(errorMsg);
+
     }
   }
 
@@ -472,7 +586,7 @@ window.onload = function () {
     try {
       const response2 = await fetch(
         "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/driver_transactions?id=" +
-          USER_ID,
+          USER_ID + "&org=" + ORG_ID,
         {
           method: "GET",
         }

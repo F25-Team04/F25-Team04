@@ -1,73 +1,165 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-html, body {
-    background-color: var(--muted-background);
+html,
+body {
+  background-color: var(--muted-background);
 }
+
+/* ------------------------------
+   POINTS SUMMARY CARD
+------------------------------ */
 
 .points-card {
-    display: grid;
-    grid-template-columns: 40px 1fr;
-    align-items: center;
-    justify-self: center;
-    background-color: var(--revvy-green);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    margin: 24px;
-    padding: 16px;
-    border-bottom: 4px solid var(--revvy-black);
-    border-right: 4px solid var(--revvy-black);
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  justify-self: center;
+  background-color: var(--revvy-green);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  margin: 24px;
+  padding: 16px;
+  border-bottom: 4px solid var(--revvy-black);
+  border-right: 4px solid var(--revvy-black);
 }
 
 .points-card span {
-    font-weight: 500;
+  font-weight: 500;
 }
 
 .points-num {
-    font-size: 32px;
+  font-size: 32px;
 }
 
 .rewards-icon {
-    font-size: 32px;
+  font-size: 32px;
 }
 
 .points-section {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
+/* ------------------------------
+   MAIN CONTENT SHELL
+------------------------------ */
+
 .points-content {
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
-    border-radius: 10px;
-    padding: 10px 24px;
-    width: 720px;
-    justify-self: center;
-    background-color: white;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  padding: 10px 24px;
+  width: 720px;
+  justify-self: center;
+  background-color: white;
+  margin: 0 auto 32px;
 }
 
 .points-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 200px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 200px;
 }
 
 .title-div {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .title-icon {
-    font-size: 48px;
+  font-size: 48px;
 }
 
+.points-title {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* Right-aligned main amount (h3) */
 .points-value {
-    margin-left: auto;
+  margin-left: auto;
+}
+
+/* ------------------------------
+   TRANSACTION CONTROLS
+------------------------------ */
+
+.transaction-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+
+.transaction-controls select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  font-size: 14px;
+}
+
+/* ------------------------------
+   TRANSACTION ROWS
+------------------------------ */
+
+.transaction-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+/* Icon bubble on left */
+.transaction-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+/* Middle column text */
+.reason-date {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-reason {
+  font-weight: 500;
+  color: #111827;
+}
+
+.transaction-date {
+  color: #6b7280; /* gray-500 */
+  font-size: 13px;
+}
+
+/* Right side: main amount + gray new-balance hint */
+.transaction-amount-wrapper {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* This is the gray arrow + new balance value */
+.transaction-balance-hint {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #9ca3af; /* gray-400 */
+}
+
+/* Optional: subtle hover */
+.transaction-row:hover {
+  background-color: #f9fafb;
 }
