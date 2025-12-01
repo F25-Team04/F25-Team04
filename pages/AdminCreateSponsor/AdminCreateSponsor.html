@@ -64,8 +64,10 @@
         required
       />
       <br />
-      <label for="org">ORG ID:</label>
-      <input name="org" type="text" required />
+      <label for="org">Organization:</label>
+      <select name="org" id="org" required>
+        <option value="" disabled selected>Select an organization</option>
+      </select>
       <br />
       <button type="submit" class="btn">Create User</button>
       <br />

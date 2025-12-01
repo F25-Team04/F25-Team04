@@ -103,4 +103,26 @@ window.onload = function () {
     }
   }
   GetSecurityQuestion();
+
+  // Populate org dropdown
+  async function populateOrgs() {
+    const sel = document.getElementById("org");
+    if (!sel) return;
+    try {
+      const resp = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/organizations?include_ids=1");
+      const txt = await resp.text();
+      let data; try { data = JSON.parse(txt); } catch { data = []; }
+      if (!Array.isArray(data)) return;
+      data.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o.org_id;
+        opt.textContent = o.org_name;
+        sel.appendChild(opt);
+      });
+      if (sel.options.length === 2) sel.selectedIndex = 1;
+    } catch (e) {
+      console.error("Org load error:", e);
+    }
+  }
+  populateOrgs();
 };
