@@ -10,6 +10,7 @@ import secrets
 import unicodedata
 import requests
 import math
+from datetime import datetime
 
 
 import smtplib
@@ -1217,8 +1218,6 @@ def post_orders(body):
                 ))
 
             conn.commit()
-            notifMessage = "Order For " + i["title"] + " Placed Successfully"
-            post_notifications(user_id, "Order", notifMessage)
             return build_response(200, {"message": "Order placed successfully", "order_id": order_id})
 
         except Exception as e:
@@ -1518,6 +1517,8 @@ def post_checkout(body):
             """, (user_id, "confirmed", total_points, total_usd, order_id))
 
             conn.commit()
+            notifMessage = "Order Placed Successfully"
+            post_notifications(user_id, "Order", notifMessage)
             return build_response(200, {"message": "Cart checked out successfully", "order_id": order_id})
 
         except Exception as e:
@@ -1531,6 +1532,9 @@ def post_notifications(reciever, subject, message):
     # if driver_id is None or org_id is None:
     #     raise Exception("Missing required field(s): driver_id, org_id")
 
+    current_datetime = datetime.now()
+    formatted_string = current_datetime.strftime("%Y-%m-%d")
+
     with conn.cursor() as cur:
 
         
@@ -1543,7 +1547,7 @@ def post_notifications(reciever, subject, message):
                     not_subject,
                     not_isdeleted
                 ) VALUES (%s, %s, %s, %s, %s, %s)
-            """, (message, reciever, "TestDate", 0, subject,0))
+            """, (message, reciever, formatted_string, 0, subject,0))
         affected = cur.rowcount
         conn.commit()
 

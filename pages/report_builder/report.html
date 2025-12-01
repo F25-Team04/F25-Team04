@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<header><script src = "report.js"></script></header>
+<body>
+
+  <style>
+    h1{text-align: center;}
+    form{text-align: center;}
+    #sub{background-color: brown;}
+    span{visibility:hidden;}
+    #test{display:none;}
+    #usrID{background-color:white;}
+    #specify{display:none;}
+  </style>
+
+  <h1 style="background-color:rgba(0, 159, 50, 0.618) ;"><br>Build Report<br><br></h1>
+  <div>
+    <h2 id = "scopeLabel">How many Drivers</h2>
+    <select id="scope">
+      <option id = "allDrivers" value="all">All Drivers</option>
+      <option id = "org" value="myOrg">My Organization</option>
+      <option id = "solo" value="soloDriver">Specific Driver</option>
+      <br>
+    </select><br><br>
+    <form id = "specify" >
+      <label for="driverID">Enter Driver ID:<br></label>
+      <input type="text" id="driverID" name="driverID"><br><br>
+    </form>
+  </div>
+  
+  <form id = "makeForm">
+    <br>
+    <input type="submit" value= "confirm" id="sub">
+  </form>
+
+  <hr>
+
+  <div id="report"></div>
+
+
+</body>   
+</html>
