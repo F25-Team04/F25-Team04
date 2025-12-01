@@ -17,6 +17,11 @@ window.onload = function () {
   link.href = "../driver/driver.html?id=" + USER_ID + "&org=" + ORG_ID;
   link.textContent = "Dashboard";
   li.appendChild(link);
+  const notifications = document.createElement("a");
+  notifications.href =
+    "../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
+  notifications.textContent = "Notifications";
+  li.appendChild(notifications);
   const store = document.createElement("a");
   store.href =
     "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
@@ -136,21 +141,22 @@ window.onload = function () {
       pointsText.textContent = " points";
       productCost.append(rewardsIcon, pointsValue, pointsText);
 
-      var orderButton = document.createElement("button");
-      orderButton.innerText = "Order Item";
-      orderButton.addEventListener("click", function () {
-        if (PricePoints > CurrDriverPoints) {
-          alert("Item is to expensive");
-        } else {
-          window.location =
-            "../OrderSummary/OrderSummary.html?id=" +
-            USER_ID +
-            "&org=" +
-            ORG_ID +
-            "&prod=" +
-            product["id"];
-        }
-      });
+      // var orderButton = document.createElement("button");
+      // orderButton.innerText = "Order Item";
+      // orderButton.addEventListener("click", function () {
+      //   if (PricePoints > CurrDriverPoints) {
+      //     alert("Item is to expensive");
+      //   } else {
+      //     AddItemCart(product["id"]);
+      //     window.location =
+      //       "../OrderSummary/OrderSummary.html?id=" +
+      //       USER_ID +
+      //       "&org=" +
+      //       ORG_ID +
+      //       "&prod=" +
+      //       product["id"];
+      //   }
+      // });
 
       var addCart = document.createElement("button");
       addCart.innerText = "Add To Cart";
@@ -160,7 +166,7 @@ window.onload = function () {
 
       metaRow.appendChild(productRating);
       metaRow.appendChild(productCost);
-      metaRow.appendChild(orderButton);
+      // metaRow.appendChild(orderButton);
       metaRow.appendChild(addCart);
 
       content.appendChild(productName);
@@ -317,7 +323,9 @@ window.onload = function () {
       console.log(response);
       if (response.ok) {
         const result = await response.json();
-
+        if (response.status == 200) {
+          alert("Item added to cart successfully.");
+        }
         if (response.status != 200) {
           alert(result.message);
         }

@@ -39,7 +39,8 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
-  // Navigation bar links
+  // Nav
+  // Nav
   var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
@@ -47,37 +48,18 @@ window.onload = function () {
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
 
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
-
-  const createSponsor = document.createElement("a");
-  createSponsor.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
-  li.appendChild(createSponsor);
-  list.appendChild(li);
-
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
 
   const change = document.createElement("a");
   change.href =
@@ -87,6 +69,26 @@ window.onload = function () {
     ORG_ID;
   change.textContent = "Change Point Conversion Rate";
   li.appendChild(change);
+
+  const bulk = document.createElement("a");
+  bulk.href =
+    "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
+  bulk.textContent = "Bulk Loader";
+  li.appendChild(bulk);
+
+  const impersonator = document.createElement("a");
+  impersonator.href =
+    "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+    USER_ID +
+    "&org=" +
+    ORG_ID;
+  impersonator.textContent = "Impersonation";
+  li.appendChild(impersonator);
+  const report = document.createElement("a");
+  report.href =
+    "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+  report.textContent = "Build Report";
+  li.appendChild(report);
   list.appendChild(li);
 
   // Pulls pending driver requests for the organization that the user belongs to
@@ -107,7 +109,7 @@ window.onload = function () {
         } else if (response.status == 200) {
           const list = document.getElementById("application-list");
           list.innerHTML = "";
-          
+
           result.forEach((driver) => {
             // Row wrapper
             const item = document.createElement("div");
@@ -140,6 +142,11 @@ window.onload = function () {
 
             // Event listener for approve button
             approve.addEventListener("click", async () => {
+              const confirmed = confirm(
+                "Are you sure you want to APPROVE this application?"
+              );
+              if (!confirmed) return;
+
               try {
                 await ApplicationDecision(
                   driver["Application ID"],
@@ -154,24 +161,34 @@ window.onload = function () {
 
             // Event listener for reject button
             reject.addEventListener("click", async () => {
+              const confirmed = confirm(
+                "Are you sure you want to REJECT this application?"
+              );
+              if (!confirmed) return;
+
               try {
                 const note = prompt(
                   "Enter a rejection note to send to the driver (required):",
                   ""
                 );
-                if (note === null) {
+
+                // If user cancels the prompt, don't do anything
+                if (note === null || note.trim() === "") {
+                  alert("Rejection note is required.");
                   return;
                 }
-                ApplicationDecision(
+
+                await ApplicationDecision(
                   driver["Application ID"],
                   USER_ID,
                   false,
                   note
                 );
+
+                list.removeChild(item);
               } catch (error) {
                 console.error("Error:", error);
               }
-              list.removeChild(item);
             });
           });
         }

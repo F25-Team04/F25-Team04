@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Bulk Loader</title>
+
+    <link rel="stylesheet" href="../../css/global.css" />
+    <link rel="stylesheet" href="AdminBulkLoad.css" />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <script defer src="AdminBulkLoad.js"></script>
+  </head>
+
+  <body>
+    <!-- NAVBAR (copied from AdminCreateAdmin) -->
+    <header>
+      <nav class="navbar">
+        <div class="nav-container">
+          <div class="nav-brand">
+            <a href="../../index.html"
+              ><img class="brand-logo" src="../../assets/car-logo-flipped.png"
+            /></a>
+            <a href="../../index.html"
+              ><img class="brand-name" src="../../assets/revvy.png"
+            /></a>
+          </div>
+          <ul id="links">
+            <li><a href="../about/about.html" id="about-page">About</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <div class="main">
+      <div class="app-header">
+        <h1>Admin Bulk User & Organization Loader</h1>
+      </div>
+
+      <div id="bulk-container">
+        <!-- LEFT: Upload Panel -->
+        <section class="pane upload-pane">
+          <h2>Upload Bulk File</h2>
+
+          <input type="file" id="commandFile" accept=".txt" />
+
+          <button id="submitFile" class="btn approve-btn">
+            Submit Bulk File
+          </button>
+
+          <!-- Collapsible Format Guide -->
+          <div id="formatGuide" class="collapsible format-guides">
+            <button type="button" class="btn outline-btn" id="toggleGuideBtn">
+              Text Document Format Guide ▼
+            </button>
+
+            <div class="collapsible-content" id="guideContent">
+              <pre class="guide">
+• Upload a .txt file containing ONE command per line.
+• Fields in each command are separated by "|".
+• Commands are processed in order, top to bottom.
+• Results appear live in the Successes and Errors panels.
+
+COMMAND TYPES
+────────────────────────────────
+O|OrgName
+    → Creates a new organization.
+    → Errors if the organization already exists.
+
+D|OrgName|First|Last|Email
+    → Adds a Driver to the specified organization.
+    → Creates the user if they do not exist.
+    → If user exists, attaches them to the org.
+    → If already attached, marked as success.
+
+S|OrgName|First|Last|Email
+    → Same as D, but adds a Sponsor instead.
+
+PROCESSING RULES
+────────────────────────────────
+• Organization names must match exactly.
+• Email addresses uniquely identify users.
+• Driver/Sponsor lines require existing or previously-created organizations.
+• Blank lines are ignored.
+• Invalid lines appear in Errors but do NOT stop processing.
+• Large files are automatically broken into batches.
+
+EXAMPLE
+────────────────────────────────
+O|BulkOrg
+D|BulkOrg|Sarah|Connor|sconnor@mail.com
+S|BulkOrg|Kyle|Reese|kreese@mail.com
+O|OtherOrg
+D|OtherOrg|Ellen|Ripley|eripley@mail.com
+
+SUMMARY OF EXAMPLE
+────────────────────────────────
+1. Create BulkOrg.
+2. Add Sarah Connor as a Driver.
+3. Add Kyle Reese as a Sponsor.
+4. Create OtherOrg.
+5. Add Ellen Ripley as a Driver in OtherOrg.
+                            </pre
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- CENTER: Errors -->
+        <section class="pane error-pane">
+          <h2>Errors</h2>
+          <div id="errorsList" class="scroll-panel"></div>
+        </section>
+
+        <!-- RIGHT: Success -->
+        <section class="pane success-pane">
+          <h2>Successes</h2>
+          <div id="successList" class="scroll-panel"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="spinner"></div>
+      <p id="loadingMessage">Processing...</p>
+      <p id="loadingProgress" class="loading-progress"></p>
+    </div>
+  </body>
+</html>

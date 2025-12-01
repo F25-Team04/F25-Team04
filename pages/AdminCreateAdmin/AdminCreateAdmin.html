@@ -1,88 +1,88 @@
 <!DOCTYPE html>
 <html>
- <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup</title>
-    <link rel="stylesheet" href="../../css/global.css">
-    <link rel="stylesheet" href="AdminCreateAdmin.css">
-    <link href='https://cdn.boxicons.com/fonts/basic/boxicons.min.css' rel='stylesheet'>
-    <script type="text/javascript" src="AdminCreateAdmin.js"></script>
-    
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Admin</title>
+    <link rel="stylesheet" href="../../css/global.css" />
+    <link rel="stylesheet" href="AdminCreateAdmin.css" />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <script type="text/javascript" src="AdminCreateAdmin.js" defer></script>
   </head>
-
   <body>
     <header>
       <nav class="navbar">
         <div class="nav-container">
           <div class="nav-brand">
-            <a href="../../index.html"><img class="brand-logo" src="../../assets/car-logo-flipped.png"></a>
-            <a href="../../index.html"><img class="brand-name" src="../../assets/revvy.png"></a>
+            <a href="../../index.html"><img class="brand-logo" src="../../assets/car-logo-flipped.png" /></a>
+            <a href="../../index.html"><img class="brand-name" src="../../assets/revvy.png" /></a>
           </div>
           <ul id="links">
-            <li><a href="../about/about.html">About</a></li>
+            <li><a href="../about/about.html" id="about-page">About</a></li>
           </ul>
         </div>
       </nav>
     </header>
 
-    <div class="app-header">
-      <h1>Admin Creation</h1>
-    </div>
-    <div class="wrapper">
-        <form action="" id="signupForm">
-            <div class="accInfo">
-                <h3>Account Information</h3>
-                <p>Email Address</p>
-                <input name="email" type="email" placeholder="someone@email.com" required>
-                <p>Password</p>
+    <h1 class="title">Create Admin</h1>
+    <form id="signupForm" class="card-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input name="email" id="email" type="email" placeholder="someone@email.com" required />
+      </div>
 
-                <input name="password" type="password" placeholder="Enter password" required>
-                <input name="confPassword" type="password" placeholder="Confirm password" required>
-                <details class="pw-reqs">
-                  <summary>Password requirements</summary>
-                  <ul>
-                    <li>At least 8 characters</li>
-                    <li>At least one uppercase letter</li>
-                    <li>At least one lowercase letter</li>
-                    <li>At least one number (0-9)</li>
-                    <li>At least one symbol (!@#$...)</li>
-                  </ul>
-                </details>               
-                <div class="acc-info-footer">
-                    <div class="toggle-pw">
-                        <label><input type="checkbox"> Show password</label>
-                    </div>
-                    <div class="caps-lock">
-                        <span class="caps-indicator"></span>
-                        <p>Caps Lock</p>
-                    </div>
-                </div>
-            </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input name="password" id="password" type="password" placeholder="Enter password" required />
+      </div>
 
-            <div class="adminInfo">
-                <h3>Admin Information</h3>
-                <p>Phone Number</p>
-                <input name="phone" type="tel" placeholder="(XXX) XXX-XXXX" required>
-                <p>First Name</p>
-                <input name="fname" type="text" placeholder="First name" required>
-                <p>Last Name</p>
-                <input name="lname" type="text" placeholder="Last name" required>
-                <label for="security">Security Question: (Choose a question)</label>
-                <input list="questions" id="security" name="security" placeholder="Question" />
-                <datalist id="questions"></datalist>
-                <label for="answer">Answer</label>
-                <input name="answer" placeholder="Enter your answer" type="text" required>
-            </div>
-            <button type="submit" class="btn">Create Admin</button>
+      <div class="form-group">
+        <label for="confPassword">Confirm Password</label>
+        <input name="confPassword" id="confPassword" type="password" placeholder="Confirm password" required />
+      </div>
 
-        </form>
-    </div>
+      <details class="pw-reqs">
+        <summary>Password requirements</summary>
+        <ul>
+          <li>At least 8 characters</li>
+          <li>At least one uppercase letter</li>
+          <li>At least one lowercase letter</li>
+          <li>At least one number (0-9)</li>
+          <li>At least one symbol (!@#$...)</li>
+        </ul>
+      </details>
 
-  <footer class="copyright">
-    <p class="copyright">© 2025 Revvy | Team 04</p>
-  </footer>
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input name="phone" id="phone" type="tel" placeholder="(XXX) XXX-XXXX" required />
+      </div>
 
+      <div class="form-group">
+        <label for="fname">First Name</label>
+        <input name="fname" id="fname" type="text" placeholder="First name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="lname">Last Name</label>
+        <input name="lname" id="lname" type="text" placeholder="Last name" required />
+      </div>
+
+      <div class="form-group">
+        <label for="security">Security Question</label>
+        <input list="questions" id="security" name="security" placeholder="Question" />
+        <datalist id="questions"></datalist>
+      </div>
+
+      <div class="form-group">
+        <label for="answer">Answer</label>
+        <input name="answer" id="answer" type="text" placeholder="Enter your answer" required />
+      </div>
+
+      <button type="submit" class="btn approve-btn">Create Admin</button>
+    </form>
   </body>
 </html>

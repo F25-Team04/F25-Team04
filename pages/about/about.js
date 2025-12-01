@@ -16,32 +16,62 @@ function LoadNav() {
     return;
   }
   if (User["Role"] == "sponsor") {
-    console.log("Hey");
+    // Nav
+    var list = this.document.getElementById("links");
     const li = document.createElement("li");
-
+    var about = this.document.getElementById("about-page");
+    about.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
     const link = document.createElement("a");
     link.href =
       "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
     link.textContent = "Dashboard";
     li.appendChild(link);
-    const create = document.createElement("a");
-    create.href =
-      "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
+
+    const catalogView = document.createElement("a");
+    catalogView.href =
+      "../SponsorCatalogView/SponsorCatalogView.html?id=" +
       USER_ID +
       "&org=" +
       ORG_ID;
-    create.textContent = "Create Sponsor";
-    li.appendChild(create);
-    const app = document.createElement("a");
-    app.href =
-      "../SponsorApplicationPage/sponsor-applications.html?id=" +
-      USER_ID +
-      "&org=" +
-      ORG_ID;
-    app.textContent = "Applications";
-    li.appendChild(app);
+    catalogView.textContent = "Catalog View";
+    li.appendChild(catalogView);
     list.appendChild(li);
-  } else {
+
+    const change = document.createElement("a");
+    change.href =
+      "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    change.textContent = "Change Point Conversion Rate";
+    li.appendChild(change);
+
+    const bulk = document.createElement("a");
+    bulk.href =
+      "../SponsorBulkLoad/SponsorBulkLoad.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    bulk.textContent = "Bulk Loader";
+    li.appendChild(bulk);
+
+    const impersonator = document.createElement("a");
+    impersonator.href =
+      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    impersonator.textContent = "Impersonation";
+    li.appendChild(impersonator);
+    const report = document.createElement("a");
+    report.href =
+      "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+    report.textContent = "Build Report";
+    li.appendChild(report);
+
+    list.appendChild(li);
+  } else if (User["Role"] == "driver") {
+    console.log("Hey");
     if (USER_ID != null && ORG_ID == null) {
       const li = document.createElement("li");
       const switchOrg = document.createElement("a");
@@ -58,23 +88,47 @@ function LoadNav() {
     var list = this.document.getElementById("links");
     const li = document.createElement("li");
 
+    var aboutPage = this.document.getElementById("about-page");
+    aboutPage.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
+
     const link = document.createElement("a");
     link.href = "../driver/driver.html?id=" + USER_ID + "&org=" + ORG_ID;
     link.textContent = "Dashboard";
     li.appendChild(link);
+
+    const notifications = document.createElement("a");
+    notifications.href =
+      "../notificationsPage/notifs.html?id=" + USER_ID + "&org=" + ORG_ID;
+    notifications.textContent = "Notifications";
+    li.appendChild(notifications);
 
     const store = document.createElement("a");
     store.href =
       "../DriverStorePage/DriverStore.html?id=" + USER_ID + "&org=" + ORG_ID;
     store.textContent = "Store";
     li.appendChild(store);
-    list.appendChild(li);
 
     const cart = document.createElement("a");
     cart.href =
       "../DriverCart/DriverCart.html?id=" + USER_ID + "&org=" + ORG_ID;
     cart.textContent = "Cart";
     li.appendChild(cart);
+
+    list.appendChild(li);
+
+    const orders = document.createElement("a");
+    orders.href =
+      "../driver/driver-orders/driver-orders.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    orders.textContent = "Orders";
+    li.appendChild(orders);
+
+    const apply = document.createElement("a");
+    apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
+    apply.textContent = "Apply";
+    li.appendChild(apply);
 
     const account = document.createElement("a");
     account.href =
@@ -86,11 +140,41 @@ function LoadNav() {
     switchOrg.href = "../DriverSelectOrg/DriverSelectOrg.html?id=" + USER_ID;
     switchOrg.textContent = "Switch Organization";
     li.appendChild(switchOrg);
+    list.appendChild(li);
+  } else if (User["Role"] == "admin") {
+    console.log("Hey");
+    var list = this.document.getElementById("links");
+    const li = document.createElement("li");
+    var about = this.document.getElementById("about-page");
+    about.href = "../about/about.html?id=" + USER_ID;
+    const link = document.createElement("a");
+    link.href = "../AdminHomepage/AdminHome.html?id=" + USER_ID;
+    link.textContent = "Dashboard";
+    li.appendChild(link);
+    const create = document.createElement("a");
+    create.href = "../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
+    create.textContent = "Create Sponsor";
+    const create_org = document.createElement("a");
+    create_org.href =
+      "../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
+    create_org.textContent = "Create Organization";
+    const create_admin = document.createElement("a");
+    create_admin.href =
+      "../AdminCreateAdmin/AdminCreateAdmin.html?id=" + USER_ID;
+    create_admin.textContent = "Create Admin";
+    const bulk_load = document.createElement("a");
+    bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
+    bulk_load.textContent = "Bulk Loader";
+    const impersonator = document.createElement("a");
+    impersonator.href =
+      "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
+    impersonator.textContent = "Impersonation";
 
-    const apply = document.createElement("a");
-    apply.href = "../DriverApp/apply.html?id=" + USER_ID + "&org=" + ORG_ID;
-    apply.textContent = "Apply";
-    li.appendChild(apply);
+    li.appendChild(create_admin);
+    li.appendChild(create);
+    li.appendChild(create_org);
+    li.appendChild(bulk_load);
+    li.appendChild(impersonator);
     list.appendChild(li);
   }
 }

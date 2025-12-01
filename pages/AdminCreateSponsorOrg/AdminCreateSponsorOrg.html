@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Create Sponsor</title>
+    <title>Create Organization</title>
     <link
       rel="stylesheet"
       href="../SponsorCreateSponsor/SponsorCreateSponsor.css"
@@ -14,6 +14,7 @@
       href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="AdminCreateSponsorOrg.css" />
     <script type="text/javascript" src="AdminCreateSponsorOrg.js"></script>
   </head>
   <header>
@@ -28,19 +29,24 @@
           /></a>
         </div>
         <ul id="links">
-          <li><a href="../about/about.html">About</a></li>
+          <li><a href="../about/about.html" id="about-page">About</a></li>
         </ul>
       </div>
     </nav>
   </header>
   <body>
-    <h1>Create Sponsor Organization</h1>
+    <h1 class="title">Create Sponsor Organization</h1>
     <form id="create">
       <label for="org_name">Organization Name: </label>
       <input name="org_name" type="text" placeholder="Name" required />
       <br />
       <label for="org_conversion_rate">Point Conversion Rate: </label>
-      <input name="org_conversion_rate" type="text" placeholder="1 point = $X.XX" required />
+      <input
+        name="org_conversion_rate"
+        type="text"
+        placeholder="1 point = $X.XX"
+        required
+      />
       <br />
       <button type="submit" class="btn">Create Organization</button>
       <br />

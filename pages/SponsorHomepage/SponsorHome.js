@@ -3,45 +3,26 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 window.onload = function () {
-  // Navigation bar links
+  // Nav
   var list = this.document.getElementById("links");
+  const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
   about.href = "../about/about.html?id=" + USER_ID + "&org=" + ORG_ID;
-  const li = document.createElement("li");
   const link = document.createElement("a");
   link.href =
     "../SponsorHomepage/SponsorHome.html?id=" + USER_ID + "&org=" + ORG_ID;
-  link.textContent = "Home";
+  link.textContent = "Dashboard";
   li.appendChild(link);
 
-  const createDriver = document.createElement("a");
-  createDriver.href =
-    "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+  const catalogView = document.createElement("a");
+  catalogView.href =
+    "../SponsorCatalogView/SponsorCatalogView.html?id=" +
     USER_ID +
     "&org=" +
     ORG_ID;
-  createDriver.textContent = "Create Driver";
-  li.appendChild(createDriver);
+  catalogView.textContent = "Catalog View";
+  li.appendChild(catalogView);
   list.appendChild(li);
-
-  const createSponsor = document.createElement("a");
-  createSponsor.href =
-    "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  createSponsor.textContent = "Create Sponsor";
-  li.appendChild(createSponsor);
-  list.appendChild(li);
-
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
 
   const change = document.createElement("a");
   change.href =
@@ -51,6 +32,28 @@ window.onload = function () {
     ORG_ID;
   change.textContent = "Change Point Conversion Rate";
   li.appendChild(change);
+
+  const bulk = document.createElement("a");
+  bulk.href =
+    "../SponsorBulkLoad/SponsorBulkLoad.html?id=" + USER_ID + "&org=" + ORG_ID;
+  bulk.textContent = "Bulk Loader";
+  li.appendChild(bulk);
+
+      const impersonator = document.createElement("a");
+    impersonator.href =
+      "../SponsorImpersonator/SponsorImpersonator.html?id=" +
+      USER_ID +
+      "&org=" +
+      ORG_ID;
+    impersonator.textContent = "Impersonation";
+    li.appendChild(impersonator);
+
+  const report = document.createElement("a");
+  report.href =
+    "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+  report.textContent = "Build Report";
+  li.appendChild(report);
+    
   list.appendChild(li);
 
   function MakeRulesList(rules) {
@@ -106,15 +109,13 @@ window.onload = function () {
       if (response.ok) {
         var result = await response.json();
         result = result[0];
-        if (response.success == false) {
-          alert(result.message);
-        } else if (response.status == 200) {
-          console.log(result["Organizations"][0]["org_name"]);
-          message = document.getElementById("welcome_message");
-          message.textContent = "Welcome " + result["First Name"] + "!";
-          document.getElementById("org-name").innerText =
-            result["Organizations"][0]["org_name"];
-        }
+
+        const message = document.getElementById("welcome_message");
+        message.textContent = "Welcome back, " + result["First Name"] + "!";
+
+        document.getElementById("org").innerText = result["Organizations"][0]["org_name"];
+
+        fillDashboard(result);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -206,4 +207,60 @@ window.onload = function () {
         console.error("Error:", error);
       }
     });
+
+  const createDriverBtn = document.getElementById("create-driver-btn");
+  const createSponsorBtn = document.getElementById("create-sponsor-btn");
+  const viewApplicationsBtn = document.getElementById("view-applications-btn");
+  const pointsManagerBtn = document.getElementById("points-manager-btn");
+
+  if (createDriverBtn) {
+    createDriverBtn.addEventListener("click", function () {
+      window.location.href =
+        "../SponsorCreateDriver/SponsorCreateDriver.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
+
+  if (createSponsorBtn) {
+    createSponsorBtn.addEventListener("click", function () {
+      window.location.href =
+        "../SponsorCreateSponsor/SponsorCreateSponsor.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
+
+  if (viewApplicationsBtn) {
+    viewApplicationsBtn.addEventListener("click", function () {
+      window.location.href =
+        "../SponsorApplicationPage/sponsor-applications.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
+
+  if (pointsManagerBtn) {
+    pointsManagerBtn.addEventListener("click", function () {
+      window.location.href =
+        "../points-manager/points-manager.html?id=" +
+        USER_ID +
+        "&org=" +
+        ORG_ID;
+    });
+  }
 };
+
+function fillDashboard(sponsorInfo) {
+  place = document.getElementById("name");
+  place.innerHTML = sponsorInfo["First Name"] + " " + sponsorInfo["Last Name"];
+  place = document.getElementById("usrID");
+  place.innerHTML = "ID: " + sponsorInfo["User ID"];
+  place = document.getElementById("email");
+  place.innerHTML = sponsorInfo["Email"];
+  place = document.getElementById("role");
+  place.innerHTML = sponsorInfo["Role"];
+}

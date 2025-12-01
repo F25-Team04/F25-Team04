@@ -107,3 +107,45 @@ footer p {
     font-size: 14px;
     color: var(--muted-foreground);
 }
+
+/* Full-screen overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    transition: opacity 0.2s ease;
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+/* Spinner animation */
+.spinner {
+    width: 64px;
+    height: 64px;
+    border: 6px solid #ddd;
+    border-top-color: var(--revvy-green);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin-bottom: 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-overlay p {
+    font-size: 18px;
+    color: white;
+    font-weight: 600;
+}

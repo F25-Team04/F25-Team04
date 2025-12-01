@@ -72,6 +72,7 @@ window.onload = function () {
       );
       result = await response.json();
       result = result[0];
+      hideLoader();
       if ((result.statusCode = 200)) {
         if (response.success == false) {
           alert(result.message);
@@ -94,7 +95,7 @@ window.onload = function () {
               "&org=" +
               result["Organizations"][0]["org_id"];
           } else if (result["Role"] == "admin") {
-            window.location = "../AdminHomepage/AdminHome.html";
+            window.location = "../AdminHomepage/AdminHome.html" + "?id=" + UserID;
           }
         }
       }
@@ -114,6 +115,7 @@ window.onload = function () {
         email: form.email.value,
         password: form.password.value,
       };
+      showLoader("Authenticating...");
       try {
         // Send POST request
         const response = await fetch(
@@ -130,8 +132,10 @@ window.onload = function () {
           const result = await response.json();
 
           if (result.success == false) {
+            hideLoader();
             alert(result.message);
           } else if (result.success == true) {
+            setLoaderMessage("Login successful! Redirecting...");
             GetUser(result.message);
           }
         }
@@ -140,3 +144,28 @@ window.onload = function () {
       }
     });
 };
+
+// ============================================================
+// LOADING SPINNER
+// ============================================================
+function showLoader(message = "Processing...") {
+  const overlay = document.getElementById("loadingOverlay");
+  const msg = document.getElementById("loadingMessage");
+  if (overlay) overlay.classList.remove("hidden");
+  if (msg) msg.textContent = message;
+}
+
+function hideLoader() {
+  const overlay = document.getElementById("loadingOverlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function setLoaderMessage(text = "") {
+  const msg = document.getElementById("loadingMessage");
+  if (msg) msg.textContent = text;
+}
+
+function setLoaderProgress(text = "") {
+  const prg = document.getElementById("loadingProgress");
+  if (prg) prg.textContent = text;
+}
