@@ -194,19 +194,12 @@ window.onload = function () {
     .getElementById("hidePts")
     .addEventListener("change", async function (event) {
       const ptNots = document.getElementsByClassName("Points");
-      let newVal = "none"
-      let checkVal = ptNots[0]
-      if (checkVal.style.display == "none"){
-        newVal = "block"
-      }
-      else{
-        alert("Print WHO NEW")
-      }
+    
 
       for (let i = 0; i < ptNots.length; i++) {
         const element = ptNots[i];
-        element.style.display = newVal;
-        alert ("NEw value " + element.style.display)
+        element.style.display = "none";
+    
       }
 
     });
