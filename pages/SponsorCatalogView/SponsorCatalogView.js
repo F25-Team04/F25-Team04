@@ -30,22 +30,6 @@ window.onload = function () {
   li.appendChild(catalogView);
   list.appendChild(li);
 
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
-
-  const pointsManager = document.createElement("a");
-  pointsManager.href =
-    "../points-manager/points-manager.html?id=" + USER_ID + "&org=" + ORG_ID;
-  pointsManager.textContent = "Points Manager";
-  li.appendChild(pointsManager);
-  list.appendChild(li);
-
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
