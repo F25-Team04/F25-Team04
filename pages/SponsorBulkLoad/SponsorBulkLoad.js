@@ -50,7 +50,7 @@ function setupNavBar() {
   );
   add("../SponsorBulkLoad/SponsorBulkLoad.html", "Bulk Loader");
   add("../SponsorImpersonator/SponsorImpersonator.html", "Impersonation");
-
+  add("../report_builder/report.html", "Report Builder");
   list.appendChild(li);
 }
 

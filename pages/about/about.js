@@ -63,6 +63,11 @@ function LoadNav() {
       ORG_ID;
     impersonator.textContent = "Impersonation";
     li.appendChild(impersonator);
+    const report = document.createElement("a");
+    report.href =
+      "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+    report.textContent = "Build Report";
+    li.appendChild(report);
 
     list.appendChild(li);
   } else if (User["Role"] == "driver") {
@@ -160,9 +165,11 @@ function LoadNav() {
     const bulk_load = document.createElement("a");
     bulk_load.href = "../AdminBulkLoad/AdminBulkLoad.html?id=" + USER_ID;
     bulk_load.textContent = "Bulk Loader";
-        const impersonator = document.createElement("a");
-  impersonator.href = "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
-  impersonator.textContent = "Impersonation";
+    const impersonator = document.createElement("a");
+    impersonator.href =
+      "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
+    impersonator.textContent = "Impersonation";
+
     li.appendChild(create_admin);
     li.appendChild(create);
     li.appendChild(create_org);

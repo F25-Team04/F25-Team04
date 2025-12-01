@@ -1,41 +1,61 @@
 <!DOCTYPE html>
 <html>
-<header>
-  <script src = "report.js"></script>
-  <link rel="stylesheet" href="../../css/global.css" />
-</header>
-<body>
-
-  <style>
-    h1{text-align: center;}
-    form{text-align: center;}
-    #sub{background-color: rgba(81, 105, 224, 0.623);}
-    span{visibility:hidden;}
-    #test{display:none;}
-    #usrID{background-color:white;}
-    #specify{display:none;}
-    .report{
-      border-radius: 25px;
-      border: 2px solid #73AD21;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .inTitle{
-      font-size: 23px;
-    }
-    h2,h4,p{
-      display: inline-flex;
-    }
-    h2 {
-      margin-bottom: 0; /* Or a small value like 5px, 10px, etc. */
-    }
-    hr {
-      height: 3px; /* Adjust this value for desired thickness */
-      background-color: black; /* Set the color of the line */
-      border: none; /* Remove default border */
-    }
-    
-  </style>
+  <header>
+    <title>Build Report</title>
+    <script src="report.js"></script>
+    <link rel="stylesheet" href="../../css/global.css" />
+  </header>
+  <body>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      h1 {
+        text-align: center;
+      }
+      form {
+        text-align: center;
+      }
+      #sub {
+        background-color: rgba(81, 105, 224, 0.623);
+      }
+      span {
+        visibility: hidden;
+      }
+      #test {
+        display: none;
+      }
+      #usrID {
+        background-color: white;
+      }
+      #specify {
+        display: none;
+      }
+      .report {
+        border-radius: 25px;
+        border: 2px solid #73ad21;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .inTitle {
+        font-size: 23px;
+      }
+      h2,
+      h4,
+      p {
+        display: inline-flex;
+      }
+      h2 {
+        margin-bottom: 0; /* Or a small value like 5px, 10px, etc. */
+      }
+      hr {
+        height: 3px; /* Adjust this value for desired thickness */
+        background-color: black; /* Set the color of the line */
+        border: none; /* Remove default border */
+      }
+    </style>
 
     <header>
       <nav class="navbar">
@@ -55,30 +75,30 @@
       </nav>
     </header>
 
-  <h1 style="background-color:rgba(0, 159, 50, 0.618) ;"><br>Build Report<br><br></h1>
-  <div>
-    <h2 id = "scopeLabel">How many Drivers</h2>
-    <select id="scope">
-      <option id = "allDrivers" value="all">All Drivers</option>
-      <option id = "org" value="myOrg">My Organization</option>
-      <option id = "solo" value="soloDriver">Specific Driver</option>
-      <br>
-    </select><br><br>
-    <form id = "specify" >
-      <label for="driverID">Enter Driver ID:<br></label>
-      <input type="text" id="driverID" name="driverID"><br><br>
+    <h1 style="background-color: rgba(0, 159, 50, 0.618)">
+      <br />Build Report<br /><br />
+    </h1>
+    <div>
+      <h2 id="scopeLabel">How many Drivers</h2>
+      <select id="scope">
+        <option id="allDrivers" value="all">All Drivers</option>
+        <option id="org" value="myOrg">My Organization</option>
+        <option id="solo" value="soloDriver">Specific Driver</option>
+        <br /></select
+      ><br /><br />
+      <form id="specify">
+        <label for="driverID">Enter Driver ID:<br /></label>
+        <input type="text" id="driverID" name="driverID" /><br /><br />
+      </form>
+    </div>
+
+    <form id="makeForm">
+      <br />
+      <input type="submit" value="confirm" id="sub" />
     </form>
-  </div>
-  
-  <form id = "makeForm">
-    <br>
-    <input type="submit" value= "confirm" id="sub">
-  </form>
 
-  <br>
+    <br />
 
-  <div id="report"></div>
-
-
-</body>   
+    <div id="report"></div>
+  </body>
 </html>

@@ -3,7 +3,8 @@ const USER_ID = params.get("id");
 const ORG_ID = params.get("org");
 
 const DRIVER_ENDPOINT =
-  "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?role=driver&org=" + encodeURIComponent(ORG_ID);
+  "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/user?role=driver&org=" +
+  encodeURIComponent(ORG_ID);
 
 let DRIVER_CACHE = [];
 let CURRENT_DRIVER_ID = null;
@@ -43,7 +44,7 @@ function setupNavBar() {
   );
   add("../SponsorBulkLoad/SponsorBulkLoad.html", "Bulk Loader");
   add("../SponsorImpersonator/SponsorImpersonator.html", "Impersonation");
-
+  add("../report_builder/report.html", "Report Builder");
   list.appendChild(li);
 }
 
@@ -60,7 +61,6 @@ function attachCollapseHandler() {
     btn.title = collapsed ? "Expand users panel" : "Collapse users panel";
   });
 }
-
 
 /* FILTER BAR */
 function attachFilterHandlers() {
@@ -82,8 +82,11 @@ function applyFilters() {
 }
 
 function matchesFilter(user, term, field) {
-  const name =
-    ((user["First Name"] || "") + " " + (user["Last Name"] || "")).toLowerCase();
+  const name = (
+    (user["First Name"] || "") +
+    " " +
+    (user["Last Name"] || "")
+  ).toLowerCase();
   const userId = (user["User ID"] || "").toString().toLowerCase();
   const email = (user["Email"] || "").toLowerCase();
 
@@ -91,11 +94,7 @@ function matchesFilter(user, term, field) {
   if (field === "id") return userId.includes(term);
   if (field === "email") return email.includes(term);
 
-  return (
-    name.includes(term) ||
-    userId.includes(term) ||
-    email.includes(term)
-  );
+  return name.includes(term) || userId.includes(term) || email.includes(term);
 }
 
 /* FETCHERS */
@@ -150,7 +149,9 @@ function buildUsersList(users) {
     card.appendChild(info);
 
     card.addEventListener("click", () => {
-      document.querySelectorAll(".driver-card").forEach((c) => c.classList.remove("selected"));
+      document
+        .querySelectorAll(".driver-card")
+        .forEach((c) => c.classList.remove("selected"));
       card.classList.add("selected");
 
       openDriverInIframe(userId, first, last);
@@ -165,7 +166,11 @@ function openDriverInIframe(id, first, last) {
   const iframe = document.getElementById("impersonation-frame");
   const status = document.getElementById("impersonation-status");
   CURRENT_DRIVER_ID = id;
-  iframe.src = "../driver/driver.html?id=" + encodeURIComponent(id) + "&org=" + encodeURIComponent(ORG_ID);
+  iframe.src =
+    "../driver/driver.html?id=" +
+    encodeURIComponent(id) +
+    "&org=" +
+    encodeURIComponent(ORG_ID);
   status.textContent = `Viewing as driver ${first} ${last} (User ID: ${id})`;
 }
 
@@ -178,7 +183,6 @@ function clearSelectionAndFrame() {
   status.textContent =
     "No user selected. Choose a driver on the left to start.";
 }
-
 
 function attachIframeGuard() {
   const iframe = document.getElementById("impersonation-frame");
@@ -194,10 +198,11 @@ function attachIframeGuard() {
       internalURL = iframe.src;
     }
 
-    console.log("[IFRAME VISIT]:", internalURL );
+    console.log("[IFRAME VISIT]:", internalURL);
 
     if (internalURL.includes("DriverSelectOrg")) {
-      const redirect = "../driver/driver.html?id=" + CURRENT_DRIVER_ID + "&org=" + ORG_ID;
+      const redirect =
+        "../driver/driver.html?id=" + CURRENT_DRIVER_ID + "&org=" + ORG_ID;
       iframe.src = redirect;
     }
   });
