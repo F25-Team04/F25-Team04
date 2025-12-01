@@ -74,7 +74,7 @@ window.onload = function () {
       org_div.style.boxShadow = "none";
     });
   }
-  
+
   GetUserOrgs();
 
   function renderPage(orgs) {
@@ -142,7 +142,7 @@ window.onload = function () {
       org_div.addEventListener("click", () => {
         // Gonna be the application page eventually
         window.location =
-          "..\\Driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
+          "..\\driver\\driver.html?id=" + USER_ID + "&org=" + org["org_id"];
       });
       org_div.appendChild(title);
       org_div.appendChild(points_div);
