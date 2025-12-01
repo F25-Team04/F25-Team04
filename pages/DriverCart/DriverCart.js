@@ -249,6 +249,13 @@ window.onload = function () {
     CurrDriverPoints = parseInt(points);
   }
   async function ConfirmOrder() {
+    console.log(User["Address"]);
+    if (!User["Address"] || User["Address"] == "") {
+      alert(
+        "Please update your address in Update Account Info before Confirming Order."
+      );
+      return;
+    }
     const data = {
       user_id: USER_ID,
       org_id: ORG_ID,
