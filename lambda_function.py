@@ -541,6 +541,39 @@ def post_create_sponsor(body):
         "org": org_id
     })
 
+def post_organization(body):
+    body = json.loads(body or "{}")
+    name = body.get("org_name")
+    conversion_rate = body.get("org_conversion_rate")
+
+    if name is None or conversion_rate is None:
+        return build_response(400, { "message": "Missing required field(s): org_name, org_conversion_rate" })
+    
+    # if org exists and not deleted, return error
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT org_id
+            FROM Organizations
+            WHERE org_name = %s
+                AND org_isdeleted = 0
+        """, (name,))
+        if cur.fetchone():
+            return build_response(400, {"message": "Organization with that name already exists"})
+
+        # insert new organization
+        cur.execute("""
+            INSERT INTO Organizations (
+                org_name,
+                org_conversionrate
+            ) VALUES (%s, %s)
+        """, (name, conversion_rate))
+        org_id = cur.lastrowid
+        conn.commit()
+        return build_response(200, {
+            "message": "Organization created successfully.",
+            "org_id": org_id
+        })
+
 def post_admin_signup(body):
     # Parse and validate input
     body = json.loads(body or "{}")
@@ -2928,6 +2961,8 @@ def lambda_handler(event, context):
             response = post_create_driver(body)
         elif (method == "POST" and path == "/sponsor"):
             response = post_create_sponsor(body)
+        elif (method == "POST" and path == "/organizations"):
+            response = post_organization(body)
         elif (method == "POST" and path == "/admin"):
             response = post_admin_signup(body)
         elif (method == "POST" and path == "/login"):
