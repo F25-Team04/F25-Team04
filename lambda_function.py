@@ -2779,6 +2779,31 @@ def delete_user(queryParams):
     
     return build_response(404, f"No user found with id={usr_id}")
 
+def delete_organization(queryParams):
+    # marks organization as deleted in the database
+    queryParams = queryParams or {}
+    org_id = queryParams.get("id")
+    if org_id is None:
+        raise Exception(f"Missing required query parameter: id")
+    
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE Organizations
+            SET org_isdeleted = 1
+            WHERE org_id = %s
+            AND org_isdeleted = 0
+        """, org_id)
+        result = cur.fetchall()
+        affected = cur.rowcount
+        conn.commit()
+    if affected:
+        return build_response(200, {
+            "success": True,
+            "message": f"Organization {org_id} deleted"
+        })
+    
+    return build_response(404, f"No organization found with id={org_id}")
+
 def delete_notification(queryParams):
     # marks user as deleted in the database
     queryParams = queryParams or {}
@@ -2889,6 +2914,8 @@ def lambda_handler(event, context):
         # DELETE
         elif (method == "DELETE" and path == "/user"):
             response = delete_user(queryParams)
+        elif (method == "DELETE" and path == "/organizations"):
+            response = delete_organization(queryParams)
         elif (method == "DELETE" and path == "/notifications"):
             response = delete_notification(queryParams)
         elif (method == "DELETE" and path == "/catalog_rules"):
