@@ -58,7 +58,7 @@ window.onload = function () {
   );
   makePanelClickable(
     "orgs-list",
-    `../AdminAccManager/manage-organizations/manage-organizations.html?id=${encodeURIComponent(USER_ID || "")}`
+    `../AdminAccManager/manage-organizations/manage-orgs.html?id=${encodeURIComponent(USER_ID || "")}`
   );
   makePanelClickable(
     "admins-list",
