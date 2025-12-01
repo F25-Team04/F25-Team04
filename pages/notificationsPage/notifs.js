@@ -127,7 +127,7 @@ window.onload = function () {
             
           // Send POST request
 
-          const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/notifications?id=3", {
+          const response = await fetch("https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev/notifications?id=" + USER_ID, {
               method: "GET",
           })
           

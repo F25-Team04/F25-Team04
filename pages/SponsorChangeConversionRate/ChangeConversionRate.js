@@ -65,6 +65,12 @@ window.onload = function () {
   impersonator.textContent = "Impersonation";
   li.appendChild(impersonator);
 
+  const report = document.createElement("a");
+  report.href =
+    "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+  report.textContent = "Build Report";
+  li.appendChild(report);
+
   document
     .getElementById("conversionForm")
     .addEventListener("submit", async function (event) {
