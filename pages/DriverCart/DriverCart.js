@@ -272,7 +272,7 @@ window.onload = function () {
         if (response.status != 200) {
           alert(result.message);
         } else if (response.status == 200) {
-          GetShop();
+          window.location.reload();
         }
       }
     } catch (error) {
