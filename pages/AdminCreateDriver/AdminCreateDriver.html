@@ -80,8 +80,12 @@
         <input name="answer" type="text" placeholder="Answer" required />
       </div>
 
-      <input name="org_id" type="hidden" id="org_id" required />
-
+      <div class="form-group">
+        <label for="org">Organization:</label>
+        <select name="org" id="org" required>
+          <option value="" disabled selected>Select an organization</option>
+        </select>
+      </div>
       <button type="submit" class="btn approve-btn">Create User</button>
     </form>
   </body>

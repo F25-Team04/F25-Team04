@@ -1,6 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const USER_ID = params.get("id");
-const ORG_ID = params.get("org");
+const API_BASE = "https://ozbssob4k2.execute-api.us-east-1.amazonaws.com/dev";
 
 function generateQuestions(questions) {
   const dropdown = document.getElementById("questions");
@@ -15,7 +15,7 @@ function generateQuestions(questions) {
 }
 
 window.onload = function () {
-var list = this.document.getElementById("links");
+  var list = this.document.getElementById("links");
   const li = document.createElement("li");
   var about = this.document.getElementById("about-page");
   about.href = "../about/about.html?id=" + USER_ID;
@@ -76,9 +76,6 @@ var list = this.document.getElementById("links");
 
     const formData = new FormData(form);
 
-    // Add org from query string as `org` so it matches Lambda
-    formData.set("org", ORG_ID);
-
     // Convert FormData -> plain object
     const data = Object.fromEntries(formData.entries());
 
@@ -127,3 +124,20 @@ var list = this.document.getElementById("links");
       ORG_ID;
   });
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const orgSelect = document.getElementById("org");
+  fetch(`${API_BASE}/organizations?include_ids=1`)
+    .then((r) => r.json())
+    .then((arr) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach((o) => {
+        const opt = document.createElement("option");
+        opt.value = o.org_id;
+        opt.textContent = o.org_name;
+        orgSelect.appendChild(opt);
+      });
+    })
+    .catch(() => {
+    });
+});

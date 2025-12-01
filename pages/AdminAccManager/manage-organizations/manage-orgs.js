@@ -12,6 +12,9 @@ window.onload = function () {
     const create = document.createElement("a");
     create.href = "../../AdminCreateSponsor/AdminCreateSponsor.html?id=" + USER_ID;
     create.textContent = "Create Sponsor";
+    const create_driver = document.createElement("a");
+    create_driver.href = "../../AdminCreateDriver/AdminCreateDriver.html?id=" + USER_ID;
+    create_driver.textContent = "Create Driver";
     const create_org = document.createElement("a");
     create_org.href = "../../AdminCreateSponsorOrg/AdminCreateSponsorOrg.html?id=" + USER_ID;
     create_org.textContent = "Create Organization";
@@ -25,6 +28,7 @@ window.onload = function () {
   impersonator.href = "../AdminImpersonator/AdminImpersonator.html?id=" + USER_ID;
   impersonator.textContent = "Impersonation";
     li.appendChild(create_admin);
+    li.appendChild(create_driver);
     li.appendChild(create);
     li.appendChild(create_org);
     li.appendChild(bulk_load);
