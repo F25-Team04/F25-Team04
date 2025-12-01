@@ -61,22 +61,6 @@ window.onload = function () {
   li.appendChild(catalogView);
   list.appendChild(li);
 
-  const app = document.createElement("a");
-  app.href =
-    "../SponsorApplicationPage/sponsor-applications.html?id=" +
-    USER_ID +
-    "&org=" +
-    ORG_ID;
-  app.textContent = "Applications";
-  li.appendChild(app);
-
-  const pointsManager = document.createElement("a");
-  pointsManager.href =
-    "../points-manager/points-manager.html?id=" + USER_ID + "&org=" + ORG_ID;
-  pointsManager.textContent = "Points Manager";
-  li.appendChild(pointsManager);
-  list.appendChild(li);
-
   const change = document.createElement("a");
   change.href =
     "../SponsorChangeConversionRate/ChangeConversionRate.html?id=" +
@@ -100,6 +84,11 @@ window.onload = function () {
     ORG_ID;
   impersonator.textContent = "Impersonation";
   li.appendChild(impersonator);
+  const report = document.createElement("a");
+  report.href =
+    "../report_builder/report.html?id=" + USER_ID + "&org=" + ORG_ID;
+  report.textContent = "Build Report";
+  li.appendChild(report);
   list.appendChild(li);
 
   // Pulls pending driver requests for the organization that the user belongs to
