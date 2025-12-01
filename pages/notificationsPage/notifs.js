@@ -167,7 +167,7 @@ window.onload = function () {
           
 
         if (response.ok) {
-          alert("Notification Deleted")
+          alert("Notification Won't Show Up Next Time")
 
         } else {
           //alert("Password or Email is Incorrect  ");
