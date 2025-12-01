@@ -1217,6 +1217,8 @@ def post_orders(body):
                 ))
 
             conn.commit()
+            notifMessage = "Order For " + i["title"] + " Placed Successfully"
+            post_notifications(user_id, "Order", notifMessage)
             return build_response(200, {"message": "Order placed successfully", "order_id": order_id})
 
         except Exception as e:
